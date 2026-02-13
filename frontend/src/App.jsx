@@ -12,6 +12,8 @@ import { Signup } from "./components/AuthCom/SignUp";
 import { useAuthStore } from "./store/useAuthStore";
 import { Loader } from "lucide-react";
 
+import AdminPage from "./pages/AdminPage";
+
 function Home() {
   return (
     <>
@@ -45,12 +47,21 @@ function App() {
 
         {/* Auth Routes */}
         <Route path="/signup" element={!authUser ? <Signup /> : <Navigate to="/products" />} />
-        <Route path="/login" element={!authUser ? <Login /> : <Navigate to="/products" />} />
+        <Route
+          path="/login"
+          element={!authUser ? <Login /> : (authUser.role === 'admin' ? <Navigate to="/admin" /> : <Navigate to="/products" />)}
+        />
 
-        {/* Products page (Listing) - Protected */}
+        {/* User Protected Routes */}
         <Route
           path="/products"
           element={authUser ? <Listing cart={cart} setCart={setCart} /> : <Navigate to="/login" />}
+        />
+
+        {/* Admin Protected Routes */}
+        <Route
+          path="/admin"
+          element={authUser && authUser.role === 'admin' ? <AdminPage /> : <Navigate to="/login" />}
         />
 
         {/* Cart page */}

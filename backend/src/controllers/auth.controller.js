@@ -1,6 +1,5 @@
-
 import { generateToken } from "../lib/utils.js";
-import User from "../models/user.js";
+import User from "../models/UserModel.js";
 import bcrypt from "bcryptjs";
 
 export const signup = async (req, res) => {
@@ -14,7 +13,7 @@ export const signup = async (req, res) => {
       return res.status(400).json({ message: "Password must be at least 6 characters" });
     }
 
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ where: { email } });
 
     if (user) {
       return res.status(400).json({ message: "User with this email already exists" });
@@ -23,7 +22,7 @@ export const signup = async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    const newUser = new User({
+    const newUser = await User.create({
       fullName,
       email,
       password: hashedPassword,
@@ -31,15 +30,13 @@ export const signup = async (req, res) => {
     });
 
     if (newUser) {
-      generateToken(newUser._id, res);
-      await newUser.save();
+      generateToken(newUser.id, res);
 
       res.status(201).json({
-        _id: newUser._id,
+        id: newUser.id,
         fullName: newUser.fullName,
         email: newUser.email,
         phoneNumber: newUser.phoneNumber,
-
       });
     } else {
       res.status(400).json({ message: "Invalid user data" });
@@ -53,7 +50,7 @@ export const signup = async (req, res) => {
 export const login = async (req, res) => {
   const { email, password } = req.body;
   try {
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ where: { email } });
 
     if (!user) {
       return res.status(400).json({ message: "Invalid credentials" });
@@ -64,10 +61,10 @@ export const login = async (req, res) => {
       return res.status(400).json({ message: "Invalid credentials" });
     }
 
-    generateToken(user._id, res);
+    generateToken(user.id, res);
 
     res.status(200).json({
-      _id: user._id,
+      id: user.id,
       fullName: user.fullName,
       email: user.email,
       phoneNumber: user.phoneNumber,

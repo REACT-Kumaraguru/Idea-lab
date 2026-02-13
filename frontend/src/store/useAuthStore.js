@@ -14,8 +14,14 @@ export const useAuthStore = create((set, get) => ({
       const res = await axiosInstance.get("/auth/check");
       set({ authUser: res.data });
     } catch (error) {
-      console.log("Error in checkAuth:", error);
-      set({ authUser: null });
+      // If user check fails, try admin check
+      try {
+        const resAdmin = await axiosInstance.get("/admin/check");
+        set({ authUser: resAdmin.data });
+      } catch (adminError) {
+        console.log("Error in checkAuth:", adminError);
+        set({ authUser: null });
+      }
     } finally {
       set({ isCheckingAuth: false });
     }
@@ -37,7 +43,10 @@ export const useAuthStore = create((set, get) => ({
   login: async (data) => {
     set({ isLoggingIn: true });
     try {
-      const res = await axiosInstance.post("/auth/login", data);
+      console.log("useAuthStore login called with:", data);
+      const route = data.loginType === "admin" ? "/admin/login" : "/auth/login";
+      console.log("Determined login route:", route);
+      const res = await axiosInstance.post(route, data);
       set({ authUser: res.data });
       toast.success("Logged in successfully");
     } catch (error) {
@@ -49,6 +58,8 @@ export const useAuthStore = create((set, get) => ({
 
   logout: async () => {
     try {
+      // Determine logout route based on current role (optional, but safe to try both or just auth one if they share cookie)
+      // Since cookie name 'jwt' is shared, hitting any logout endpoint that clears cookie works.
       await axiosInstance.post("/auth/logout");
       set({ authUser: null });
       toast.success("Logged out successfully");
