@@ -1,10 +1,10 @@
 import express from "express";
-import { ENV } from "./lib/env.js";
-import authRoutes from "./routes/auth.route.js";
-import adminAuthRoutes from "./routes/adminauth.route.js";
+import { ENV } from "./src/lib/env.js";
+import authRoutes from "./src/routes/auth.route.js";
+import adminAuthRoutes from "./src/routes/adminauth.route.js";
 import cookieParser from "cookie-parser";
 import cors from "cors";
-import { connectDB } from "./lib/db.js";
+import { connectDB } from "./src/lib/db.js";
 
 const app = express();
 
