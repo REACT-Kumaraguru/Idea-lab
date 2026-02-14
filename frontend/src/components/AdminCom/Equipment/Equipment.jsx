@@ -1,43 +1,51 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  Plus, 
-  Search, 
-  Edit2, 
-  Trash2, 
-  Filter 
+import {
+  Plus,
+  Search,
+  Edit2,
+  Trash2,
+  Filter
 } from 'lucide-react';
+import { useEquipmentStore } from '../../../store/useEquipmentStore';
 
 const Equipment = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Mock data
-  const equipmentList = [
-    { id: 1, name: '3D Printer - Ultimaker S5', category: 'Fabrication', status: 'Available', serial: 'ULT-001' },
-    { id: 2, name: 'Laser Cutter - Epilog Fusion', category: 'Cutting', status: 'In Use', serial: 'EP-992' },
-    { id: 3, name: 'Oscilloscope - Tektronix', category: 'Electronics', status: 'Maintenance', serial: 'TEK-442' },
-    { id: 4, name: 'CNC Router', category: 'Woodworking', status: 'Available', serial: 'CNC-012' },
-  ];
+  const {
+    equipment,
+    fetchEquipment,
+    deleteEquipment,
+    isFetchingEquipment
+  } = useEquipmentStore();
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'Available': return 'bg-green-100 text-green-700';
-      case 'In Use': return 'bg-blue-100 text-blue-700';
-      case 'Maintenance': return 'bg-red-100 text-red-700';
-      default: return 'bg-gray-100 text-gray-700';
+  useEffect(() => {
+    fetchEquipment();
+  }, [fetchEquipment]);
+
+  const handleDelete = async (id) => {
+    if (window.confirm("Are you sure you want to delete this equipment?")) {
+      await deleteEquipment(id);
+      // No need to manually update state, store handles it
     }
   };
 
+  const getStatusColor = (isAvailable) => {
+    return isAvailable
+      ? 'bg-green-100 text-green-700'
+      : 'bg-red-100 text-red-700';
+  };
+
+  const filteredList = equipment.filter(item =>
+    item.equipmentName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    item.brandName?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   return (
-    /* THE FIX: 
-       ml-16: Adds margin to the left (64px) to clear the sidebar.
-       p-8: Adds padding so content doesn't touch the screen edges.
-       min-h-screen: Ensures the background covers the whole height.
-    */
     <div className="ml-16 p-4 md:p-8 min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto space-y-6">
-        
+
         {/* Header Section */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
@@ -60,7 +68,7 @@ const Equipment = () => {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
             <input
               type="text"
-              placeholder="Search by name or serial..."
+              placeholder="Search by name or brand..."
               className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -78,55 +86,76 @@ const Equipment = () => {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-gray-50 border-b border-gray-200">
+                  <th className="px-6 py-4 text-xs font-semibold text-gray-600 uppercase tracking-wider">Image</th>
                   <th className="px-6 py-4 text-xs font-semibold text-gray-600 uppercase tracking-wider">Equipment</th>
-                  <th className="px-6 py-4 text-xs font-semibold text-gray-600 uppercase tracking-wider">Category</th>
-                  <th className="px-6 py-4 text-xs font-semibold text-gray-600 uppercase tracking-wider">Serial No.</th>
+                  <th className="px-6 py-4 text-xs font-semibold text-gray-600 uppercase tracking-wider">Brand</th>
+                  <th className="px-6 py-4 text-xs font-semibold text-gray-600 uppercase tracking-wider">Quantity</th>
+                  <th className="px-6 py-4 text-xs font-semibold text-gray-600 uppercase tracking-wider">Rent (₹)</th>
                   <th className="px-6 py-4 text-xs font-semibold text-gray-600 uppercase tracking-wider">Status</th>
                   <th className="px-6 py-4 text-xs font-semibold text-gray-600 uppercase tracking-wider text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {equipmentList.map((item) => (
-                  <tr key={item.id} className="hover:bg-gray-50/50 transition-colors group">
-                    <td className="px-6 py-4">
-                      <span className="font-medium text-gray-800 block">{item.name}</span>
-                    </td>
-                    <td className="px-6 py-4 text-gray-600">{item.category}</td>
-                    <td className="px-6 py-4 text-gray-500 font-mono text-sm">{item.serial}</td>
-                    <td className="px-6 py-4">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(item.status)}`}>
-                        {item.status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button 
-                          className="p-2 text-gray-400 hover:text-teal-600 hover:bg-teal-50 rounded-lg transition-colors"
-                          title="Edit"
-                        >
-                          <Edit2 className="w-4 h-4" />
-                        </button>
-                        <button 
-                          className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                          title="Delete"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </td>
+                {isFetchingEquipment ? (
+                  <tr>
+                    <td colSpan="7" className="px-6 py-4 text-center text-gray-500">Loading...</td>
                   </tr>
-                ))}
+                ) : filteredList.length === 0 ? (
+                  <tr>
+                    <td colSpan="7" className="px-6 py-4 text-center text-gray-500">No equipment found</td>
+                  </tr>
+                ) : (
+                  filteredList.map((item) => (
+                    <tr key={item.id} className="hover:bg-gray-50/50 transition-colors group">
+                      <td className="px-6 py-4">
+                        {item.image ? (
+                          <img src={`http://localhost:5001/${item.image}`} alt={item.equipmentName} className="w-10 h-10 object-cover rounded-md" />
+                        ) : (
+                          <div className="w-10 h-10 bg-gray-200 rounded-md flex items-center justify-center text-gray-400 text-xs">No Img</div>
+                        )}
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className="font-medium text-gray-800 block">{item.equipmentName}</span>
+                        <span className="text-xs text-gray-500">{item.equipmentDetails}</span>
+                      </td>
+                      <td className="px-6 py-4 text-gray-600">{item.brandName}</td>
+                      <td className="px-6 py-4 text-gray-500 font-mono text-sm">{item.quantity}</td>
+                      <td className="px-6 py-4 text-gray-700 font-mono text-sm">
+                        {item.rentAmount ? `₹${item.rentAmount}` : '-'}
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(item.isAvailable)}`}>
+                          {item.isAvailable ? 'Available' : 'Unavailable'}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <div className="flex justify-end gap-1 opacity-100 transition-opacity">
+                          <button
+                            className="p-2 text-gray-400 hover:text-teal-600 hover:bg-teal-50 rounded-lg transition-colors"
+                            title="Edit"
+                            onClick={() => navigate('/admin/new-equipment', { state: { equipment: item } })}
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </button>
+                          <button
+                            className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                            title="Delete"
+                            onClick={() => handleDelete(item.id)}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
-          
+
           {/* Footer */}
           <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between text-sm text-gray-500 bg-gray-50/30">
-            <span>Showing {equipmentList.length} items</span>
-            <div className="flex gap-2">
-              <button className="px-3 py-1 border border-gray-200 rounded hover:bg-white disabled:opacity-50 transition-colors" disabled>Previous</button>
-              <button className="px-3 py-1 border border-gray-200 rounded hover:bg-white transition-colors">Next</button>
-            </div>
+            <span>Showing {filteredList.length} items</span>
           </div>
         </div>
       </div>

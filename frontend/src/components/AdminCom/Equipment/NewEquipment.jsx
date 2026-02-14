@@ -1,10 +1,20 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { useEquipmentStore } from '../../../store/useEquipmentStore';
 
 export default function NewEquipment() {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const { createEquipment, updateEquipment, isCreatingEquipment, isUpdatingEquipment } = useEquipmentStore();
+
+  // Check if we are in "Edit" mode
+  const editingEquipment = location.state?.equipment;
+
   const [formData, setFormData] = useState({
     equipmentName: '',
     brandName: '',
     quantity: '',
+    rentAmount: '',
     equipmentDetails: '',
     isAvailable: true
   });
@@ -12,6 +22,22 @@ export default function NewEquipment() {
   const [imagePreview, setImagePreview] = useState(null);
   const [imageFile, setImageFile] = useState(null);
   const [showSuccess, setShowSuccess] = useState(false);
+
+  useEffect(() => {
+    if (editingEquipment) {
+      setFormData({
+        equipmentName: editingEquipment.equipmentName,
+        brandName: editingEquipment.brandName,
+        quantity: editingEquipment.quantity,
+        rentAmount: editingEquipment.rentAmount || '',
+        equipmentDetails: editingEquipment.equipmentDetails || '',
+        isAvailable: editingEquipment.isAvailable
+      });
+      if (editingEquipment.image) {
+        setImagePreview(`http://localhost:5001/${editingEquipment.image}`);
+      }
+    }
+  }, [editingEquipment]);
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -38,40 +64,45 @@ export default function NewEquipment() {
     setImageFile(null);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    const equipmentData = {
-      ...formData,
-      image: imageFile
-    };
 
-    console.log('Equipment Data:', equipmentData);
-    
-    setShowSuccess(true);
-    
-    setTimeout(() => {
-      setShowSuccess(false);
-    }, 3000);
-  };
+    // Create FormData for multipart/form-data upload
+    const data = new FormData();
+    data.append('equipmentName', formData.equipmentName);
+    data.append('brandName', formData.brandName);
+    data.append('quantity', formData.quantity);
+    data.append('rentAmount', formData.rentAmount);
+    data.append('equipmentDetails', formData.equipmentDetails);
+    data.append('isAvailable', formData.isAvailable);
 
-  const resetForm = () => {
-    setFormData({
-      equipmentName: '',
-      brandName: '',
-      quantity: '',
-      equipmentDetails: '',
-      isAvailable: true
-    });
-    setImagePreview(null);
-    setImageFile(null);
+    if (imageFile) {
+      data.append('image', imageFile);
+    }
+
+    let success = false;
+    if (editingEquipment) {
+      success = await updateEquipment(editingEquipment.id, data);
+    } else {
+      success = await createEquipment(data);
+    }
+
+    if (success) {
+      setShowSuccess(true);
+      setTimeout(() => {
+        setShowSuccess(false);
+        navigate('/admin/equipment');
+      }, 2000);
+    }
   };
 
   const handleCancel = () => {
     if (window.confirm('Are you sure you want to cancel? All unsaved changes will be lost.')) {
-      resetForm();
+      navigate('/admin/equipment');
     }
   };
+
+  const isSaving = isCreatingEquipment || isUpdatingEquipment;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 p-4 lg:p-8">
@@ -79,10 +110,10 @@ export default function NewEquipment() {
         {/* Header */}
         <div className="mb-6 animate-fade-in">
           <h1 className="text-3xl lg:text-4xl font-bold text-slate-900 mb-2 tracking-tight">
-            Add New Equipment
+            {editingEquipment ? 'Edit Equipment' : 'Add New Equipment'}
           </h1>
           <p className="text-slate-600 text-base lg:text-lg">
-            Fill in the details and see a live preview of your equipment
+            {editingEquipment ? 'Update details below' : 'Fill in the details and see a live preview of your equipment'}
           </p>
         </div>
 
@@ -99,25 +130,25 @@ export default function NewEquipment() {
                     Equipment Image
                   </h2>
                 </div>
-                
+
                 <div className="w-full">
                   {!imagePreview ? (
-                    <label 
-                      htmlFor="imageUpload" 
+                    <label
+                      htmlFor="imageUpload"
                       className="block w-full py-8 px-4 border-2 border-dashed border-slate-200 rounded-xl bg-slate-50 cursor-pointer transition-all duration-300 hover:border-emerald-300 hover:bg-emerald-50/50 text-center group"
                     >
                       <div className="flex flex-col items-center gap-2">
-                        <svg 
-                          className="w-10 h-10 text-emerald-500 mb-1 group-hover:scale-110 transition-transform" 
-                          viewBox="0 0 24 24" 
-                          fill="none" 
+                        <svg
+                          className="w-10 h-10 text-emerald-500 mb-1 group-hover:scale-110 transition-transform"
+                          viewBox="0 0 24 24"
+                          fill="none"
                           stroke="currentColor"
                         >
-                          <path 
-                            strokeLinecap="round" 
-                            strokeLinejoin="round" 
-                            strokeWidth={2} 
-                            d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" 
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
                           />
                         </svg>
                         <span className="text-sm font-medium text-slate-900 block">
@@ -137,9 +168,9 @@ export default function NewEquipment() {
                     </label>
                   ) : (
                     <div className="relative w-full rounded-xl overflow-hidden border-2 border-slate-200">
-                      <img 
-                        src={imagePreview} 
-                        alt="Equipment preview" 
+                      <img
+                        src={imagePreview}
+                        alt="Equipment preview"
                         className="w-full h-48 object-cover"
                       />
                       <button
@@ -147,17 +178,17 @@ export default function NewEquipment() {
                         onClick={removeImage}
                         className="absolute top-2 right-2 w-8 h-8 rounded-full bg-red-500/90 hover:bg-red-600 border-none cursor-pointer flex items-center justify-center transition-all duration-300 backdrop-blur-sm hover:scale-110"
                       >
-                        <svg 
-                          className="w-4 h-4 text-white" 
-                          viewBox="0 0 24 24" 
-                          fill="none" 
+                        <svg
+                          className="w-4 h-4 text-white"
+                          viewBox="0 0 24 24"
+                          fill="none"
                           stroke="currentColor"
                           strokeWidth={2}
                         >
-                          <path 
-                            strokeLinecap="round" 
-                            strokeLinejoin="round" 
-                            d="M6 18L18 6M6 6l12 12" 
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M6 18L18 6M6 6l12 12"
                           />
                         </svg>
                       </button>
@@ -174,7 +205,7 @@ export default function NewEquipment() {
                     Basic Information
                   </h2>
                 </div>
-                
+
                 <div className="space-y-4">
                   <div>
                     <label htmlFor="equipmentName" className="block text-sm font-medium text-slate-900 mb-1.5">
@@ -209,21 +240,40 @@ export default function NewEquipment() {
                       />
                     </div>
 
-                    <div>
-                      <label htmlFor="quantity" className="block text-sm font-medium text-slate-900 mb-1.5">
-                        Quantity <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="number"
-                        id="quantity"
-                        name="quantity"
-                        value={formData.quantity}
-                        onChange={handleInputChange}
-                        placeholder="0"
-                        min="0"
-                        required
-                        className="w-full px-3 py-2.5 text-sm font-mono border-2 border-slate-200 rounded-lg bg-slate-50 text-slate-900 transition-all duration-300 outline-none focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-100 hover:border-slate-300"
-                      />
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label htmlFor="quantity" className="block text-sm font-medium text-slate-900 mb-1.5">
+                          Quantity <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="number"
+                          id="quantity"
+                          name="quantity"
+                          value={formData.quantity}
+                          onChange={handleInputChange}
+                          placeholder="0"
+                          min="0"
+                          required
+                          className="w-full px-3 py-2.5 text-sm font-mono border-2 border-slate-200 rounded-lg bg-slate-50 text-slate-900 transition-all duration-300 outline-none focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-100 hover:border-slate-300"
+                        />
+                      </div>
+
+                      <div>
+                        <label htmlFor="rentAmount" className="block text-sm font-medium text-slate-900 mb-1.5">
+                          Rent Amount (₹)
+                        </label>
+                        <input
+                          type="number"
+                          id="rentAmount"
+                          name="rentAmount"
+                          value={formData.rentAmount}
+                          onChange={handleInputChange}
+                          placeholder="0.00"
+                          min="0"
+                          step="0.01"
+                          className="w-full px-3 py-2.5 text-sm font-mono border-2 border-slate-200 rounded-lg bg-slate-50 text-slate-900 transition-all duration-300 outline-none focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-100 hover:border-slate-300"
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -237,7 +287,7 @@ export default function NewEquipment() {
                     Equipment Details
                   </h2>
                 </div>
-                
+
                 <div>
                   <label htmlFor="equipmentDetails" className="block text-sm font-medium text-slate-900 mb-1.5">
                     Equipment Details
@@ -265,7 +315,7 @@ export default function NewEquipment() {
                     Availability
                   </h2>
                 </div>
-                
+
                 <div className="flex items-center justify-between p-4 bg-slate-50 rounded-lg border-2 border-slate-200 transition-all hover:border-slate-300">
                   <span className="font-medium text-slate-900 text-sm">Is Available</span>
                   <label className="relative inline-block w-12 h-7 cursor-pointer">
@@ -276,12 +326,10 @@ export default function NewEquipment() {
                       onChange={handleInputChange}
                       className="opacity-0 w-0 h-0 peer"
                     />
-                    <span className={`absolute cursor-pointer top-0 left-0 right-0 bottom-0 rounded-full transition-all duration-300 ${
-                      formData.isAvailable ? 'bg-emerald-500' : 'bg-slate-300'
-                    }`}>
-                      <span className={`absolute h-5 w-5 left-1 top-1 bg-white rounded-full transition-transform duration-300 shadow-md ${
-                        formData.isAvailable ? 'translate-x-5' : 'translate-x-0'
-                      }`}></span>
+                    <span className={`absolute cursor-pointer top-0 left-0 right-0 bottom-0 rounded-full transition-all duration-300 ${formData.isAvailable ? 'bg-emerald-500' : 'bg-slate-300'
+                      }`}>
+                      <span className={`absolute h-5 w-5 left-1 top-1 bg-white rounded-full transition-transform duration-300 shadow-md ${formData.isAvailable ? 'translate-x-5' : 'translate-x-0'
+                        }`}></span>
                     </span>
                   </label>
                 </div>
@@ -289,18 +337,20 @@ export default function NewEquipment() {
 
               {/* Button Group */}
               <div className="flex gap-3 pt-6 border-t-2 border-slate-200">
-                <button 
-                  type="button" 
-                  onClick={handleCancel} 
-                  className="flex-1 px-6 py-3 text-sm font-semibold border-2 border-slate-200 rounded-lg cursor-pointer bg-white text-slate-900 transition-all duration-300 hover:bg-slate-50 hover:border-slate-300 hover:-translate-y-0.5"
+                <button
+                  type="button"
+                  onClick={handleCancel}
+                  disabled={isSaving}
+                  className="flex-1 px-6 py-3 text-sm font-semibold border-2 border-slate-200 rounded-lg cursor-pointer bg-white text-slate-900 transition-all duration-300 hover:bg-slate-50 hover:border-slate-300 hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Cancel
                 </button>
-                <button 
-                  type="submit" 
-                  className="flex-1 px-6 py-3 text-sm font-semibold border-none rounded-lg cursor-pointer bg-emerald-500 text-white shadow-lg shadow-emerald-200 transition-all duration-300 hover:bg-emerald-600 hover:shadow-xl hover:shadow-emerald-300 hover:-translate-y-0.5 active:translate-y-0"
+                <button
+                  type="submit"
+                  disabled={isSaving}
+                  className="flex-1 px-6 py-3 text-sm font-semibold border-none rounded-lg cursor-pointer bg-emerald-500 text-white shadow-lg shadow-emerald-200 transition-all duration-300 hover:bg-emerald-600 hover:shadow-xl hover:shadow-emerald-300 hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Save Equipment
+                  {isSaving ? 'Saving...' : (editingEquipment ? 'Update Equipment' : 'Save Equipment')}
                 </button>
               </div>
             </form>
@@ -342,15 +392,14 @@ export default function NewEquipment() {
                     </svg>
                   </div>
                 )}
-                
+
                 {/* Availability Badge */}
                 <div className="absolute top-3 right-3">
                   <span
-                    className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                      formData.isAvailable
-                        ? 'bg-emerald-500 text-white'
-                        : 'bg-red-500 text-white'
-                    }`}
+                    className={`px-3 py-1 rounded-full text-xs font-semibold ${formData.isAvailable
+                      ? 'bg-emerald-500 text-white'
+                      : 'bg-red-500 text-white'
+                      }`}
                   >
                     {formData.isAvailable ? 'Available' : 'Unavailable'}
                   </span>
@@ -408,7 +457,7 @@ export default function NewEquipment() {
             </div>
             <div>
               <strong className="block text-slate-900">Success!</strong>
-              <span className="text-slate-600 text-sm">Equipment has been added to inventory</span>
+              <span className="text-slate-600 text-sm">Equipment has been {editingEquipment ? 'updated' : 'added'} successfully</span>
             </div>
           </div>
         </div>
