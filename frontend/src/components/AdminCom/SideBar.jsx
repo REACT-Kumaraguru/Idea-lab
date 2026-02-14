@@ -9,10 +9,12 @@ import {
   UserPlus
 } from 'lucide-react';
 import Logo from "../../assets/idea-lab.png";
+import { useAuthStore } from "../../store/useAuthStore";
 
 export const Sidebar = () => {
   const navigate = useNavigate();
-  const location = useLocation(); // Tracks the current URL path
+  const location = useLocation();
+  const { logout } = useAuthStore();
 
   const menuItems = [
     { id: 'home', icon: Home, label: 'Home', path: '/admin' },
@@ -22,13 +24,14 @@ export const Sidebar = () => {
     { id: 'adminUser', icon: UserPlus, label: 'Admin Access', path: '/admin/users' },
   ];
 
-  const bottomItems = [
-    { id: 'logout', icon: LogOut, label: 'Logout', path: '/login' },
-  ];
+  const handleLogout = async () => {
+    await logout();
+    navigate("/login");
+  };
 
   return (
     <div className="fixed top-0 left-0 flex flex-col h-screen w-16 bg-white border-r border-gray-200 py-4 items-center justify-between z-50">
-      
+
       {/* Top Section */}
       <div className="flex flex-col items-center space-y-2 w-full">
         {/* Logo Container */}
@@ -40,18 +43,16 @@ export const Sidebar = () => {
         {/* Main Menu Items */}
         {menuItems.map((item) => {
           const Icon = item.icon;
-          // Check if the current route matches this item's path
           const isActive = location.pathname === item.path;
 
           return (
             <button
               key={item.id}
               onClick={() => navigate(item.path)}
-              className={`w-10 h-10 flex items-center justify-center rounded-lg transition-all duration-200 relative group ${
-                isActive
+              className={`w-10 h-10 flex items-center justify-center rounded-lg transition-all duration-200 relative group ${isActive
                   ? 'bg-teal-600 text-white shadow-md'
                   : 'text-gray-500 hover:bg-teal-50 hover:text-teal-600'
-              }`}
+                }`}
             >
               <Icon className="w-5 h-5" />
 
@@ -64,23 +65,17 @@ export const Sidebar = () => {
         })}
       </div>
 
-      {/* Bottom Section */}
+      {/* Bottom Section - Logout */}
       <div className="flex flex-col items-center space-y-2 w-full">
-        {bottomItems.map((item) => {
-          const Icon = item.icon;
-          return (
-            <button
-              key={item.id}
-              onClick={() => navigate(item.path)}
-              className="w-10 h-10 flex items-center justify-center rounded-lg text-gray-500 hover:bg-red-50 hover:text-red-600 transition-colors relative group"
-            >
-              <Icon className="w-5 h-5" />
-              <span className="absolute left-14 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap transition-opacity duration-200 shadow-lg z-50">
-                {item.label}
-              </span>
-            </button>
-          );
-        })}
+        <button
+          onClick={handleLogout}
+          className="w-10 h-10 flex items-center justify-center rounded-lg text-gray-500 hover:bg-red-50 hover:text-red-600 transition-colors relative group"
+        >
+          <LogOut className="w-5 h-5" />
+          <span className="absolute left-14 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap transition-opacity duration-200 shadow-lg z-50">
+            Logout
+          </span>
+        </button>
       </div>
     </div>
   );

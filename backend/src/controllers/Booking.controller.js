@@ -1,6 +1,6 @@
 import EquipmentBooking from "../models/EquipmentBooking.model.js";
-import Equipment from "../models/equipment.model.js";
-import User from "../models/user.model.js";
+import Equipment from "../models/EquipmentModel.js";
+import User from "../models/UserModel.js";
 import { Op } from "sequelize";
 
 // @desc    Create a new equipment booking

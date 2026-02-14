@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Calendar, Clock, AlertCircle, CheckCircle, X, Info } from "lucide-react";
-import axios from "axios";
+import { useBookingStore } from "../../store/useBookingStore";
 
 const EquipmentBooking = ({ equipment, isOpen, onClose, onBookingSuccess }) => {
   const [bookingData, setBookingData] = useState({
@@ -9,14 +9,19 @@ const EquipmentBooking = ({ equipment, isOpen, onClose, onBookingSuccess }) => {
     duration: 1,
     notes: "",
   });
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [existingBookings, setExistingBookings] = useState([]);
-  const [loadingBookings, setLoadingBookings] = useState(false);
+
+  const {
+    equipmentBookings: existingBookings,
+    isCreatingBooking: loading,
+    isFetchingEquipmentBookings: loadingBookings,
+    fetchEquipmentBookings,
+    createBooking,
+  } = useBookingStore();
 
   useEffect(() => {
     if (isOpen && equipment) {
-      fetchExistingBookings();
+      fetchEquipmentBookings(equipment.id);
       resetForm();
     }
   }, [isOpen, equipment]);
@@ -29,22 +34,6 @@ const EquipmentBooking = ({ equipment, isOpen, onClose, onBookingSuccess }) => {
       notes: "",
     });
     setError("");
-  };
-
-  const fetchExistingBookings = async () => {
-    try {
-      setLoadingBookings(true);
-      const response = await axios.get(
-        `http://localhost:5001/api/bookings/equipment/${equipment.id}`
-      );
-      if (response.data.success) {
-        setExistingBookings(response.data.data);
-      }
-    } catch (err) {
-      console.error("Error fetching bookings:", err);
-    } finally {
-      setLoadingBookings(false);
-    }
   };
 
   const handleInputChange = (e) => {
@@ -91,47 +80,22 @@ const EquipmentBooking = ({ equipment, isOpen, onClose, onBookingSuccess }) => {
       return;
     }
 
-    setLoading(true);
     setError("");
 
-    try {
-      const token = localStorage.getItem("token");
+    const result = await createBooking({
+      equipmentId: equipment.id,
+      bookingDate: bookingData.bookingDate,
+      bookingTime: bookingData.bookingTime,
+      duration: parseInt(bookingData.duration),
+      notes: bookingData.notes,
+    });
 
-      if (!token) {
-        setError("Please login to make a booking");
-        setLoading(false);
-        return;
+    if (result) {
+      if (onBookingSuccess) {
+        onBookingSuccess(result);
       }
-
-      const response = await axios.post(
-        `http://localhost:5001/api/bookings`,
-        {
-          equipmentId: equipment.id,
-          bookingDate: bookingData.bookingDate,
-          bookingTime: bookingData.bookingTime,
-          duration: parseInt(bookingData.duration),
-          notes: bookingData.notes,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      if (response.data.success) {
-        if (onBookingSuccess) {
-          onBookingSuccess(response.data.data);
-        }
-        resetForm();
-        onClose();
-      }
-    } catch (err) {
-      setError(
-        err.response?.data?.message || "Failed to create booking. Please try again."
-      );
-    } finally {
-      setLoading(false);
+      resetForm();
+      onClose();
     }
   };
 

@@ -3,6 +3,7 @@ import { ENV } from "./src/lib/env.js";
 import authRoutes from "./src/routes/auth.route.js";
 import adminAuthRoutes from "./src/routes/adminauth.route.js";
 import equipmentRoutes from "./src/routes/equipment.route.js";
+import bookingRoutes from "./src/routes/Booking.routes.js";
 import cookieParser from "cookie-parser";
 
 import { setupAssociations } from './src/models/associations.js';
@@ -20,15 +21,20 @@ app.use(
   })
 );
 
-setupAssociations(); 
+setupAssociations();
 
 app.use("/api/auth", authRoutes);
 app.use("/api/admin", adminAuthRoutes);
 app.use("/api/equipment", equipmentRoutes);
+app.use("/api/bookings", bookingRoutes);
 
 app.use("/src/uploads", express.static("src/uploads"));
 
-app.listen(ENV.PORT, () => {
-  console.log("server is running on PORT:" + ENV.PORT);
-  connectDB();
-});
+const startServer = async () => {
+  await connectDB();
+  app.listen(ENV.PORT, () => {
+    console.log("server is running on PORT:" + ENV.PORT);
+  });
+};
+
+startServer();
