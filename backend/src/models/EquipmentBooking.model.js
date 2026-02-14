@@ -1,0 +1,64 @@
+import { DataTypes } from "sequelize";
+import { sequelize } from "../lib/db.js";
+
+const EquipmentBooking = sequelize.define(
+  "EquipmentBooking",
+  {
+    id: {
+      type: DataTypes.INTEGER,
+      primaryKey: true,
+      autoIncrement: true,
+    },
+    equipmentId: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      field: "equipment_id",
+    },
+    userId: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      field: "user_id",
+    },
+    bookingDate: {
+      type: DataTypes.DATEONLY,
+      allowNull: false,
+      field: "booking_date",
+    },
+    bookingTime: {
+      type: DataTypes.TIME,
+      allowNull: false,
+      field: "booking_time",
+    },
+    duration: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 1,
+      validate: {
+        min: 1,
+        max: 12,
+      },
+    },
+    status: {
+      type: DataTypes.ENUM("pending", "approved", "rejected", "completed", "cancelled"),
+      defaultValue: "pending",
+      allowNull: false,
+    },
+    totalAmount: {
+      type: DataTypes.DECIMAL(10, 2),
+      allowNull: false,
+      field: "total_amount",
+    },
+    notes: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+    },
+  },
+  {
+    tableName: "equipment_bookings",
+    timestamps: true,
+    createdAt: "created_at",
+    updatedAt: "updated_at",
+  }
+);
+
+export default EquipmentBooking;

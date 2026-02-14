@@ -4,6 +4,8 @@ import authRoutes from "./src/routes/auth.route.js";
 import adminAuthRoutes from "./src/routes/adminauth.route.js";
 import equipmentRoutes from "./src/routes/equipment.route.js";
 import cookieParser from "cookie-parser";
+
+import { setupAssociations } from './src/models/associations.js';
 import cors from "cors";
 import { connectDB } from "./src/lib/db.js";
 
@@ -17,6 +19,8 @@ app.use(
     credentials: true,
   })
 );
+
+setupAssociations(); 
 
 app.use("/api/auth", authRoutes);
 app.use("/api/admin", adminAuthRoutes);
