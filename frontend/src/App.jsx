@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
@@ -7,12 +6,15 @@ import Header from "./components/Header";
 import Listing from "./components/ComponentCom/Listing";
 import Cart from "./components/Cart";
 import Hero from "./pages/Hero";
+import NewEquipment from "./components/AdminCom/Equipment/NewEquipment";
+import Equipment from "./components/AdminCom/Equipment/Equipment";
 import { Login } from "./components/AuthCom/Login";
 import { Signup } from "./components/AuthCom/SignUp";
 import { useAuthStore } from "./store/useAuthStore";
 import { Loader } from "lucide-react";
 
 import AdminPage from "./pages/AdminPage";
+import AdminLayout from "./components/AdminCom/AdminLayout";
 
 function Home() {
   return (
@@ -42,34 +44,69 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Home page with Header */}
+        {/* Home page */}
         <Route path="/" element={<Home />} />
 
         {/* Auth Routes */}
-        <Route path="/signup" element={!authUser ? <Signup /> : <Navigate to="/products" />} />
+        <Route
+          path="/signup"
+          element={!authUser ? <Signup /> : <Navigate to="/products" />}
+        />
+
         <Route
           path="/login"
-          element={!authUser ? <Login /> : (authUser.role === 'admin' ? <Navigate to="/admin" /> : <Navigate to="/products" />)}
+          element={
+            !authUser ? (
+              <Login />
+            ) : authUser.role === "admin" ? (
+              <Navigate to="/admin/equipment" />
+            ) : (
+              <Navigate to="/products" />
+            )
+          }
         />
 
         {/* User Protected Routes */}
         <Route
           path="/products"
-          element={authUser ? <Listing cart={cart} setCart={setCart} /> : <Navigate to="/login" />}
+          element={
+            authUser ? (
+              <Listing cart={cart} setCart={setCart} />
+            ) : (
+              <Navigate to="/login" />
+            )
+          }
         />
 
-        {/* Admin Protected Routes */}
-        <Route
-          path="/admin"
-          element={authUser && authUser.role === 'admin' ? <AdminPage /> : <Navigate to="/login" />}
-        />
-
-        {/* Cart page */}
         <Route
           path="/cart"
           element={<Cart cart={cart} setCart={setCart} />}
         />
+
+        {/* Admin Protected Routes with Layout */}
+        {/* Admin Protected Routes with Layout */}
+    <Route
+      path="/admin"
+      element={
+        authUser && authUser.role === "admin" ? (
+          <AdminLayout />
+        ) : (
+          <Navigate to="/login" />
+        )
+      }
+    >
+      {/* Default admin page */}
+      <Route index element={<AdminPage />} />
+
+      {/* Equipment list page */}
+      <Route path="equipment" element={<Equipment />} />
+
+      {/* New equipment page */}
+      <Route path="new-equipment" element={<NewEquipment />} />
+    </Route>
+
       </Routes>
+
       <Toaster />
     </BrowserRouter>
   );

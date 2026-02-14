@@ -1,52 +1,62 @@
-import React, { useState } from 'react';
-import { Home, Layers, Bookmark, Settings, BarChart3, MessageSquare, LogOut, ClipboardClock,PackageSearch,UserPlus   } from 'lucide-react';
-import Logo from "../../assets/idea-lab.png"
+import React from 'react';
+import { useNavigate, useLocation } from "react-router-dom";
+import {
+  Home,
+  Layers,
+  LogOut,
+  ClipboardClock,
+  PackageSearch,
+  UserPlus
+} from 'lucide-react';
+import Logo from "../../assets/idea-lab.png";
 
 export const Sidebar = () => {
-  const [activeItem, setActiveItem] = useState('home');
+  const navigate = useNavigate();
+  const location = useLocation(); // Tracks the current URL path
 
   const menuItems = [
-    { id: 'home', icon: Home, label: 'Home' },
-    { id: 'equipment', icon: PackageSearch, label: 'Equipment' },
-    { id: 'approval', icon: ClipboardClock, label: 'Approval' },
-    { id: 'projects', icon: Layers, label: 'Projects' },
-    { id: 'adminUser', icon: UserPlus, label: 'Admin Access' },
-   
+    { id: 'home', icon: Home, label: 'Home', path: '/admin' },
+    { id: 'equipment', icon: PackageSearch, label: 'Equipment', path: '/admin/equipment' },
+    { id: 'approval', icon: ClipboardClock, label: 'Approval', path: '/admin/approval' },
+    { id: 'projects', icon: Layers, label: 'Projects', path: '/admin/projects' },
+    { id: 'adminUser', icon: UserPlus, label: 'Admin Access', path: '/admin/users' },
   ];
 
   const bottomItems = [
-
-    { id: 'logout', icon: LogOut, label: 'Logout' },
+    { id: 'logout', icon: LogOut, label: 'Logout', path: '/login' },
   ];
 
   return (
-    <div className="flex flex-col h-screen w-16 bg-white border-r border-gray-200 py-4 items-center justify-between">
+    <div className="fixed top-0 left-0 flex flex-col h-screen w-16 bg-white border-r border-gray-200 py-4 items-center justify-between z-50">
+      
       {/* Top Section */}
-      <div className="flex flex-col items-center space-y-1">
-        {/* Logo */}
-        <div>
-        <img src={Logo} alt="" className="h-10 mb-3" />
-        <hr className="border-gray-300" />
-        </div>       
+      <div className="flex flex-col items-center space-y-2 w-full">
+        {/* Logo Container */}
+        <div className="flex flex-col items-center w-full mb-2">
+          <img src={Logo} alt="Idea Lab" className="h-10 mb-3 object-contain" />
+          <div className="w-10 border-b border-gray-200"></div>
+        </div>
 
         {/* Main Menu Items */}
         {menuItems.map((item) => {
           const Icon = item.icon;
+          // Check if the current route matches this item's path
+          const isActive = location.pathname === item.path;
+
           return (
             <button
               key={item.id}
-              onClick={() => setActiveItem(item.id)}
-              className={`w-10 h-10 flex items-center justify-center rounded-lg transition-colors duration-200 relative group ${
-                activeItem === item.id
-                  ? 'bg-gray-900 text-white'
-                  : 'text-gray-600 hover:bg-gray-100'
+              onClick={() => navigate(item.path)}
+              className={`w-10 h-10 flex items-center justify-center rounded-lg transition-all duration-200 relative group ${
+                isActive
+                  ? 'bg-teal-600 text-white shadow-md'
+                  : 'text-gray-500 hover:bg-teal-50 hover:text-teal-600'
               }`}
-              title={item.label}
             >
               <Icon className="w-5 h-5" />
-              
-              {/* Tooltip */}
-              <span className="absolute left-full ml-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap transition-opacity duration-200">
+
+              {/* Tooltip - appears on hover */}
+              <span className="absolute left-14 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap transition-opacity duration-200 shadow-lg z-50">
                 {item.label}
               </span>
             </button>
@@ -55,24 +65,17 @@ export const Sidebar = () => {
       </div>
 
       {/* Bottom Section */}
-      <div className="flex flex-col items-center space-y-1">
+      <div className="flex flex-col items-center space-y-2 w-full">
         {bottomItems.map((item) => {
           const Icon = item.icon;
           return (
             <button
               key={item.id}
-              onClick={() => setActiveItem(item.id)}
-              className={`w-10 h-10 flex items-center justify-center rounded-lg transition-colors duration-200 relative group ${
-                activeItem === item.id
-                  ? 'bg-gray-900 text-white'
-                  : 'text-gray-600 hover:bg-gray-100'
-              }`}
-              title={item.label}
+              onClick={() => navigate(item.path)}
+              className="w-10 h-10 flex items-center justify-center rounded-lg text-gray-500 hover:bg-red-50 hover:text-red-600 transition-colors relative group"
             >
               <Icon className="w-5 h-5" />
-              
-              {/* Tooltip */}
-              <span className="absolute left-full ml-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap transition-opacity duration-200">
+              <span className="absolute left-14 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap transition-opacity duration-200 shadow-lg z-50">
                 {item.label}
               </span>
             </button>
