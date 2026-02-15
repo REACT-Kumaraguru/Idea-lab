@@ -3,6 +3,54 @@ import Equipment from "../models/EquipmentModel.js";
 import User from "../models/UserModel.js";
 import { Op } from "sequelize";
 
+// @desc    Get all bookings (Admin)
+// @route   GET /api/bookings
+// @access  Private/Admin
+export const getAllBookings = async (req, res) => {
+  try {
+    const { status, equipmentId } = req.query;
+
+    const whereClause = {};
+    if (status) {
+      whereClause.status = status;
+    }
+    if (equipmentId) {
+      whereClause.equipmentId = equipmentId;
+    }
+
+    const bookings = await EquipmentBooking.findAll({
+      where: whereClause,
+      include: [
+        {
+          model: Equipment,
+          as: "equipment",
+          attributes: ["id", "equipmentName", "brandName", "image", "rentAmount"],
+        },
+        {
+          model: User,
+          as: "user",
+          attributes: ["id", "fullName", "email"],
+        },
+      ],
+      // FIX: Use the actual database column name 'created_at' instead of 'createdAt'
+      order: [['created_at', 'DESC']],
+    });
+
+    res.status(200).json({
+      success: true,
+      count: bookings.length,
+      data: bookings,
+    });
+  } catch (error) {
+    console.error("Error fetching all bookings:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error fetching bookings",
+      error: error.message,
+    });
+  }
+};
+
 // @desc    Create a new equipment booking
 // @route   POST /api/bookings
 // @access  Private
@@ -164,7 +212,8 @@ export const getMyBookings = async (req, res) => {
           attributes: ["id", "equipmentName", "brandName", "image", "rentAmount"],
         },
       ],
-      order: [["createdAt", "DESC"]],
+      // FIX: Use the actual database column name
+      order: [['created_at', 'DESC']],
     });
 
     res.status(200).json({
@@ -174,53 +223,6 @@ export const getMyBookings = async (req, res) => {
     });
   } catch (error) {
     console.error("Error fetching user bookings:", error);
-    res.status(500).json({
-      success: false,
-      message: "Error fetching bookings",
-      error: error.message,
-    });
-  }
-};
-
-// @desc    Get all bookings (Admin)
-// @route   GET /api/bookings
-// @access  Private/Admin
-export const getAllBookings = async (req, res) => {
-  try {
-    const { status, equipmentId } = req.query;
-
-    const whereClause = {};
-    if (status) {
-      whereClause.status = status;
-    }
-    if (equipmentId) {
-      whereClause.equipmentId = equipmentId;
-    }
-
-    const bookings = await EquipmentBooking.findAll({
-      where: whereClause,
-      include: [
-        {
-          model: Equipment,
-          as: "equipment",
-          attributes: ["id", "equipmentName", "brandName", "image", "rentAmount"],
-        },
-        {
-          model: User,
-          as: "user",
-          attributes: ["id", "fullName", "email"],
-        },
-      ],
-      order: [["createdAt", "DESC"]],
-    });
-
-    res.status(200).json({
-      success: true,
-      count: bookings.length,
-      data: bookings,
-    });
-  } catch (error) {
-    console.error("Error fetching all bookings:", error);
     res.status(500).json({
       success: false,
       message: "Error fetching bookings",

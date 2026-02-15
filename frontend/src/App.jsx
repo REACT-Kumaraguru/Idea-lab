@@ -8,6 +8,7 @@ import Cart from "./components/Cart";
 import Hero from "./pages/Hero";
 import NewEquipment from "./components/AdminCom/Equipment/NewEquipment";
 import Equipment from "./components/AdminCom/Equipment/Equipment";
+import Approval from "./components/AdminCom/ApprovalCom/Approval";
 import { Login } from "./components/AuthCom/Login";
 import { Signup } from "./components/AuthCom/SignUp";
 import { useAuthStore } from "./store/useAuthStore";
@@ -103,6 +104,7 @@ function App() {
 
       {/* New equipment page */}
       <Route path="new-equipment" element={<NewEquipment />} />
+      <Route path="approval" element={<Approval />} />
     </Route>
 
       </Routes>
