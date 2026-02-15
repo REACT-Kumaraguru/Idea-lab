@@ -8,6 +8,7 @@ import {
   updateBookingStatus,
   cancelBooking,
   deleteBooking,
+  submitCart,
 } from "../controllers/Booking.controller.js";
 import { protectRoute, protectAdminRoute } from "../middleware/auth.middleware.js";
 
@@ -19,6 +20,7 @@ router.get("/equipment/:equipmentId", getEquipmentBookings);
 // Protected routes (require authentication)
 router.post("/", protectRoute, createBooking);
 router.get("/my-bookings", protectRoute, getMyBookings);
+router.post("/submit-cart", protectRoute, submitCart);
 router.get("/:id", protectRoute, getBookingById);
 router.put("/:id/cancel", protectRoute, cancelBooking);
 

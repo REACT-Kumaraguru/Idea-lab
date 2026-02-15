@@ -1,47 +1,25 @@
 import React, { useState, useEffect } from "react";
-import { Calendar, Clock, DollarSign, MapPin, X, AlertCircle, CheckCircle } from "lucide-react";
-import axios from "axios";
+import { Calendar, Clock, DollarSign, AlertCircle } from "lucide-react";
+import Navbar from "../Navbar";
+import { useBookingStore } from "../../store/useBookingStore";
+import { axiosInstance } from "../../lib/axios";
 
 const MyBookings = () => {
-  const [bookings, setBookings] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const { bookings, fetchMyBookings, isFetchingBookings } = useBookingStore();
   const [cancellingId, setCancellingId] = useState(null);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     fetchMyBookings();
-  }, []);
+  }, [fetchMyBookings]);
 
-  const fetchMyBookings = async () => {
-    try {
-      setLoading(true);
-      setError("");
-      const token = localStorage.getItem("token");
+  const reservedBookings = (Array.isArray(bookings) ? bookings : []).filter((b) => b.status !== "draft");
+  const cartCount = (Array.isArray(bookings) ? bookings : []).filter((b) => b.status === "draft").length;
 
-      if (!token) {
-        setError("Please login to view your bookings");
-        setLoading(false);
-        return;
-      }
-
-      const response = await axios.get(
-        "http://localhost:5001/api/bookings/my-bookings",
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      if (response.data.success) {
-        setBookings(response.data.data);
-      }
-    } catch (err) {
-      setError(err.response?.data?.message || "Failed to fetch bookings");
-      console.error("Error fetching bookings:", err);
-    } finally {
-      setLoading(false);
-    }
+  const getImageUrl = (imagePath) => {
+    if (!imagePath) return null;
+    if (imagePath.startsWith("http")) return imagePath;
+    return `http://localhost:5001/${imagePath}`;
   };
 
   const handleCancelBooking = async (bookingId) => {
@@ -51,24 +29,11 @@ const MyBookings = () => {
 
     try {
       setCancellingId(bookingId);
-      const token = localStorage.getItem("token");
-
-      const response = await axios.put(
-        `http://localhost:5001/api/bookings/${bookingId}/cancel`,
-        {},
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      if (response.data.success) {
-        alert("Booking cancelled successfully");
-        fetchMyBookings(); // Refresh the list
-      }
+      await axiosInstance.put(`/bookings/${bookingId}/cancel`);
+      await fetchMyBookings();
+      setError("");
     } catch (err) {
-      alert(err.response?.data?.message || "Failed to cancel booking");
+      setError(err.response?.data?.message || "Failed to cancel booking");
       console.error("Error cancelling booking:", err);
     } finally {
       setCancellingId(null);
@@ -77,6 +42,8 @@ const MyBookings = () => {
 
   const getStatusColor = (status) => {
     switch (status) {
+      case "draft":
+        return "bg-slate-100 text-slate-700";
       case "pending":
         return "bg-yellow-100 text-yellow-800";
       case "approved":
@@ -100,21 +67,26 @@ const MyBookings = () => {
     });
   };
 
-  if (loading) {
+  if (isFetchingBookings) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-screen bg-gray-50">
+        <Navbar cartCount={cartCount} />
+        <div className="flex justify-center items-center py-16">
+          <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-6xl mx-auto px-4">
+    <div className="min-h-screen bg-gray-50">
+      <Navbar cartCount={cartCount} />
+
+      <div className="max-w-6xl mx-auto px-4 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-800">My Bookings</h1>
+          <h1 className="text-3xl font-bold text-gray-800">My Reserve</h1>
           <p className="text-gray-600 mt-2">
-            View and manage your equipment bookings
+            View your submitted bookings and their approval status
           </p>
         </div>
 
@@ -125,19 +97,19 @@ const MyBookings = () => {
           </div>
         )}
 
-        {bookings.length === 0 ? (
+        {reservedBookings.length === 0 ? (
           <div className="text-center py-12 bg-white rounded-lg shadow">
             <Calendar className="w-16 h-16 text-gray-400 mx-auto mb-4" />
             <h3 className="text-xl font-semibold text-gray-700 mb-2">
-              No bookings yet
+              No reservations yet
             </h3>
             <p className="text-gray-600">
-              Start booking equipment to see your reservations here
+              After you proceed to request from the cart, your bookings will appear here with their approval status.
             </p>
           </div>
         ) : (
           <div className="space-y-4">
-            {bookings.map((booking) => (
+            {reservedBookings.map((booking) => (
               <div
                 key={booking.id}
                 className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow"
@@ -146,7 +118,7 @@ const MyBookings = () => {
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex gap-4">
                       <img
-                        src={booking.equipment?.image || "https://via.placeholder.com/150"}
+                        src={getImageUrl(booking.equipment?.image) || "https://via.placeholder.com/150"}
                         alt={booking.equipment?.equipmentName}
                         className="w-20 h-20 object-cover rounded-lg"
                         onError={(e) => {
@@ -240,7 +212,7 @@ const MyBookings = () => {
                   )}
 
                   <div className="mt-4 text-xs text-gray-500">
-                    Booked on: {formatDate(booking.created_at)}
+                    Booked on: {formatDate(booking.created_at || booking.createdAt)}
                   </div>
                 </div>
               </div>

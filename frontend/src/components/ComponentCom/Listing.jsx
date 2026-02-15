@@ -4,6 +4,7 @@ import Sidebar from "../Sidebar";
 import EquipmentBooking from "../bookingCom/EquipmentBooking";
 import { Calendar, Users, MapPin, ShoppingCart, LogOut, AlertCircle } from "lucide-react";
 import { useAuthStore } from "../../store/useAuthStore";
+import { toast } from "react-hot-toast";
 import axios from "axios";
 
 const Listing = ({ cart, setCart }) => {
@@ -34,10 +35,10 @@ const Listing = ({ cart, setCart }) => {
       const response = await axios.get("http://localhost:5001/api/equipment");
 
       // Handle response - it returns array directly or data object
-      const equipmentData = Array.isArray(response.data) 
-        ? response.data 
+      const equipmentData = Array.isArray(response.data)
+        ? response.data
         : response.data.data || [];
-      
+
       setLabEquipment(equipmentData);
     } catch (err) {
       setError(err.response?.data?.message || "Failed to fetch equipment");
@@ -90,11 +91,29 @@ const Listing = ({ cart, setCart }) => {
     setIsBookingModalOpen(true);
   };
 
-  // Handle successful booking
+  // Handle successful booking — also add to cart with booking details
   const handleBookingSuccess = (booking) => {
-    alert(
-      `Booking successful! Your booking ID is ${booking.id}. Status: ${booking.status}`
-    );
+    // Build cart item with equipment info + booking details
+    const cartItem = {
+      id: `booking-${booking.id}`, // unique cart ID per booking
+      equipmentId: booking.equipment?.id || selectedEquipment?.id,
+      bookingId: booking.id,
+      equipmentName: booking.equipment?.equipmentName || selectedEquipment?.equipmentName,
+      brandName: booking.equipment?.brandName || selectedEquipment?.brandName,
+      image: booking.equipment?.image || selectedEquipment?.image,
+      rentAmount: booking.equipment?.rentAmount || selectedEquipment?.rentAmount,
+      quantity: selectedEquipment?.quantity,
+      bookingDate: booking.bookingDate,
+      bookingTime: booking.bookingTime,
+      duration: booking.duration,
+      totalAmount: booking.totalAmount,
+      notes: booking.notes,
+      status: booking.status,
+    };
+
+    setCart((prev) => [...prev, cartItem]);
+    toast.success("Equipment booked & added to cart!");
+
     // Refresh equipment list to update availability
     fetchEquipment();
   };
@@ -239,11 +258,10 @@ const Listing = ({ cart, setCart }) => {
                       <div className="flex gap-2">
                         <button
                           onClick={() => handleBookNow(item)}
-                          className={`flex-1 py-2 px-4 rounded-lg font-semibold text-sm transition-colors flex items-center justify-center gap-2 ${
-                            item.isAvailable
+                          className={`flex-1 py-2 px-4 rounded-lg font-semibold text-sm transition-colors flex items-center justify-center gap-2 ${item.isAvailable
                               ? "bg-blue-600 text-white hover:bg-blue-700"
                               : "bg-gray-200 text-gray-500 cursor-not-allowed"
-                          }`}
+                            }`}
                           disabled={!item.isAvailable}
                         >
                           <Calendar className="w-4 h-4" />

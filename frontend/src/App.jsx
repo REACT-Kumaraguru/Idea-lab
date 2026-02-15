@@ -5,6 +5,7 @@ import { Toaster } from "react-hot-toast";
 import Header from "./components/Header";
 import Listing from "./components/ComponentCom/Listing";
 import Cart from "./components/Cart";
+import MyBookings from "./components/bookingCom/Mybookings";
 import Hero from "./pages/Hero";
 import NewEquipment from "./components/AdminCom/Equipment/NewEquipment";
 import Equipment from "./components/AdminCom/Equipment/Equipment";
@@ -12,6 +13,7 @@ import Approval from "./components/AdminCom/ApprovalCom/Approval";
 import { Login } from "./components/AuthCom/Login";
 import { Signup } from "./components/AuthCom/SignUp";
 import { useAuthStore } from "./store/useAuthStore";
+import { useBookingStore } from "./store/useBookingStore";
 import { Loader } from "lucide-react";
 
 import AdminPage from "./pages/AdminPage";
@@ -29,10 +31,17 @@ function Home() {
 function App() {
   const [cart, setCart] = useState([]);
   const { authUser, checkAuth, isCheckingAuth } = useAuthStore();
+  const fetchMyBookings = useBookingStore((state) => state.fetchMyBookings);
 
   useEffect(() => {
     checkAuth();
   }, [checkAuth]);
+
+  useEffect(() => {
+    if (authUser && authUser.role !== "admin") {
+      fetchMyBookings();
+    }
+  }, [authUser, fetchMyBookings]);
 
   if (isCheckingAuth && !authUser) {
     return (
@@ -82,6 +91,17 @@ function App() {
         <Route
           path="/cart"
           element={<Cart cart={cart} setCart={setCart} />}
+        />
+
+        <Route
+          path="/reserved"
+          element={
+            authUser ? (
+              <MyBookings />
+            ) : (
+              <Navigate to="/login" />
+            )
+          }
         />
 
         {/* Admin Protected Routes with Layout */}

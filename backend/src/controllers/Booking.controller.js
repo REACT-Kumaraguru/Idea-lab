@@ -3,7 +3,7 @@ import Equipment from "../models/EquipmentModel.js";
 import User from "../models/UserModel.js";
 import { Op } from "sequelize";
 
-// @desc    Get all bookings (Admin)
+// @desc    Get all bookings (Admin) - excludes draft (cart-only) bookings
 // @route   GET /api/bookings
 // @access  Private/Admin
 export const getAllBookings = async (req, res) => {
@@ -13,6 +13,8 @@ export const getAllBookings = async (req, res) => {
     const whereClause = {};
     if (status) {
       whereClause.status = status;
+    } else {
+      whereClause.status = { [Op.in]: ["pending", "approved", "rejected", "completed", "cancelled"] };
     }
     if (equipmentId) {
       whereClause.equipmentId = equipmentId;
@@ -118,7 +120,7 @@ export const createBooking = async (req, res) => {
     // The duration field stores working hours for informational purposes only
     const totalAmount = parseFloat(equipment.rentAmount);
 
-    // Create booking
+    // Create booking as draft (only sent to admin when user clicks "Proceed to Request" in cart)
     const booking = await EquipmentBooking.create({
       equipmentId,
       userId,
@@ -127,7 +129,7 @@ export const createBooking = async (req, res) => {
       duration,
       totalAmount,
       notes,
-      status: "pending",
+      status: "draft",
     });
 
     // Fetch the created booking with associations
@@ -209,7 +211,7 @@ export const getMyBookings = async (req, res) => {
         {
           model: Equipment,
           as: "equipment",
-          attributes: ["id", "equipmentName", "brandName", "image", "rentAmount"],
+          attributes: ["id", "equipmentName", "brandName", "image", "rentAmount", "equipmentDetails", "quantity"],
         },
       ],
       // FIX: Use the actual database column name
@@ -339,6 +341,66 @@ export const updateBookingStatus = async (req, res) => {
   }
 };
 
+// @desc    Submit cart: move all user's draft bookings to pending (so admin sees them)
+// @route   POST /api/bookings/submit-cart
+// @access  Private
+export const submitCart = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const draftBookings = await EquipmentBooking.findAll({
+      where: { userId, status: "draft" },
+      order: [["id", "ASC"]],
+    });
+
+    if (draftBookings.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "No items in cart to submit",
+      });
+    }
+
+    let submitted = 0;
+    const skipped = [];
+
+    for (const booking of draftBookings) {
+      const conflict = await EquipmentBooking.findOne({
+        where: {
+          equipmentId: booking.equipmentId,
+          bookingDate: booking.bookingDate,
+          status: { [Op.in]: ["pending", "approved"] },
+          id: { [Op.ne]: booking.id },
+        },
+      });
+
+      if (conflict) {
+        skipped.push({ id: booking.id, reason: "Slot already taken" });
+        continue;
+      }
+
+      booking.status = "pending";
+      await booking.save();
+      submitted++;
+    }
+
+    res.status(200).json({
+      success: true,
+      message:
+        submitted > 0
+          ? `Request submitted. ${submitted} booking(s) sent to admin.${skipped.length ? ` ${skipped.length} skipped (slot already taken).` : ""}`
+          : "No bookings could be submitted (all slots already taken).",
+      data: { submitted, skipped },
+    });
+  } catch (error) {
+    console.error("Error submitting cart:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error submitting cart",
+      error: error.message,
+    });
+  }
+};
+
 // @desc    Cancel a booking
 // @route   PUT /api/bookings/:id/cancel
 // @access  Private
@@ -361,7 +423,7 @@ export const cancelBooking = async (req, res) => {
       });
     }
 
-    if (booking.status === "completed" || booking.status === "cancelled") {
+    if (!["draft", "pending", "approved"].includes(booking.status)) {
       return res.status(400).json({
         success: false,
         message: "Cannot cancel this booking",

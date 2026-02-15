@@ -1,13 +1,16 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { Search, X, MapPin, ShoppingCart } from "lucide-react";
-import Logo from ".././assets/idea-lab.png"
+import Logo from ".././assets/idea-lab.png";
+import { useBookingStore } from "../store/useBookingStore";
 
 const Navbar = ({
   searchQuery = "",
   setSearchQuery = () => {},
-  cartCount = 0,
 }) => {
+  const bookings = useBookingStore((state) => state.bookings);
+  const cartCount = (Array.isArray(bookings) ? bookings : []).filter((b) => b.status === "draft").length;
+
   return (
     <nav className="bg-white border-b shadow-sm px-6 py-4 sticky top-0 z-50 font-sans">
       <div className="max-w-[1400px] mx-auto flex items-center justify-between gap-8">
@@ -56,12 +59,12 @@ const Navbar = ({
             Equipment
           </Link>
 
-          <a
-            href="#"
+          <Link
+            to="/reserved"
             className="text-gray-700 hover:text-blue-700 font-medium text-sm"
           >
             My Reserve
-          </a>
+          </Link>
 
           {/* Cart Link */}
           <Link

@@ -8,6 +8,7 @@ export const useBookingStore = create((set, get) => ({
   isCreatingBooking: false,
   isFetchingBookings: false,
   isFetchingEquipmentBookings: false,
+  isSubmittingCart: false,
 
   // Fetch bookings for a specific equipment (public)
   fetchEquipmentBookings: async (equipmentId) => {
@@ -56,6 +57,28 @@ export const useBookingStore = create((set, get) => ({
       toast.error(error.response?.data?.message || "Error fetching your bookings");
     } finally {
       set({ isFetchingBookings: false });
+    }
+  },
+
+  // Submit cart: move all draft bookings to pending so admin sees them (protected)
+  submitCart: async () => {
+    set({ isSubmittingCart: true });
+    try {
+      const res = await axiosInstance.post("/bookings/submit-cart");
+      if (res.data.success) {
+        toast.success(res.data.message || "Request submitted to admin!");
+        const updated = await axiosInstance.get("/bookings/my-bookings");
+        set({ bookings: updated.data.data || [] });
+        return res.data;
+      }
+      toast.error(res.data?.message || "Failed to submit");
+      return null;
+    } catch (error) {
+      console.log("Error in submitCart:", error);
+      toast.error(error.response?.data?.message || "Error submitting cart");
+      return null;
+    } finally {
+      set({ isSubmittingCart: false });
     }
   },
 }));

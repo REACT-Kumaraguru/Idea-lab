@@ -39,8 +39,9 @@ const EquipmentBooking = sequelize.define(
       },
     },
     status: {
-      type: DataTypes.ENUM("pending", "approved", "rejected", "completed", "cancelled"),
-      defaultValue: "pending",
+      // If DB already exists: ALTER TABLE equipment_bookings MODIFY COLUMN status ENUM('draft','pending','approved','rejected','completed','cancelled') NOT NULL DEFAULT 'draft';
+      type: DataTypes.ENUM("draft", "pending", "approved", "rejected", "completed", "cancelled"),
+      defaultValue: "draft",
       allowNull: false,
     },
     totalAmount: {
