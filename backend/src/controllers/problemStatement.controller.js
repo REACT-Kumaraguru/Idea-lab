@@ -1,6 +1,8 @@
 import ProblemStatement from "../models/ProblemStatementModel.js";
 import ProblemStatementImage from "../models/ProblemStatementImageModel.js";
 import ProblemStatementDocument from "../models/ProblemStatementDocumentModel.js";
+import User from "../models/UserModel.js";
+import { sendProblemSubmittedEmail, sendProblemAcceptedEmail } from "../lib/email.js";
 
 export const submitProblemStatement = async (req, res) => {
   try {
@@ -156,6 +158,14 @@ export const submitProblemStatement = async (req, res) => {
       ],
     });
 
+    if (req.user?.email) {
+      try {
+        await sendProblemSubmittedEmail(req.user.email, req.user.fullName);
+      } catch (emailErr) {
+        console.error("Error sending problem submitted email:", emailErr.message);
+      }
+    }
+
     res.status(201).json({
       success: true,
       message: "Problem statement submitted successfully",
@@ -285,6 +295,23 @@ export const updateProblemStatementStatus = async (req, res) => {
       reviewedBy: adminId,
       reviewedAt: new Date(),
     });
+
+    if (status === "approved") {
+      try {
+        const withUser = await ProblemStatement.findByPk(id, {
+          include: [{ model: User, as: "user", attributes: ["email", "fullName"] }],
+        });
+        if (withUser?.user?.email) {
+          await sendProblemAcceptedEmail(
+            withUser.user.email,
+            withUser.user.fullName,
+            withUser.problemTitle
+          );
+        }
+      } catch (emailErr) {
+        console.error("Error sending problem accepted email:", emailErr.message);
+      }
+    }
 
     res.status(200).json({
       success: true,

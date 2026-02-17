@@ -1,15 +1,16 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { Calendar, Clock, AlertCircle, Search, Filter } from "lucide-react";
+import { Calendar, Clock, AlertCircle, Search, Filter, FileText } from "lucide-react";
 import Navbar from "../Navbar";
 import { useBookingStore } from "../../store/useBookingStore";
 import { axiosInstance } from "../../lib/axios";
+import InvoiceModal from "../AdminCom/ApprovalCom/PDFformat";
 
 const STATUS_OPTIONS = [
   { value: "all", label: "All" },
   { value: "pending", label: "Pending" },
   { value: "approved", label: "Approved" },
   { value: "rejected", label: "Rejected" },
-  { value: "completed", label: "Completed" },
+  { value: "completed", label: "Completed" },  
   { value: "cancelled", label: "Cancelled" },
 ];
 
@@ -22,6 +23,8 @@ const DATE_FILTER_OPTIONS = [
 const MyBookings = () => {
   const { bookings, fetchMyBookings, isFetchingBookings } = useBookingStore();
   const [cancellingId, setCancellingId] = useState(null);
+  const [cancellingBatchKey, setCancellingBatchKey] = useState(null);
+  const [selectedGroupForInvoice, setSelectedGroupForInvoice] = useState(null);
   const [error, setError] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
@@ -61,6 +64,30 @@ const MyBookings = () => {
     return result;
   }, [reservedBookings, filterStatus, searchQuery, dateFilter, today]);
 
+  // Group by cart submission: one card per reservation (same as admin "one request")
+  const groupedReservations = useMemo(() => {
+    const map = new Map();
+    filteredBookings.forEach((b) => {
+      const key = b.submissionBatchId || `single-${b.id}`;
+      if (!map.has(key)) map.set(key, []);
+      map.get(key).push(b);
+    });
+    return Array.from(map.entries()).map(([key, bookings]) => ({
+      batchKey: key,
+      batchId: key.startsWith("single-") ? null : key,
+      bookings,
+    }));
+  }, [filteredBookings]);
+
+  const totalReservationCount = useMemo(() => {
+    const map = new Map();
+    reservedBookings.forEach((b) => {
+      const key = b.submissionBatchId || `single-${b.id}`;
+      map.set(key, true);
+    });
+    return map.size;
+  }, [reservedBookings]);
+
   const hasActiveFilters = filterStatus !== "all" || searchQuery.trim() !== "" || dateFilter !== "all";
 
   const clearFilters = () => {
@@ -90,6 +117,29 @@ const MyBookings = () => {
       console.error("Error cancelling booking:", err);
     } finally {
       setCancellingId(null);
+    }
+  };
+
+  // Cancel whole reservation (all bookings in the group)
+  const handleCancelReservation = async (group) => {
+    const count = group.bookings.length;
+    if (!window.confirm(`Cancel this entire reservation (${count} item${count > 1 ? "s" : ""})?`)) {
+      return;
+    }
+
+    const key = group.batchKey;
+    try {
+      setCancellingBatchKey(key);
+      setError("");
+      for (const b of group.bookings) {
+        await axiosInstance.put(`/bookings/${b.id}/cancel`);
+      }
+      await fetchMyBookings();
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to cancel reservation");
+      console.error("Error cancelling reservation:", err);
+    } finally {
+      setCancellingBatchKey(null);
     }
   };
 
@@ -200,7 +250,7 @@ const MyBookings = () => {
             </div>
             {hasActiveFilters && (
               <p className="mt-3 text-sm text-gray-600">
-                Showing {filteredBookings.length} of {reservedBookings.length} reservations
+                Showing {groupedReservations.length} of {totalReservationCount} reservations
               </p>
             )}
           </div>
@@ -216,7 +266,7 @@ const MyBookings = () => {
               After you proceed to request from the cart, your bookings will appear here with their approval status.
             </p>
           </div>
-        ) : filteredBookings.length === 0 ? (
+        ) : groupedReservations.length === 0 ? (
           <div className="text-center py-12 bg-white rounded-lg shadow">
             <Filter className="w-16 h-16 text-gray-400 mx-auto mb-4" />
             <h3 className="text-xl font-semibold text-gray-700 mb-2">
@@ -235,115 +285,159 @@ const MyBookings = () => {
           </div>
         ) : (
           <div className="space-y-4">
-            {filteredBookings.map((booking) => (
-              <div
-                key={booking.id}
-                className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow"
-              >
-                <div className="p-6">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex gap-4">
-                      <img
-                        src={getImageUrl(booking.equipment?.image) || "https://via.placeholder.com/150"}
-                        alt={booking.equipment?.equipmentName}
-                        className="w-20 h-20 object-cover rounded-lg"
-                        onError={(e) => {
-                          e.target.src = "https://via.placeholder.com/150";
-                        }}
-                      />
-                      <div>
-                        <h3 className="text-lg font-bold text-gray-800">
-                          {booking.equipment?.equipmentName}
-                        </h3>
-                        <p className="text-sm text-gray-600">
-                          {booking.equipment?.brandName}
-                        </p>
-                        <div className="mt-2">
+            {groupedReservations.map((group) => {
+              const first = group.bookings[0];
+              const status = first.status;
+              const isBatch = group.bookings.length > 1;
+              const totalAmount = group.bookings.reduce((sum, b) => sum + parseFloat(b.totalAmount || 0), 0);
+              const isCancelling = cancellingBatchKey === group.batchKey;
+
+              return (
+                <div
+                  key={group.batchKey}
+                  className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow"
+                >
+                  <div className="p-6">
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex gap-4 flex-wrap">
+                        {group.bookings.map((b) => (
+                          <div key={b.id} className="flex gap-3 items-start">
+                            <img
+                              src={getImageUrl(b.equipment?.image) || "https://via.placeholder.com/150"}
+                              alt={b.equipment?.equipmentName}
+                              className="w-20 h-20 object-cover rounded-lg flex-shrink-0"
+                              onError={(e) => {
+                                e.target.src = "https://via.placeholder.com/150";
+                              }}
+                            />
+                            <div>
+                              <h3 className="text-lg font-bold text-gray-800">
+                                {b.equipment?.equipmentName}
+                              </h3>
+                              <p className="text-sm text-gray-600">
+                                {b.equipment?.brandName}
+                              </p>
+                              <p className="text-xs text-gray-500 mt-1">
+                                {formatDate(b.bookingDate)} · {String(b.bookingTime).slice(0, 5)} · {b.duration} hr(s)
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                        <div className="flex items-center">
                           <span
                             className={`inline-block text-xs font-semibold px-3 py-1 rounded-full ${getStatusColor(
-                              booking.status
+                              status
                             )}`}
                           >
-                            {booking.status.toUpperCase()}
+                            {status.toUpperCase()}
                           </span>
+                          {isBatch && (
+                            <span className="ml-2 text-xs text-gray-500">
+                              {group.bookings.length} items
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex gap-2 flex-shrink-0">
+                        {status === "approved" && (
+                          <button
+                            onClick={() => setSelectedGroupForInvoice(group.bookings)}
+                            className="flex items-center gap-1 px-4 py-2 text-sm font-semibold text-blue-600 border border-blue-300 rounded-lg hover:bg-blue-50 transition-colors"
+                          >
+                            <FileText size={16} />
+                            View invoice
+                          </button>
+                        )}
+                        {(status === "pending" || status === "approved") && (
+                          <button
+                            onClick={() => handleCancelReservation(group)}
+                            disabled={isCancelling}
+                            className="px-4 py-2 text-sm font-semibold text-red-600 border border-red-300 rounded-lg hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            {isCancelling ? (
+                              <div className="flex items-center gap-2">
+                                <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin" />
+                                Cancelling...
+                              </div>
+                            ) : (
+                              "Cancel reservation"
+                            )}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4 border-t border-gray-200">
+                      <div className="flex items-center gap-2">
+                        <Calendar className="w-4 h-4 text-gray-400" />
+                        <div>
+                          <p className="text-xs text-gray-500">Date(s)</p>
+                          <p className="text-sm font-semibold text-gray-800">
+                            {isBatch
+                              ? group.bookings.map((b) => formatDate(b.bookingDate)).join(", ")
+                              : formatDate(first.bookingDate)}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <Clock className="w-4 h-4 text-gray-400" />
+                        <div>
+                          <p className="text-xs text-gray-500">Time</p>
+                          <p className="text-sm font-semibold text-gray-800">
+                            {isBatch
+                              ? group.bookings.map((b) => String(b.bookingTime).slice(0, 5)).join(", ")
+                              : String(first.bookingTime).slice(0, 5)}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <Clock className="w-4 h-4 text-gray-400" />
+                        <div>
+                          <p className="text-xs text-gray-500">Duration</p>
+                          <p className="text-sm font-semibold text-gray-800">
+                            {isBatch
+                              ? group.bookings.map((b) => `${b.duration} hr`).join(", ")
+                              : `${first.duration} hour(s)`}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <div>
+                          <p className="text-xs text-gray-500">Total</p>
+                          <p className="text-sm font-semibold text-gray-800">
+                            ₹{totalAmount.toFixed(2)}
+                          </p>
                         </div>
                       </div>
                     </div>
-                    {(booking.status === "pending" ||
-                      booking.status === "approved") && (
-                      <button
-                        onClick={() => handleCancelBooking(booking.id)}
-                        disabled={cancellingId === booking.id}
-                        className="px-4 py-2 text-sm font-semibold text-red-600 border border-red-300 rounded-lg hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        {cancellingId === booking.id ? (
-                          <div className="flex items-center gap-2">
-                            <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin" />
-                            Cancelling...
-                          </div>
-                        ) : (
-                          "Cancel Booking"
-                        )}
-                      </button>
+
+                    {group.bookings.some((b) => b.notes) && (
+                      <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+                        <p className="text-xs text-gray-500 mb-1">Notes:</p>
+                        {group.bookings.filter((b) => b.notes).map((b) => (
+                          <p key={b.id} className="text-sm text-gray-700">{b.notes}</p>
+                        ))}
+                      </div>
                     )}
-                  </div>
 
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4 border-t border-gray-200">
-                    <div className="flex items-center gap-2">
-                      <Calendar className="w-4 h-4 text-gray-400" />
-                      <div>
-                        <p className="text-xs text-gray-500">Date</p>
-                        <p className="text-sm font-semibold text-gray-800">
-                          {formatDate(booking.bookingDate)}
-                        </p>
-                      </div>
+                    <div className="mt-4 text-xs text-gray-500">
+                      Booked on: {formatDate(first.created_at || first.createdAt)}
                     </div>
-
-                    <div className="flex items-center gap-2">
-                      <Clock className="w-4 h-4 text-gray-400" />
-                      <div>
-                        <p className="text-xs text-gray-500">Time</p>
-                        <p className="text-sm font-semibold text-gray-800">
-                          {booking.bookingTime}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <Clock className="w-4 h-4 text-gray-400" />
-                      <div>
-                        <p className="text-xs text-gray-500">Duration</p>
-                        <p className="text-sm font-semibold text-gray-800">
-                          {booking.duration} hour(s)
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      
-                      <div>
-                        <p className="text-xs text-gray-500">Total</p>
-                        <p className="text-sm font-semibold text-gray-800">
-                          ₹{parseFloat(booking.totalAmount).toFixed(2)}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {booking.notes && (
-                    <div className="mt-4 p-3 bg-gray-50 rounded-lg">
-                      <p className="text-xs text-gray-500 mb-1">Notes:</p>
-                      <p className="text-sm text-gray-700">{booking.notes}</p>
-                    </div>
-                  )}
-
-                  <div className="mt-4 text-xs text-gray-500">
-                    Booked on: {formatDate(booking.created_at || booking.createdAt)}
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
+        )}
+
+        {selectedGroupForInvoice && selectedGroupForInvoice.length > 0 && (
+          <InvoiceModal
+            bookings={selectedGroupForInvoice}
+            onClose={() => setSelectedGroupForInvoice(null)}
+          />
         )}
       </div>
     </div>

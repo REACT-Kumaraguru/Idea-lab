@@ -1,23 +1,32 @@
 import React, { useState } from 'react';
 import { X, Printer, Download } from 'lucide-react';
 
-const InvoiceModal = ({ booking, onClose }) => {
+const InvoiceModal = ({ booking, bookings: bookingsProp, onClose }) => {
   const handlePrint = () => {
     window.print();
   };
 
-  if (!booking) return null;
+  // Support single booking or batch (array); normalize to array
+  const list = Array.isArray(bookingsProp) && bookingsProp.length > 0
+    ? bookingsProp
+    : booking
+      ? [booking]
+      : [];
+  const first = list[0];
 
-  // Calculate totals
-  const subtotal = parseFloat(booking.totalAmount);
+  if (!first) return null;
+
+  // Calculate totals from all items
+  const subtotal = list.reduce((sum, b) => sum + parseFloat(b.totalAmount || 0), 0);
   const taxRate = 0; // 18% GST
   const tax = subtotal * taxRate;
   const total = subtotal + tax;
 
-  // Generate invoice number
-  const invoiceNumber = `INV-${new Date().getFullYear()}-${String(booking.id).padStart(4, '0')}`;
+  // One invoice number per approval (batch or single)
+  const invoiceSuffix = (first.submissionBatchId && String(first.submissionBatchId).slice(-6)) || first.id;
+  const invoiceNumber = `INV-${new Date().getFullYear()}-${String(invoiceSuffix).padStart(6, '0')}`;
   const invoiceDate = new Date().toLocaleDateString('en-GB');
-  const dueDate = new Date(booking.bookingDate).toLocaleDateString('en-GB');
+  const dueDate = new Date(first.bookingDate).toLocaleDateString('en-GB');
 
   // Format time
   const formatTime = (time) => {
@@ -93,8 +102,8 @@ const InvoiceModal = ({ booking, onClose }) => {
                 <div>
                   <h3 className="text-xs font-bold text-gray-500 uppercase mb-3">Bill To:</h3>
                   <div className="bg-gray-50 p-4 rounded-lg">
-                    <p className="font-bold text-gray-900 text-lg">{booking.user?.fullName || 'Customer'}</p>
-                    <p className="text-sm text-gray-600 mt-1">{booking.user?.email || 'N/A'}</p>
+                    <p className="font-bold text-gray-900 text-lg">{first.user?.fullName || 'Customer'}</p>
+                    <p className="text-sm text-gray-600 mt-1">{first.user?.email || 'N/A'}</p>
                     <p className="text-sm text-gray-600">Phone: +91 XXXXXXXXXX</p>
                   </div>
                 </div>
@@ -108,13 +117,13 @@ const InvoiceModal = ({ booking, onClose }) => {
                     <p className="text-gray-900 font-semibold">{dueDate}</p>
                   </div>
                   <div>
-                    <span className="text-xs font-bold text-gray-500 uppercase">Booking ID:</span>
-                    <p className="text-gray-900 font-semibold">#{booking.id}</p>
+                    <span className="text-xs font-bold text-gray-500 uppercase">Booking(s):</span>
+                    <p className="text-gray-900 font-semibold">{list.length} item(s) #{first.id}{list.length > 1 ? '…' : ''}</p>
                   </div>
                 </div>
               </div>
 
-              {/* Items Table */}
+              {/* Items Table - one row per item (batch or single) */}
               <div className="mb-8">
                 <table className="w-full">
                   <thead>
@@ -127,19 +136,21 @@ const InvoiceModal = ({ booking, onClose }) => {
                     </tr>
                   </thead>
                   <tbody>
-                    <tr className="border-b border-gray-200">
-                      <td className="py-4 px-4">
-                        <div className="font-bold text-gray-900">{booking.equipment?.equipmentName || 'Equipment'}</div>
-                        <div className="text-sm text-gray-600">{booking.equipment?.brandName || 'Brand'}</div>
-                      </td>
-                      <td className="py-4 px-4">
-                        <div className="text-sm text-gray-900">{new Date(booking.bookingDate).toLocaleDateString('en-GB')}</div>
-                        <div className="text-xs text-gray-600">{formatTime(booking.bookingTime)} - {calculateEndTime(booking.bookingTime, booking.duration)}</div>
-                      </td>
-                      <td className="py-4 px-4 text-center text-sm text-gray-900">{booking.duration} Hrs</td>
-                      <td className="py-4 px-4 text-right text-sm text-gray-900">{formatCurrency(booking.totalAmount)}</td>
-                      <td className="py-4 px-4 text-right font-bold text-gray-900">{formatCurrency(booking.totalAmount)}</td>
-                    </tr>
+                    {list.map((b) => (
+                      <tr key={b.id} className="border-b border-gray-200">
+                        <td className="py-4 px-4">
+                          <div className="font-bold text-gray-900">{b.equipment?.equipmentName || 'Equipment'}</div>
+                          <div className="text-sm text-gray-600">{b.equipment?.brandName || 'Brand'}</div>
+                        </td>
+                        <td className="py-4 px-4">
+                          <div className="text-sm text-gray-900">{new Date(b.bookingDate).toLocaleDateString('en-GB')}</div>
+                          <div className="text-xs text-gray-600">{formatTime(b.bookingTime)} - {calculateEndTime(b.bookingTime, b.duration)}</div>
+                        </td>
+                        <td className="py-4 px-4 text-center text-sm text-gray-900">{b.duration} Hrs</td>
+                        <td className="py-4 px-4 text-right text-sm text-gray-900">{formatCurrency(b.totalAmount)}</td>
+                        <td className="py-4 px-4 text-right font-bold text-gray-900">{formatCurrency(b.totalAmount)}</td>
+                      </tr>
+                    ))}
                   </tbody>
                 </table>
               </div>
@@ -162,11 +173,13 @@ const InvoiceModal = ({ booking, onClose }) => {
                 </div>
               </div>
 
-              {/* Notes */}
-              {booking.notes && (
+              {/* Notes - first booking with notes */}
+              {list.some((b) => b.notes) && (
                 <div className="mb-6 p-4 bg-yellow-50 border-l-4 border-yellow-400 rounded">
                   <p className="text-xs font-bold text-gray-700 mb-1">Notes:</p>
-                  <p className="text-sm text-gray-600">{booking.notes}</p>
+                  {list.filter((b) => b.notes).map((b) => (
+                    <p key={b.id} className="text-sm text-gray-600">{b.notes}</p>
+                  ))}
                 </div>
               )}
 

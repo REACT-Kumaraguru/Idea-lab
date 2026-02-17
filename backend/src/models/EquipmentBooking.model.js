@@ -54,6 +54,11 @@ const EquipmentBooking = sequelize.define(
       type: DataTypes.TEXT,
       allowNull: true,
     },
+    submissionBatchId: {
+      type: DataTypes.STRING(64),
+      allowNull: true,
+      field: "submission_batch_id",
+    },
   },
   {
     tableName: "equipment_bookings",

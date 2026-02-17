@@ -2,6 +2,7 @@ import EquipmentBooking from "../models/EquipmentBooking.model.js";
 import Equipment from "../models/EquipmentModel.js";
 import User from "../models/UserModel.js";
 import { Op } from "sequelize";
+import { sendBookingStatusEmail, sendBookingBatchStatusEmail } from "../lib/email.js";
 
 // @desc    Get all bookings (Admin) - excludes draft (cart-only) bookings
 // @route   GET /api/bookings
@@ -249,6 +250,11 @@ export const getMyBookings = async (req, res) => {
           as: "equipment",
           attributes: ["id", "equipmentName", "brandName", "image", "rentAmount", "pricePerHour", "equipmentDetails", "quantity"],
         },
+        {
+          model: User,
+          as: "user",
+          attributes: ["id", "fullName", "email"],
+        },
       ],
       // FIX: Use the actual database column name
       order: [['created_at', 'DESC']],
@@ -362,6 +368,21 @@ export const updateBookingStatus = async (req, res) => {
       ],
     });
 
+    if ((status === "approved" || status === "rejected") && updatedBooking.user?.email) {
+      try {
+        await sendBookingStatusEmail(
+          updatedBooking.user.email,
+          updatedBooking.user.fullName,
+          updatedBooking.equipment?.equipmentName,
+          updatedBooking.bookingDate,
+          updatedBooking.bookingTime,
+          status
+        );
+      } catch (emailErr) {
+        console.error("Error sending booking status email:", emailErr.message);
+      }
+    }
+
     res.status(200).json({
       success: true,
       message: "Booking status updated successfully",
@@ -372,6 +393,76 @@ export const updateBookingStatus = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Error updating booking status",
+      error: error.message,
+    });
+  }
+};
+
+// @desc    Update status for a whole cart submission (batch) - one request to admin
+// @route   PUT /api/bookings/batch/:batchId/status
+// @access  Private/Admin
+export const updateBatchStatus = async (req, res) => {
+  try {
+    const { batchId } = req.params;
+    const { status } = req.body;
+
+    if (!status) {
+      return res.status(400).json({
+        success: false,
+        message: "Status is required",
+      });
+    }
+    if (!["approved", "rejected"].includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: "Status must be approved or rejected",
+      });
+    }
+
+    const bookings = await EquipmentBooking.findAll({
+      where: { submissionBatchId: batchId },
+      include: [
+        { model: Equipment, as: "equipment", attributes: ["id", "equipmentName", "brandName", "image"] },
+        { model: User, as: "user", attributes: ["id", "fullName", "email"] },
+      ],
+    });
+
+    if (!bookings.length) {
+      return res.status(404).json({
+        success: false,
+        message: "No bookings found for this request",
+      });
+    }
+
+    for (const b of bookings) {
+      b.status = status;
+      await b.save();
+    }
+
+    const user = bookings[0].user;
+    if (user?.email) {
+      try {
+        const items = bookings.map((b) => ({
+          equipmentName: b.equipment?.equipmentName,
+          bookingDate: b.bookingDate,
+          bookingTime: b.bookingTime,
+        }));
+        await sendBookingBatchStatusEmail(user.email, user.fullName, items, status);
+      } catch (emailErr) {
+        console.error("Error sending batch status email:", emailErr.message);
+      }
+    }
+
+    res.status(200).json({
+      success: true,
+      message: `Request ${status} successfully`,
+      data: bookings,
+    });
+  } catch (error) {
+    console.error("Error updating batch status:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error updating batch status",
       error: error.message,
     });
   }
@@ -396,6 +487,7 @@ export const submitCart = async (req, res) => {
       });
     }
 
+    const batchId = `sub-${userId}-${Date.now()}`;
     let submitted = 0;
     const skipped = [];
 
@@ -415,6 +507,7 @@ export const submitCart = async (req, res) => {
       }
 
       booking.status = "pending";
+      booking.submissionBatchId = batchId;
       await booking.save();
       submitted++;
     }

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Users, Clock, FileCheck, FileX, Download, Check, X, Printer, Search, FileText } from 'lucide-react';
 import { useAuthStore } from '../../../store/useAuthStore';
 import InvoiceModal from './PDFformat'; // Import the invoice modal
@@ -120,6 +120,20 @@ const Approval = () => {
     return true;
   });
 
+  // Group by cart submission: same submissionBatchId = one request (one row). No batchId = one booking per row.
+  const groupedRows = useMemo(() => {
+    const map = new Map();
+    filteredRequests.forEach(req => {
+      const key = req.submissionBatchId || `single-${req.id}`;
+      if (!map.has(key)) map.set(key, []);
+      map.get(key).push(req);
+    });
+    return Array.from(map.entries()).map(([key, bookings]) => ({
+      batchId: key.startsWith('single-') ? null : key,
+      bookings,
+    }));
+  }, [filteredRequests]);
+
   // Time formatting functions
   const formatTime = (time) => {
     if (!time) return 'N/A';
@@ -144,9 +158,9 @@ const Approval = () => {
     return date.toLocaleDateString('en-GB').replace(/\//g, '-');
   };
 
-  // Open invoice modal
-  const handleShowInvoice = (booking) => {
-    setSelectedBookingForInvoice(booking);
+  // Open invoice modal with full group (one bill per approval)
+  const handleShowInvoice = (bookings) => {
+    setSelectedBookingForInvoice(Array.isArray(bookings) ? bookings : [bookings]);
   };
 
   // Approve booking
@@ -244,6 +258,56 @@ const Approval = () => {
     } catch (error) {
       console.error('Error rejecting booking:', error);
       alert(`❌ Failed to reject booking: ${error.message}`);
+    }
+  };
+
+  // Approve whole cart (batch) – one request
+  const handleBatchApprove = async (batchId) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/bookings/batch/${encodeURIComponent(batchId)}/status`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ status: 'approved' }),
+      });
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.message || `Failed (${response.status})`);
+      }
+      const result = await response.json();
+      if (result.success && result.data) {
+        const ids = result.data.map(b => b.id);
+        setRequests(requests.map(req => ids.includes(req.id) ? { ...req, status: 'approved', updated_at: new Date().toISOString() } : req));
+        alert('✅ Request approved successfully!');
+      }
+    } catch (error) {
+      console.error('Error approving batch:', error);
+      alert(`❌ Failed to approve request: ${error.message}`);
+    }
+  };
+
+  // Reject whole cart (batch) – one request
+  const handleBatchReject = async (batchId) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/bookings/batch/${encodeURIComponent(batchId)}/status`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ status: 'rejected' }),
+      });
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.message || `Failed (${response.status})`);
+      }
+      const result = await response.json();
+      if (result.success && result.data) {
+        const ids = result.data.map(b => b.id);
+        setRequests(requests.map(req => ids.includes(req.id) ? { ...req, status: 'rejected', updated_at: new Date().toISOString() } : req));
+        alert('✅ Request rejected.');
+      }
+    } catch (error) {
+      console.error('Error rejecting batch:', error);
+      alert(`❌ Failed to reject request: ${error.message}`);
     }
   };
 
@@ -392,105 +456,128 @@ const Approval = () => {
                 </tr>
               </thead>
               <tbody className="text-xs font-semibold text-slate-600">
-                {filteredRequests.length === 0 ? (
+                {groupedRows.length === 0 ? (
                   <tr>
                     <td colSpan={activeTab === 'all' ? "8" : "7"} className="py-12 text-center text-gray-400">
                       {activeTab === 'new' ? 'No pending requests' : 'No bookings found'}
                     </td>
                   </tr>
                 ) : (
-                  filteredRequests.map((row) => (
-                    <tr key={row.id} className="border-t border-gray-50 hover:bg-blue-50/10 transition">
-                      <td className="py-6 px-6"><input type="checkbox" className="rounded-sm accent-blue-600" /></td>
-                      
-                      {/* User Info */}
-                      <td className="py-6 px-4">
-                        <div className="font-bold text-slate-800 text-sm">{row.user?.fullName || 'N/A'}</div>
-                        <div className="text-gray-400 font-normal">{row.user?.email || 'N/A'}</div>
-                        {row.notes && (
-                          <div className="text-gray-500 text-[10px] mt-1 italic">Note: {row.notes}</div>
-                        )}
-                      </td>
+                  groupedRows.map((group) => {
+                    const row = group.bookings[0];
+                    const isBatch = group.bookings.length > 1;
+                    const status = row.status;
+                    const totalRent = group.bookings.reduce((sum, b) => sum + parseFloat(b.totalAmount || 0), 0);
+                    return (
+                      <tr key={group.batchId || row.id} className="border-t border-gray-50 hover:bg-blue-50/10 transition">
+                        <td className="py-6 px-6"><input type="checkbox" className="rounded-sm accent-blue-600" /></td>
 
-                      {/* Equipment */}
-                      <td className="py-6 px-4">
-                        <div className="flex items-center gap-2 text-slate-700">
-                          <Printer size={14} className="text-blue-400" />
-                          <div>
-                            <div className="font-bold">{row.equipment?.equipmentName || 'N/A'}</div>
-                            {row.equipment?.brandName && (
-                              <div className="text-gray-400 text-[10px]">{row.equipment.brandName}</div>
-                            )}
-                          </div>
-                        </div>
-                      </td>
-
-                      <td className="py-6 px-4 text-center font-normal">{formatDate(row.bookingDate)}</td>
-
-                      {/* Timing */}
-                      <td className="py-6 px-4">
-                        <div className="text-slate-800">{formatTime(row.bookingTime)} - {calculateEndTime(row.bookingTime, row.duration)}</div>
-                        <div className="text-gray-400 font-normal text-[10px] mt-1">Duration: {row.duration} Hrs</div>
-                      </td>
-
-                      {/* Amount */}
-                      <td className="py-6 px-4 font-bold text-blue-600 text-sm">
-                        ₹{parseFloat(row.totalAmount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                      </td>
-
-                      {/* Status - Only show in History tab */}
-                      {activeTab === 'all' && (
+                        {/* User Info */}
                         <td className="py-6 px-4">
-                          <span className={`px-3 py-1 rounded-full text-[10px] uppercase font-bold ${
-                            row.status === 'approved' ? 'bg-green-100 text-green-700' :
-                            row.status === 'rejected' ? 'bg-red-100 text-red-700' :
-                            row.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
-                            row.status === 'completed' ? 'bg-blue-100 text-blue-700' :
-                            'bg-gray-100 text-gray-700'
-                          }`}>
-                            {row.status}
-                          </span>
+                          <div className="font-bold text-slate-800 text-sm">{row.user?.fullName || 'N/A'}</div>
+                          <div className="text-gray-400 font-normal">{row.user?.email || 'N/A'}</div>
+                          {isBatch && <div className="text-blue-600 text-[10px] mt-1">{group.bookings.length} item(s)</div>}
+                          {row.notes && (
+                            <div className="text-gray-500 text-[10px] mt-1 italic">Note: {row.notes}</div>
+                          )}
                         </td>
-                      )}
 
-                      {/* Actions */}
-                      <td className="py-6 px-4">
-                        {row.status === 'pending' ? (
-                          <div className="flex gap-2">
-                            <button 
-                              onClick={() => handleApprove(row.id)}
-                              className="p-2 bg-green-50 text-green-600 rounded-lg hover:bg-green-600 hover:text-white transition"
-                              title="Approve"
-                            >
-                              <Check size={16} strokeWidth={3} />
-                            </button>
-                            <button 
-                              onClick={() => handleReject(row.id)}
-                              className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-600 hover:text-white transition"
-                              title="Reject"
-                            >
-                              <X size={16} strokeWidth={3} />
-                            </button>
-                          </div>
-                        ) : row.status === 'approved' ? (
-                          <button 
-                            onClick={() => handleShowInvoice(row)}
-                            className="flex items-center gap-1 p-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-600 hover:text-white transition text-[10px] font-bold"
-                            title="Print Invoice"
-                          >
-                            <Printer size={14} />
-                            <span>Invoice</span>
-                          </button>
-                        ) : (
-                          <span className="text-gray-400 text-[10px] italic">
-                            {row.status === 'rejected' && 'Rejected'}
-                            {row.status === 'completed' && 'Completed'}
-                            {row.status === 'cancelled' && 'Cancelled'}
-                          </span>
+                        {/* Equipment – list all for batch */}
+                        <td className="py-6 px-4">
+                          {group.bookings.map((b, i) => (
+                            <div key={b.id} className="flex items-center gap-2 text-slate-700 mb-1">
+                              <Printer size={14} className="text-blue-400 flex-shrink-0" />
+                              <div>
+                                <div className="font-bold">{b.equipment?.equipmentName || 'N/A'}</div>
+                                {b.equipment?.brandName && (
+                                  <div className="text-gray-400 text-[10px]">{b.equipment.brandName}</div>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </td>
+
+                        <td className="py-6 px-4 text-center font-normal">
+                          {isBatch ? group.bookings.map(b => formatDate(b.bookingDate)).join(', ') : formatDate(row.bookingDate)}
+                        </td>
+
+                        {/* Timing */}
+                        <td className="py-6 px-4">
+                          {isBatch ? (
+                            <div className="space-y-1">
+                              {group.bookings.map(b => (
+                                <div key={b.id} className="text-slate-800">
+                                  {formatTime(b.bookingTime)} - {calculateEndTime(b.bookingTime, b.duration)} ({b.duration} Hrs)
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <>
+                              <div className="text-slate-800">{formatTime(row.bookingTime)} - {calculateEndTime(row.bookingTime, row.duration)}</div>
+                              <div className="text-gray-400 font-normal text-[10px] mt-1">Duration: {row.duration} Hrs</div>
+                            </>
+                          )}
+                        </td>
+
+                        {/* Amount */}
+                        <td className="py-6 px-4 font-bold text-blue-600 text-sm">
+                          ₹{totalRent.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                        </td>
+
+                        {/* Status - Only show in History tab */}
+                        {activeTab === 'all' && (
+                          <td className="py-6 px-4">
+                            <span className={`px-3 py-1 rounded-full text-[10px] uppercase font-bold ${
+                              status === 'approved' ? 'bg-green-100 text-green-700' :
+                              status === 'rejected' ? 'bg-red-100 text-red-700' :
+                              status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
+                              status === 'completed' ? 'bg-blue-100 text-blue-700' :
+                              'bg-gray-100 text-gray-700'
+                            }`}>
+                              {status}
+                            </span>
+                          </td>
                         )}
-                      </td>
-                    </tr>
-                  ))
+
+                        {/* Actions – one Approve/Reject per request (batch or single) */}
+                        <td className="py-6 px-4">
+                          {status === 'pending' ? (
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => group.batchId ? handleBatchApprove(group.batchId) : handleApprove(row.id)}
+                                className="p-2 bg-green-50 text-green-600 rounded-lg hover:bg-green-600 hover:text-white transition"
+                                title="Approve"
+                              >
+                                <Check size={16} strokeWidth={3} />
+                              </button>
+                              <button
+                                onClick={() => group.batchId ? handleBatchReject(group.batchId) : handleReject(row.id)}
+                                className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-600 hover:text-white transition"
+                                title="Reject"
+                              >
+                                <X size={16} strokeWidth={3} />
+                              </button>
+                            </div>
+                          ) : status === 'approved' ? (
+                            <button
+                              onClick={() => handleShowInvoice(group.bookings)}
+                              className="flex items-center gap-1 p-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-600 hover:text-white transition text-[10px] font-bold"
+                              title="Print Invoice"
+                            >
+                              <Printer size={14} />
+                              <span>Invoice</span>
+                            </button>
+                          ) : (
+                            <span className="text-gray-400 text-[10px] italic">
+                              {status === 'rejected' && 'Rejected'}
+                              {status === 'completed' && 'Completed'}
+                              {status === 'cancelled' && 'Cancelled'}
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
             </table>
@@ -499,9 +586,9 @@ const Approval = () => {
       </div>
 
       {/* Invoice Modal */}
-      {selectedBookingForInvoice && (
+      {selectedBookingForInvoice && selectedBookingForInvoice.length > 0 && (
         <InvoiceModal 
-          booking={selectedBookingForInvoice}
+          bookings={selectedBookingForInvoice}
           onClose={() => setSelectedBookingForInvoice(null)}
         />
       )}

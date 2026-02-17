@@ -6,6 +6,7 @@ import {
   getAllBookings,
   getBookingById,
   updateBookingStatus,
+  updateBatchStatus,
   cancelBooking,
   deleteBooking,
   submitCart,
@@ -24,8 +25,9 @@ router.post("/submit-cart", protectRoute, submitCart);
 router.get("/:id", protectRoute, getBookingById);
 router.put("/:id/cancel", protectRoute, cancelBooking);
 
-// Admin routes
+// Admin routes (batch route before :id so "batch" is not parsed as id)
 router.get("/", protectAdminRoute, getAllBookings);
+router.put("/batch/:batchId/status", protectAdminRoute, updateBatchStatus);
 router.put("/:id/status", protectAdminRoute, updateBookingStatus);
 router.delete("/:id", protectAdminRoute, deleteBooking);
 
