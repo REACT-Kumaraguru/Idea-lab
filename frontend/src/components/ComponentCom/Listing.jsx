@@ -2,13 +2,11 @@ import React, { useState, useEffect } from "react";
 import Navbar from "../Navbar";
 import Sidebar from "../Sidebar";
 import EquipmentBooking from "../bookingCom/EquipmentBooking";
-import { Calendar, Users, MapPin, ShoppingCart, LogOut, AlertCircle } from "lucide-react";
-import { useAuthStore } from "../../store/useAuthStore";
+import { Calendar, Users, MapPin, AlertCircle } from "lucide-react";
 import { toast } from "react-hot-toast";
 import axios from "axios";
 
 const Listing = ({ cart, setCart }) => {
-  const { logout } = useAuthStore();
 
   // State
   const [searchQuery, setSearchQuery] = useState("");
@@ -70,16 +68,6 @@ const Listing = ({ cart, setCart }) => {
 
     return matchesSearch && matchesCategory;
   });
-
-  // Handle Add to Cart
-  const handleAddToCart = (item) => {
-    if (!cart.find((cartItem) => cartItem.id === item.id)) {
-      setCart([...cart, item]);
-      alert(`${item.equipmentName} added to cart!`);
-    } else {
-      alert(`${item.equipmentName} is already in the cart.`);
-    }
-  };
 
   // Handle Book Now
   const handleBookNow = (item) => {
@@ -157,20 +145,6 @@ const Listing = ({ cart, setCart }) => {
                   <span className="text-sm text-gray-600 bg-gray-200 px-3 py-1 rounded-full">
                     {filteredEquipment.length} Items
                   </span>
-                </div>
-                {/* Cart Status Indicator */}
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center gap-2 bg-blue-50 text-blue-700 px-4 py-2 rounded-lg font-medium">
-                    <ShoppingCart className="w-5 h-5" />
-                    <span>Cart: {cart.length} items</span>
-                  </div>
-                  <button
-                    onClick={logout}
-                    className="flex items-center gap-2 bg-red-50 text-red-600 px-4 py-2 rounded-lg font-medium hover:bg-red-100 transition-colors"
-                  >
-                    <LogOut className="w-5 h-5" />
-                    <span>Logout</span>
-                  </button>
                 </div>
               </div>
             </div>
@@ -266,12 +240,6 @@ const Listing = ({ cart, setCart }) => {
                         >
                           <Calendar className="w-4 h-4" />
                           {item.isAvailable ? "Schedule Equipment" : "Unavailable"}
-                        </button>
-                        <button
-                          onClick={() => handleAddToCart(item)}
-                          className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-semibold text-gray-700"
-                        >
-                          <ShoppingCart className="w-4 h-4" />
                         </button>
                       </div>
                     </div>

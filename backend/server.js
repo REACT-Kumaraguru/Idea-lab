@@ -4,6 +4,7 @@ import authRoutes from "./src/routes/auth.route.js";
 import adminAuthRoutes from "./src/routes/adminauth.route.js";
 import equipmentRoutes from "./src/routes/equipment.route.js";
 import bookingRoutes from "./src/routes/Booking.routes.js";
+import problemStatementRoutes from "./src/routes/problemStatement.route.js";
 import cookieParser from "cookie-parser";
 
 import { setupAssociations } from './src/models/associations.js';
@@ -12,7 +13,8 @@ import { connectDB } from "./src/lib/db.js";
 
 const app = express();
 
-app.use(express.json({ limit: "5mb" }));
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ extended: true, limit: "50mb" }));
 app.use(cookieParser());
 app.use(
   cors({
@@ -27,6 +29,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/admin", adminAuthRoutes);
 app.use("/api/equipment", equipmentRoutes);
 app.use("/api/bookings", bookingRoutes);
+app.use("/api/problems", problemStatementRoutes);
 
 app.use("/src/uploads", express.static("src/uploads"));
 

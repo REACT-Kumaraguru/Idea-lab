@@ -1,8 +1,9 @@
-import React from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Search, X, MapPin, ShoppingCart } from "lucide-react";
+import { Search, X, ShoppingCart, LogOut, User, Mail, Phone } from "lucide-react";
 import Logo from ".././assets/idea-lab.png";
 import { useBookingStore } from "../store/useBookingStore";
+import { useAuthStore } from "../store/useAuthStore";
 
 const Navbar = ({
   searchQuery = "",
@@ -10,6 +11,23 @@ const Navbar = ({
 }) => {
   const bookings = useBookingStore((state) => state.bookings);
   const cartCount = (Array.isArray(bookings) ? bookings : []).filter((b) => b.status === "draft").length;
+  const { logout, authUser } = useAuthStore();
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const profileRef = useRef(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (profileRef.current && !profileRef.current.contains(event.target)) {
+        setIsProfileOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   return (
     <nav className="bg-white border-b shadow-sm px-6 py-4 sticky top-0 z-50 font-sans">
@@ -53,7 +71,7 @@ const Navbar = ({
         {/* Navigation Links */}
         <div className="flex items-center gap-6 shrink-0">
           <Link
-            to="/"
+            to="/products"
             className="text-blue-700 font-semibold text-sm border-b-2 border-blue-700 pb-1"
           >
             Equipment
@@ -66,6 +84,20 @@ const Navbar = ({
             My Reserve
           </Link>
 
+          <Link
+            to="/upload-problem"
+            className="text-gray-700 hover:text-blue-700 font-medium text-sm"
+          >
+            Upload Problem
+          </Link>
+
+          <Link
+            to="/my-submissions"
+            className="text-gray-700 hover:text-blue-700 font-medium text-sm"
+          >
+            My Submissions
+          </Link>
+
           {/* Cart Link */}
           <Link
             to="/cart"
@@ -75,10 +107,55 @@ const Navbar = ({
             <span>Cart: {cartCount}</span>
           </Link>
 
-          {/* Campus Indicator */}
-          <div className="hidden lg:flex items-center gap-2 text-xs font-semibold text-gray-500 ml-4">
-            <MapPin className="w-3.5 h-3.5 text-gray-500" />
-            KCT Campus
+          {/* Profile Dropdown */}
+          <div className="relative" ref={profileRef}>
+            <button
+              onClick={() => setIsProfileOpen(!isProfileOpen)}
+              className="flex items-center justify-center w-10 h-10 rounded-full bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors"
+            >
+              <User className="w-5 h-5" />
+            </button>
+
+            {/* Dropdown Menu */}
+            {isProfileOpen && (
+              <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
+                {/* User Info Section */}
+                <div className="px-4 py-3 border-b border-gray-200">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
+                      <User className="w-6 h-6 text-blue-700" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-gray-900 truncate">
+                        {authUser?.fullName || "User"}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <Mail className="w-4 h-4 text-gray-400" />
+                      <span className="truncate">{authUser?.email || "N/A"}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <Phone className="w-4 h-4 text-gray-400" />
+                      <span>{authUser?.phoneNumber || "N/A"}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Logout Button */}
+                <div className="px-2 py-2">
+                  <button
+                    onClick={logout}
+                    className="w-full flex items-center gap-2 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    <span>Logout</span>
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>

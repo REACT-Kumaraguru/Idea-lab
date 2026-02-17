@@ -18,6 +18,10 @@ import { Loader } from "lucide-react";
 
 import AdminPage from "./pages/AdminPage";
 import AdminLayout from "./components/AdminCom/AdminLayout";
+import ProblemStatements from "./components/AdminCom/ProblemStatements";
+import ProblemSubmissionInfo from "./components/ProblemCom/ProblemSubmissionInfo";
+import ProjectForm from "./components/ProblemCom/ProjectForm";
+import MySubmissions from "./components/ProblemCom/MySubmissions";
 
 function Home() {
   return (
@@ -104,6 +108,39 @@ function App() {
           }
         />
 
+        <Route
+          path="/upload-problem"
+          element={
+            authUser ? (
+              <ProblemSubmissionInfo />
+            ) : (
+              <Navigate to="/login" />
+            )
+          }
+        />
+
+        <Route
+          path="/upload-problem/form"
+          element={
+            authUser ? (
+              <ProjectForm />
+            ) : (
+              <Navigate to="/login" />
+            )
+          }
+        />
+
+        <Route
+          path="/my-submissions"
+          element={
+            authUser ? (
+              <MySubmissions />
+            ) : (
+              <Navigate to="/login" />
+            )
+          }
+        />
+
         {/* Admin Protected Routes with Layout */}
         {/* Admin Protected Routes with Layout */}
     <Route
@@ -125,6 +162,7 @@ function App() {
       {/* New equipment page */}
       <Route path="new-equipment" element={<NewEquipment />} />
       <Route path="approval" element={<Approval />} />
+      <Route path="problem-statements" element={<ProblemStatements />} />
     </Route>
 
       </Routes>
