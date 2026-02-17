@@ -30,11 +30,12 @@ const EquipmentBooking = sequelize.define(
       field: "booking_time",
     },
     duration: {
-      type: DataTypes.INTEGER,
+      // If DB exists: ALTER TABLE equipment_bookings MODIFY COLUMN duration DECIMAL(4,2) NOT NULL DEFAULT 1;
+      type: DataTypes.DECIMAL(4, 2),
       allowNull: false,
       defaultValue: 1,
       validate: {
-        min: 1,
+        min: 0.5,
         max: 12,
       },
     },

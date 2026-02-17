@@ -3,7 +3,7 @@ import Equipment from "../models/EquipmentModel.js";
 
 export const createEquipment = async (req, res) => {
   try {
-    const { equipmentName, brandName, quantity, rentAmount, equipmentDetails, isAvailable } = req.body;
+    const { equipmentName, brandName, quantity, rentAmount, pricePerHour, equipmentDetails, isAvailable } = req.body;
     let imagePath = null;
 
     if (req.file) {
@@ -15,6 +15,7 @@ export const createEquipment = async (req, res) => {
       brandName,
       quantity,
       rentAmount,
+      pricePerHour: pricePerHour != null && pricePerHour !== '' ? pricePerHour : null,
       equipmentDetails,
       isAvailable: isAvailable === 'true' || isAvailable === true,
       image: imagePath,
@@ -40,7 +41,7 @@ export const getAllEquipment = async (req, res) => {
 export const updateEquipment = async (req, res) => {
   try {
     const { id } = req.params;
-    const { equipmentName, brandName, quantity, rentAmount, equipmentDetails, isAvailable } = req.body;
+    const { equipmentName, brandName, quantity, rentAmount, pricePerHour, equipmentDetails, isAvailable } = req.body;
 
     const equipment = await Equipment.findByPk(id);
 
@@ -53,7 +54,7 @@ export const updateEquipment = async (req, res) => {
       imagePath = req.file.path.replace(/\\/g, "/");
     }
 
-    await equipment.update({
+    const updateData = {
       equipmentName,
       brandName,
       quantity,
@@ -61,7 +62,10 @@ export const updateEquipment = async (req, res) => {
       equipmentDetails,
       isAvailable: isAvailable === 'true' || isAvailable === true,
       image: imagePath,
-    });
+    };
+    if (pricePerHour !== undefined) updateData.pricePerHour = pricePerHour === '' ? null : pricePerHour;
+
+    await equipment.update(updateData);
 
     res.status(200).json(equipment);
   } catch (error) {

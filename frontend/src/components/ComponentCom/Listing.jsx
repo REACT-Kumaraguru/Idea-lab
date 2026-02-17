@@ -247,9 +247,9 @@ const Listing = ({ cart, setCart }) => {
                           <Users className="w-4 h-4 text-gray-400" />
                           <span>Quantity: {item.quantity}</span>
                         </div>
-                        {item.rentAmount && (
+                        {(item.pricePerHour != null || item.rentAmount != null) && (
                           <div className="flex items-center gap-2 text-sm font-semibold text-blue-600">
-                            <span>₹{item.rentAmount}/day</span>
+                            <span>₹{item.pricePerHour ?? item.rentAmount}/hr</span>
                           </div>
                         )}
                       </div>

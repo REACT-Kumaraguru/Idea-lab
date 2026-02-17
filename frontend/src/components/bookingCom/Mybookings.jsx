@@ -1,13 +1,31 @@
-import React, { useState, useEffect } from "react";
-import { Calendar, Clock, DollarSign, AlertCircle } from "lucide-react";
+import React, { useState, useEffect, useMemo } from "react";
+import { Calendar, Clock, AlertCircle, Search, Filter } from "lucide-react";
 import Navbar from "../Navbar";
 import { useBookingStore } from "../../store/useBookingStore";
 import { axiosInstance } from "../../lib/axios";
+
+const STATUS_OPTIONS = [
+  { value: "all", label: "All" },
+  { value: "pending", label: "Pending" },
+  { value: "approved", label: "Approved" },
+  { value: "rejected", label: "Rejected" },
+  { value: "completed", label: "Completed" },
+  { value: "cancelled", label: "Cancelled" },
+];
+
+const DATE_FILTER_OPTIONS = [
+  { value: "all", label: "All" },
+  { value: "upcoming", label: "Upcoming" },
+  { value: "past", label: "Past" },
+];
 
 const MyBookings = () => {
   const { bookings, fetchMyBookings, isFetchingBookings } = useBookingStore();
   const [cancellingId, setCancellingId] = useState(null);
   const [error, setError] = useState("");
+  const [filterStatus, setFilterStatus] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [dateFilter, setDateFilter] = useState("all");
 
   useEffect(() => {
     fetchMyBookings();
@@ -15,6 +33,41 @@ const MyBookings = () => {
 
   const reservedBookings = (Array.isArray(bookings) ? bookings : []).filter((b) => b.status !== "draft");
   const cartCount = (Array.isArray(bookings) ? bookings : []).filter((b) => b.status === "draft").length;
+
+  const today = useMemo(() => new Date().toISOString().split("T")[0], []);
+
+  const filteredBookings = useMemo(() => {
+    let result = reservedBookings;
+
+    if (filterStatus !== "all") {
+      result = result.filter((b) => b.status === filterStatus);
+    }
+
+    const q = searchQuery.trim().toLowerCase();
+    if (q) {
+      result = result.filter(
+        (b) =>
+          (b.equipment?.equipmentName || "").toLowerCase().includes(q) ||
+          (b.equipment?.brandName || "").toLowerCase().includes(q)
+      );
+    }
+
+    if (dateFilter === "upcoming") {
+      result = result.filter((b) => (b.bookingDate || "") >= today);
+    } else if (dateFilter === "past") {
+      result = result.filter((b) => (b.bookingDate || "") < today);
+    }
+
+    return result;
+  }, [reservedBookings, filterStatus, searchQuery, dateFilter, today]);
+
+  const hasActiveFilters = filterStatus !== "all" || searchQuery.trim() !== "" || dateFilter !== "all";
+
+  const clearFilters = () => {
+    setFilterStatus("all");
+    setSearchQuery("");
+    setDateFilter("all");
+  };
 
   const getImageUrl = (imagePath) => {
     if (!imagePath) return null;
@@ -97,6 +150,62 @@ const MyBookings = () => {
           </div>
         )}
 
+        {reservedBookings.length > 0 && (
+          <div className="mb-6 bg-white border border-gray-200 rounded-lg shadow-sm p-4">
+            <div className="flex flex-col sm:flex-row gap-4 flex-wrap items-stretch sm:items-center">
+              <div className="relative flex-1 min-w-[200px]">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search by equipment name"
+                  className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+              <div className="flex flex-wrap items-center gap-3">
+                <Filter className="w-4 h-4 text-gray-500 shrink-0" />
+                <select
+                  value={filterStatus}
+                  onChange={(e) => setFilterStatus(e.target.value)}
+                  className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  {STATUS_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+                <select
+                  value={dateFilter}
+                  onChange={(e) => setDateFilter(e.target.value)}
+                  className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  {DATE_FILTER_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+                {hasActiveFilters && (
+                  <button
+                    type="button"
+                    onClick={clearFilters}
+                    className="px-3 py-2 text-sm font-medium text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors"
+                  >
+                    Clear filters
+                  </button>
+                )}
+              </div>
+            </div>
+            {hasActiveFilters && (
+              <p className="mt-3 text-sm text-gray-600">
+                Showing {filteredBookings.length} of {reservedBookings.length} reservations
+              </p>
+            )}
+          </div>
+        )}
+
         {reservedBookings.length === 0 ? (
           <div className="text-center py-12 bg-white rounded-lg shadow">
             <Calendar className="w-16 h-16 text-gray-400 mx-auto mb-4" />
@@ -107,9 +216,26 @@ const MyBookings = () => {
               After you proceed to request from the cart, your bookings will appear here with their approval status.
             </p>
           </div>
+        ) : filteredBookings.length === 0 ? (
+          <div className="text-center py-12 bg-white rounded-lg shadow">
+            <Filter className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-xl font-semibold text-gray-700 mb-2">
+              No reservations match your filters
+            </h3>
+            <p className="text-gray-600 mb-4">
+              Try adjusting your filters or clear them to see all reservations.
+            </p>
+            <button
+              type="button"
+              onClick={clearFilters}
+              className="px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              Clear filters
+            </button>
+          </div>
         ) : (
           <div className="space-y-4">
-            {reservedBookings.map((booking) => (
+            {filteredBookings.map((booking) => (
               <div
                 key={booking.id}
                 className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow"
@@ -194,7 +320,7 @@ const MyBookings = () => {
                     </div>
 
                     <div className="flex items-center gap-2">
-                      <DollarSign className="w-4 h-4 text-gray-400" />
+                      
                       <div>
                         <p className="text-xs text-gray-500">Total</p>
                         <p className="text-sm font-semibold text-gray-800">

@@ -26,7 +26,7 @@ export const getAllBookings = async (req, res) => {
         {
           model: Equipment,
           as: "equipment",
-          attributes: ["id", "equipmentName", "brandName", "image", "rentAmount"],
+          attributes: ["id", "equipmentName", "brandName", "image", "rentAmount", "pricePerHour"],
         },
         {
           model: User,
@@ -86,6 +86,15 @@ export const createBooking = async (req, res) => {
       });
     }
 
+    // Parse duration (hours, decimal allowed)
+    const durationHours = parseFloat(duration);
+    if (isNaN(durationHours) || durationHours < 0.5 || durationHours > 12) {
+      return res.status(400).json({
+        success: false,
+        message: "Duration must be between 0.5 and 12 hours",
+      });
+    }
+
     // Check if the date is not in the past
     const selectedDate = new Date(bookingDate);
     const today = new Date();
@@ -98,27 +107,56 @@ export const createBooking = async (req, res) => {
       });
     }
 
-    // Check if there's already a booking for this equipment on this date
-    const existingBooking = await EquipmentBooking.findOne({
+    // If booking is for today, ensure start time is not in the past
+    const isToday = selectedDate.getTime() === today.getTime();
+    if (isToday) {
+      const [h, m] = String(bookingTime).split(":").map(Number);
+      const startMinutes = (h || 0) * 60 + (m || 0);
+      const now = new Date();
+      const currentMinutes = now.getHours() * 60 + now.getMinutes();
+      if (startMinutes < currentMinutes) {
+        return res.status(400).json({
+          success: false,
+          message: "Cannot book a start time in the past",
+        });
+      }
+    }
+
+    // Time to minutes from midnight (for overlap check)
+    const timeToMinutes = (t) => {
+      const s = String(t);
+      const [h, m] = s.split(":").map(Number);
+      return (h || 0) * 60 + (m || 0);
+    };
+
+    const newStartMin = timeToMinutes(bookingTime);
+    const newEndMin = newStartMin + Math.round(durationHours * 60);
+
+    // Fetch approved (and pending) bookings for this equipment on this date
+    const existingBookings = await EquipmentBooking.findAll({
       where: {
         equipmentId,
         bookingDate,
-        status: {
-          [Op.in]: ["pending", "approved"],
-        },
+        status: { [Op.in]: ["pending", "approved"] },
       },
+      attributes: ["bookingTime", "duration"],
     });
 
-    if (existingBooking) {
-      return res.status(400).json({
-        success: false,
-        message: "Equipment is already booked for this date",
-      });
+    for (const existing of existingBookings) {
+      const existingStartMin = timeToMinutes(existing.bookingTime);
+      const existingDurationHours = parseFloat(existing.duration) || 1;
+      const existingEndMin = existingStartMin + Math.round(existingDurationHours * 60);
+      const overlaps = newStartMin < existingEndMin && newEndMin > existingStartMin;
+      if (overlaps) {
+        return res.status(400).json({
+          success: false,
+          message: "This time slot overlaps an existing booking",
+        });
+      }
     }
 
-    // Calculate total amount - daily rate (not multiplied by hours)
-    // The duration field stores working hours for informational purposes only
-    const totalAmount = parseFloat(equipment.rentAmount);
+    const pricePerHour = equipment.pricePerHour != null ? parseFloat(equipment.pricePerHour) : parseFloat(equipment.rentAmount) || 0;
+    const totalAmount = Math.round(durationHours * pricePerHour * 100) / 100;
 
     // Create booking as draft (only sent to admin when user clicks "Proceed to Request" in cart)
     const booking = await EquipmentBooking.create({
@@ -126,7 +164,7 @@ export const createBooking = async (req, res) => {
       userId,
       bookingDate,
       bookingTime,
-      duration,
+      duration: durationHours,
       totalAmount,
       notes,
       status: "draft",
@@ -138,7 +176,7 @@ export const createBooking = async (req, res) => {
         {
           model: Equipment,
           as: "equipment",
-          attributes: ["id", "equipmentName", "brandName", "image", "rentAmount"],
+          attributes: ["id", "equipmentName", "brandName", "image", "rentAmount", "pricePerHour"],
         },
         {
           model: User,
@@ -163,7 +201,7 @@ export const createBooking = async (req, res) => {
   }
 };
 
-// @desc    Get all bookings for a specific equipment
+// @desc    Get all bookings for a specific equipment (approved only, for slot blocking)
 // @route   GET /api/bookings/equipment/:equipmentId
 // @access  Public
 export const getEquipmentBookings = async (req, res) => {
@@ -173,9 +211,7 @@ export const getEquipmentBookings = async (req, res) => {
     const bookings = await EquipmentBooking.findAll({
       where: {
         equipmentId,
-        status: {
-          [Op.in]: ["pending", "approved"],
-        },
+        status: "approved",
       },
       attributes: ["id", "bookingDate", "bookingTime", "duration", "status"],
       order: [["bookingDate", "ASC"]],
@@ -211,7 +247,7 @@ export const getMyBookings = async (req, res) => {
         {
           model: Equipment,
           as: "equipment",
-          attributes: ["id", "equipmentName", "brandName", "image", "rentAmount", "equipmentDetails", "quantity"],
+          attributes: ["id", "equipmentName", "brandName", "image", "rentAmount", "pricePerHour", "equipmentDetails", "quantity"],
         },
       ],
       // FIX: Use the actual database column name
@@ -245,7 +281,7 @@ export const getBookingById = async (req, res) => {
         {
           model: Equipment,
           as: "equipment",
-          attributes: ["id", "equipmentName", "brandName", "image", "rentAmount"],
+          attributes: ["id", "equipmentName", "brandName", "image", "rentAmount", "pricePerHour"],
         },
         {
           model: User,
