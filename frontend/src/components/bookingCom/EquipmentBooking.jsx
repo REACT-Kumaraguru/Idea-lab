@@ -104,7 +104,7 @@ const EquipmentBooking = ({ equipment, isOpen, onClose, onBookingSuccess }) => {
     return (endMin - startMin) / 60;
   }, [bookingData.startTime, bookingData.endTime]);
 
-  const pricePerHour = parseFloat(equipment?.pricePerHour ?? equipment?.rentAmount ?? 0) || 0;
+  const pricePerHour = parseFloat(equipment?.pricePerHour ?? 0) || 0;
   const totalAmount = durationInHours * pricePerHour;
 
   const validateBooking = () => {

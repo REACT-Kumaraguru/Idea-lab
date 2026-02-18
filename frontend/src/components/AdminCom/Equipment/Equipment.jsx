@@ -121,7 +121,7 @@ const Equipment = () => {
                       <td className="px-6 py-4 text-gray-600">{item.brandName}</td>
                       <td className="px-6 py-4 text-gray-500 font-mono text-sm">{item.quantity}</td>
                       <td className="px-6 py-4 text-gray-700 font-mono text-sm">
-                        {item.rentAmount ? `₹${item.rentAmount}` : '-'}
+                        {item.pricePerHour != null ? `₹${item.pricePerHour}/hr` : '-'}
                       </td>
                       <td className="px-6 py-4">
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(item.isAvailable)}`}>

@@ -10,6 +10,7 @@ import {
   cancelBooking,
   deleteBooking,
   submitCart,
+  verifyQRCode,
 } from "../controllers/Booking.controller.js";
 import { protectRoute, protectAdminRoute } from "../middleware/auth.middleware.js";
 
@@ -27,6 +28,7 @@ router.put("/:id/cancel", protectRoute, cancelBooking);
 
 // Admin routes (batch route before :id so "batch" is not parsed as id)
 router.get("/", protectAdminRoute, getAllBookings);
+router.post("/verify-qr", protectAdminRoute, verifyQRCode);
 router.put("/batch/:batchId/status", protectAdminRoute, updateBatchStatus);
 router.put("/:id/status", protectAdminRoute, updateBookingStatus);
 router.delete("/:id", protectAdminRoute, deleteBooking);

@@ -27,7 +27,7 @@ export const getAllBookings = async (req, res) => {
         {
           model: Equipment,
           as: "equipment",
-          attributes: ["id", "equipmentName", "brandName", "image", "rentAmount", "pricePerHour"],
+          attributes: ["id", "equipmentName", "brandName", "image", "pricePerHour"],
         },
         {
           model: User,
@@ -156,7 +156,7 @@ export const createBooking = async (req, res) => {
       }
     }
 
-    const pricePerHour = equipment.pricePerHour != null ? parseFloat(equipment.pricePerHour) : parseFloat(equipment.rentAmount) || 0;
+    const pricePerHour = parseFloat(equipment.pricePerHour) || 0;
     const totalAmount = Math.round(durationHours * pricePerHour * 100) / 100;
 
     // Create booking as draft (only sent to admin when user clicks "Proceed to Request" in cart)
@@ -177,7 +177,7 @@ export const createBooking = async (req, res) => {
         {
           model: Equipment,
           as: "equipment",
-          attributes: ["id", "equipmentName", "brandName", "image", "rentAmount", "pricePerHour"],
+          attributes: ["id", "equipmentName", "brandName", "image", "pricePerHour"],
         },
         {
           model: User,
@@ -248,7 +248,7 @@ export const getMyBookings = async (req, res) => {
         {
           model: Equipment,
           as: "equipment",
-          attributes: ["id", "equipmentName", "brandName", "image", "rentAmount", "pricePerHour", "equipmentDetails", "quantity"],
+          attributes: ["id", "equipmentName", "brandName", "image", "pricePerHour", "equipmentDetails", "quantity"],
         },
         {
           model: User,
@@ -287,7 +287,7 @@ export const getBookingById = async (req, res) => {
         {
           model: Equipment,
           as: "equipment",
-          attributes: ["id", "equipmentName", "brandName", "image", "rentAmount", "pricePerHour"],
+          attributes: ["id", "equipmentName", "brandName", "image", "pricePerHour"],
         },
         {
           model: User,
@@ -604,6 +604,109 @@ export const deleteBooking = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Error deleting booking",
+      error: error.message,
+    });
+  }
+};
+
+// @desc    Verify QR code (scan and validate booking)
+// @route   POST /api/bookings/verify-qr
+// @access  Private/Admin
+export const verifyQRCode = async (req, res) => {
+  try {
+    const { qrData } = req.body;
+
+    if (!qrData) {
+      return res.status(400).json({
+        success: false,
+        message: "QR code data is required",
+      });
+    }
+
+    let parsedData;
+    try {
+      parsedData = typeof qrData === "string" ? JSON.parse(qrData) : qrData;
+    } catch (e) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid QR code format",
+      });
+    }
+
+    const { bookingId } = parsedData;
+
+    if (!bookingId) {
+      return res.status(400).json({
+        success: false,
+        message: "Booking ID not found in QR code",
+      });
+    }
+
+    const booking = await EquipmentBooking.findByPk(bookingId, {
+      include: [
+        {
+          model: Equipment,
+          as: "equipment",
+          attributes: ["id", "equipmentName", "brandName", "image"],
+        },
+        {
+          model: User,
+          as: "user",
+          attributes: ["id", "fullName", "email"],
+        },
+      ],
+    });
+
+    if (!booking) {
+      return res.status(404).json({
+        success: false,
+        message: "Booking not found",
+      });
+    }
+
+    // Verify QR data matches booking
+    const isValid =
+      booking.id === parseInt(bookingId) &&
+      booking.equipment?.equipmentName === parsedData.equipmentName &&
+      booking.bookingDate === parsedData.bookingDate &&
+      String(booking.bookingTime).slice(0, 5) === String(parsedData.bookingTime).slice(0, 5);
+
+    if (!isValid) {
+      return res.status(400).json({
+        success: false,
+        message: "QR code data does not match booking records",
+      });
+    }
+
+    // Mark booking as verified (admin scanned QR)
+    await booking.update({ verifiedAt: new Date() });
+
+    // Reload with includes for response
+    const updatedBooking = await EquipmentBooking.findByPk(bookingId, {
+      include: [
+        {
+          model: Equipment,
+          as: "equipment",
+          attributes: ["id", "equipmentName", "brandName", "image"],
+        },
+        {
+          model: User,
+          as: "user",
+          attributes: ["id", "fullName", "email"],
+        },
+      ],
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "QR code verified successfully",
+      data: updatedBooking,
+    });
+  } catch (error) {
+    console.error("Error verifying QR code:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error verifying QR code",
       error: error.message,
     });
   }

@@ -25,14 +25,7 @@ const Equipment = sequelize.define(
       allowNull: false,
       defaultValue: 0,
     },
-    rentAmount: {
-      type: DataTypes.DECIMAL(10, 2),
-      allowNull: true,
-      defaultValue: 0.00,
-      field: "rent_amount",
-    },
     pricePerHour: {
-      // If DB exists: ALTER TABLE equipments ADD COLUMN price_per_hour DECIMAL(10,2) NULL;
       type: DataTypes.DECIMAL(10, 2),
       allowNull: true,
       defaultValue: null,

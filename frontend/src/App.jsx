@@ -19,6 +19,8 @@ import { Loader } from "lucide-react";
 import AdminPage from "./pages/AdminPage";
 import AdminLayout from "./components/AdminCom/AdminLayout";
 import ProblemStatements from "./components/AdminCom/ProblemStatements";
+import AdminAccess from "./components/AdminCom/AdminAccess";
+import QRScanner from "./components/AdminCom/QRScanner";
 import ProblemSubmissionInfo from "./components/ProblemCom/ProblemSubmissionInfo";
 import ProjectForm from "./components/ProblemCom/ProjectForm";
 import MySubmissions from "./components/ProblemCom/MySubmissions";
@@ -163,6 +165,8 @@ function App() {
       <Route path="new-equipment" element={<NewEquipment />} />
       <Route path="approval" element={<Approval />} />
       <Route path="problem-statements" element={<ProblemStatements />} />
+      <Route path="qr-scanner" element={<QRScanner />} />
+      <Route path="users" element={<AdminAccess />} />
     </Route>
 
       </Routes>

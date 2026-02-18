@@ -3,7 +3,7 @@ import Equipment from "../models/EquipmentModel.js";
 
 export const createEquipment = async (req, res) => {
   try {
-    const { equipmentName, brandName, quantity, rentAmount, pricePerHour, equipmentDetails, isAvailable } = req.body;
+    const { equipmentName, brandName, quantity, pricePerHour, equipmentDetails, isAvailable } = req.body;
     let imagePath = null;
 
     if (req.file) {
@@ -14,7 +14,6 @@ export const createEquipment = async (req, res) => {
       equipmentName,
       brandName,
       quantity,
-      rentAmount,
       pricePerHour: pricePerHour != null && pricePerHour !== '' ? pricePerHour : null,
       equipmentDetails,
       isAvailable: isAvailable === 'true' || isAvailable === true,
@@ -41,7 +40,7 @@ export const getAllEquipment = async (req, res) => {
 export const updateEquipment = async (req, res) => {
   try {
     const { id } = req.params;
-    const { equipmentName, brandName, quantity, rentAmount, pricePerHour, equipmentDetails, isAvailable } = req.body;
+    const { equipmentName, brandName, quantity, pricePerHour, equipmentDetails, isAvailable } = req.body;
 
     const equipment = await Equipment.findByPk(id);
 
@@ -58,7 +57,6 @@ export const updateEquipment = async (req, res) => {
       equipmentName,
       brandName,
       quantity,
-      rentAmount,
       equipmentDetails,
       isAvailable: isAvailable === 'true' || isAvailable === true,
       image: imagePath,

@@ -7,7 +7,8 @@ import {
   ClipboardClock,
   PackageSearch,
   UserPlus,
-  FileText
+  FileText,
+  QrCode
 } from 'lucide-react';
 import Logo from "../../assets/idea-lab.png";
 import { useAuthStore } from "../../store/useAuthStore";
@@ -22,7 +23,7 @@ export const Sidebar = () => {
     { id: 'equipment', icon: PackageSearch, label: 'Equipment', path: '/admin/equipment' },
     { id: 'approval', icon: ClipboardClock, label: 'Approval', path: '/admin/approval' },
     { id: 'problemStatements', icon: FileText, label: 'Problem Statements', path: '/admin/problem-statements' },
-    { id: 'projects', icon: Layers, label: 'Projects', path: '/admin/projects' },
+    { id: 'qrScanner', icon: QrCode, label: 'QR Scanner', path: '/admin/qr-scanner' },
     { id: 'adminUser', icon: UserPlus, label: 'Admin Access', path: '/admin/users' },
   ];
 

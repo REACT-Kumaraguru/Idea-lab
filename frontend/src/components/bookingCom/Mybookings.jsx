@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { Calendar, Clock, AlertCircle, Search, Filter, FileText } from "lucide-react";
+import { Calendar, Clock, AlertCircle, Search, Filter, FileText, QrCode, X, ShieldCheck } from "lucide-react";
+import { QRCodeSVG } from "qrcode.react";
 import Navbar from "../Navbar";
 import { useBookingStore } from "../../store/useBookingStore";
 import { axiosInstance } from "../../lib/axios";
@@ -25,6 +26,7 @@ const MyBookings = () => {
   const [cancellingId, setCancellingId] = useState(null);
   const [cancellingBatchKey, setCancellingBatchKey] = useState(null);
   const [selectedGroupForInvoice, setSelectedGroupForInvoice] = useState(null);
+  const [selectedGroupForQR, setSelectedGroupForQR] = useState(null);
   const [error, setError] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
@@ -323,7 +325,7 @@ const MyBookings = () => {
                             </div>
                           </div>
                         ))}
-                        <div className="flex items-center">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <span
                             className={`inline-block text-xs font-semibold px-3 py-1 rounded-full ${getStatusColor(
                               status
@@ -331,8 +333,14 @@ const MyBookings = () => {
                           >
                             {status.toUpperCase()}
                           </span>
+                          {group.bookings.some((b) => b.verifiedAt) && (
+                            <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-full bg-green-100 text-green-800">
+                              <ShieldCheck className="w-3.5 h-3.5" />
+                              Verified
+                            </span>
+                          )}
                           {isBatch && (
-                            <span className="ml-2 text-xs text-gray-500">
+                            <span className="text-xs text-gray-500">
                               {group.bookings.length} items
                             </span>
                           )}
@@ -340,13 +348,22 @@ const MyBookings = () => {
                       </div>
                       <div className="flex gap-2 flex-shrink-0">
                         {status === "approved" && (
-                          <button
-                            onClick={() => setSelectedGroupForInvoice(group.bookings)}
-                            className="flex items-center gap-1 px-4 py-2 text-sm font-semibold text-blue-600 border border-blue-300 rounded-lg hover:bg-blue-50 transition-colors"
-                          >
-                            <FileText size={16} />
-                            View invoice
-                          </button>
+                          <>
+                            <button
+                              onClick={() => setSelectedGroupForInvoice(group.bookings)}
+                              className="flex items-center gap-1 px-4 py-2 text-sm font-semibold text-blue-600 border border-blue-300 rounded-lg hover:bg-blue-50 transition-colors"
+                            >
+                              <FileText size={16} />
+                              View invoice
+                            </button>
+                            <button
+                              onClick={() => setSelectedGroupForQR(group)}
+                              className="flex items-center gap-1 px-4 py-2 text-sm font-semibold text-green-600 border border-green-300 rounded-lg hover:bg-green-50 transition-colors"
+                            >
+                              <QrCode size={16} />
+                              QR Code
+                            </button>
+                          </>
                         )}
                         {(status === "pending" || status === "approved") && (
                           <button
@@ -438,6 +455,56 @@ const MyBookings = () => {
             bookings={selectedGroupForInvoice}
             onClose={() => setSelectedGroupForInvoice(null)}
           />
+        )}
+
+        {/* QR Code Modal */}
+        {selectedGroupForQR && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+            <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-900">Booking QR Code</h3>
+                <button
+                  onClick={() => setSelectedGroupForQR(null)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <p className="text-sm text-gray-600 mb-4">
+                Show this QR code to admin for verification
+              </p>
+              <div className="flex flex-col items-center gap-4">
+                {selectedGroupForQR.bookings.map((booking) => {
+                  const qrData = JSON.stringify({
+                    bookingId: booking.id,
+                    equipmentName: booking.equipment?.equipmentName,
+                    bookingDate: booking.bookingDate,
+                    bookingTime: booking.bookingTime,
+                    userId: booking.userId,
+                  });
+                  return (
+                    <div key={booking.id} className="flex flex-col items-center gap-2 p-4 border border-gray-200 rounded-lg">
+                      <QRCodeSVG value={qrData} size={200} level="H" />
+                      <p className="text-xs font-medium text-gray-700 mt-2">
+                        {booking.equipment?.equipmentName}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {formatDate(booking.bookingDate)} · {String(booking.bookingTime).slice(0, 5)}
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="mt-4 flex gap-2">
+                <button
+                  onClick={() => setSelectedGroupForQR(null)}
+                  className="flex-1 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
         )}
       </div>
     </div>

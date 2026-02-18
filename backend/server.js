@@ -35,8 +35,10 @@ app.use("/src/uploads", express.static("src/uploads"));
 
 const startServer = async () => {
   await connectDB();
-  app.listen(ENV.PORT, () => {
-    console.log("server is running on PORT:" + ENV.PORT);
+  const HOST = process.env.HOST || "0.0.0.0"; // Listen on all network interfaces
+  app.listen(ENV.PORT, HOST, () => {
+    console.log(`Server is running on http://${HOST}:${ENV.PORT}`);
+    console.log(`Local access: http://localhost:${ENV.PORT}`);
   });
 };
 

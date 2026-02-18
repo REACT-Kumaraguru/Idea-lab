@@ -14,7 +14,6 @@ export default function NewEquipment() {
     equipmentName: '',
     brandName: '',
     quantity: '',
-    rentAmount: '',
     pricePerHour: '',
     equipmentDetails: '',
     isAvailable: true
@@ -30,7 +29,6 @@ export default function NewEquipment() {
         equipmentName: editingEquipment.equipmentName,
         brandName: editingEquipment.brandName,
         quantity: editingEquipment.quantity,
-        rentAmount: editingEquipment.rentAmount || '',
         pricePerHour: editingEquipment.pricePerHour ?? '',
         equipmentDetails: editingEquipment.equipmentDetails || '',
         isAvailable: editingEquipment.isAvailable
@@ -74,7 +72,6 @@ export default function NewEquipment() {
     data.append('equipmentName', formData.equipmentName);
     data.append('brandName', formData.brandName);
     data.append('quantity', formData.quantity);
-    data.append('rentAmount', formData.rentAmount);
     if (formData.pricePerHour !== '') data.append('pricePerHour', formData.pricePerHour);
     data.append('equipmentDetails', formData.equipmentDetails);
     data.append('isAvailable', formData.isAvailable);
@@ -262,23 +259,6 @@ export default function NewEquipment() {
                       </div>
 
                       <div>
-                        <label htmlFor="rentAmount" className="block text-sm font-medium text-slate-900 mb-1.5">
-                          Rent Amount (₹)
-                        </label>
-                        <input
-                          type="number"
-                          id="rentAmount"
-                          name="rentAmount"
-                          value={formData.rentAmount}
-                          onChange={handleInputChange}
-                          placeholder="0.00"
-                          min="0"
-                          step="0.01"
-                          className="w-full px-3 py-2.5 text-sm font-mono border-2 border-slate-200 rounded-lg bg-slate-50 text-slate-900 transition-all duration-300 outline-none focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-100 hover:border-slate-300"
-                        />
-                      </div>
-
-                      <div>
                         <label htmlFor="pricePerHour" className="block text-sm font-medium text-slate-900 mb-1.5">
                           Price per hour (₹)
                         </label>
@@ -293,7 +273,7 @@ export default function NewEquipment() {
                           step="0.01"
                           className="w-full px-3 py-2.5 text-sm font-mono border-2 border-slate-200 rounded-lg bg-slate-50 text-slate-900 transition-all duration-300 outline-none focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-100 hover:border-slate-300"
                         />
-                        <p className="text-xs text-slate-500 mt-1">Used for hourly booking total. Leave empty to fall back to Rent Amount.</p>
+                        <p className="text-xs text-slate-500 mt-1">Used for hourly booking total.</p>
                       </div>
                     </div>
                   </div>

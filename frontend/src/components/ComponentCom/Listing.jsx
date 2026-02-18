@@ -89,7 +89,7 @@ const Listing = ({ cart, setCart }) => {
       equipmentName: booking.equipment?.equipmentName || selectedEquipment?.equipmentName,
       brandName: booking.equipment?.brandName || selectedEquipment?.brandName,
       image: booking.equipment?.image || selectedEquipment?.image,
-      rentAmount: booking.equipment?.rentAmount || selectedEquipment?.rentAmount,
+      pricePerHour: booking.equipment?.pricePerHour ?? selectedEquipment?.pricePerHour,
       quantity: selectedEquipment?.quantity,
       bookingDate: booking.bookingDate,
       bookingTime: booking.bookingTime,
@@ -221,9 +221,9 @@ const Listing = ({ cart, setCart }) => {
                           <Users className="w-4 h-4 text-gray-400" />
                           <span>Quantity: {item.quantity}</span>
                         </div>
-                        {(item.pricePerHour != null || item.rentAmount != null) && (
+                        {item.pricePerHour != null && (
                           <div className="flex items-center gap-2 text-sm font-semibold text-blue-600">
-                            <span>₹{item.pricePerHour ?? item.rentAmount}/hr</span>
+                            <span>₹{item.pricePerHour}/hr</span>
                           </div>
                         )}
                       </div>

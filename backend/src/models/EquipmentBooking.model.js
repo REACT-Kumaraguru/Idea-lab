@@ -59,6 +59,11 @@ const EquipmentBooking = sequelize.define(
       allowNull: true,
       field: "submission_batch_id",
     },
+    verifiedAt: {
+      type: DataTypes.DATE,
+      allowNull: true,
+      field: "verified_at",
+    },
   },
   {
     tableName: "equipment_bookings",

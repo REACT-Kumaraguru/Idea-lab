@@ -134,9 +134,9 @@ const Cart = ({ cart = [], setCart = () => {} }) => {
                             Qty: {eq.quantity}
                           </div>
                         )}
-                        {(eq.pricePerHour != null || eq.rentAmount != null) && (
+                        {eq.pricePerHour != null && (
                           <span className="font-medium text-blue-600">
-                            ₹{eq.pricePerHour ?? eq.rentAmount}/hr
+                            ₹{eq.pricePerHour}/hr
                           </span>
                         )}
                       </div>
