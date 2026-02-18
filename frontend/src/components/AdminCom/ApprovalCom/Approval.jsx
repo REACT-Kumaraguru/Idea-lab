@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Users, Clock, FileCheck, FileX, Download, Check, X, Printer, Search, FileText } from 'lucide-react';
+import { Users, Clock, FileCheck, FileX, Download, Check, X, Printer, Search, FileText, ShieldCheck } from 'lucide-react';
 import { useAuthStore } from '../../../store/useAuthStore';
 import InvoiceModal from './PDFformat'; // Import the invoice modal
 
@@ -199,6 +199,8 @@ const Approval = () => {
             req.id === id ? { ...req, status: 'approved', updated_at: new Date().toISOString() } : req
           ));
           alert('✅ Booking approved successfully!');
+          // Refresh bookings to get updated status
+          fetchBookings();
         }
       } else {
         setRequests(requests.map(req => 
@@ -248,6 +250,8 @@ const Approval = () => {
             req.id === id ? { ...req, status: 'rejected', updated_at: new Date().toISOString() } : req
           ));
           alert('✅ Booking rejected successfully!');
+          // Refresh bookings to get updated status
+          fetchBookings();
         }
       } else {
         setRequests(requests.map(req => 
@@ -279,6 +283,8 @@ const Approval = () => {
         const ids = result.data.map(b => b.id);
         setRequests(requests.map(req => ids.includes(req.id) ? { ...req, status: 'approved', updated_at: new Date().toISOString() } : req));
         alert('✅ Request approved successfully!');
+        // Refresh bookings to get updated status
+        fetchBookings();
       }
     } catch (error) {
       console.error('Error approving batch:', error);
@@ -304,6 +310,8 @@ const Approval = () => {
         const ids = result.data.map(b => b.id);
         setRequests(requests.map(req => ids.includes(req.id) ? { ...req, status: 'rejected', updated_at: new Date().toISOString() } : req));
         alert('✅ Request rejected.');
+        // Refresh bookings to get updated status
+        fetchBookings();
       }
     } catch (error) {
       console.error('Error rejecting batch:', error);
@@ -477,22 +485,56 @@ const Approval = () => {
                           <div className="font-bold text-slate-800 text-sm">{row.user?.fullName || 'N/A'}</div>
                           <div className="text-gray-400 font-normal">{row.user?.email || 'N/A'}</div>
                           {isBatch && <div className="text-blue-600 text-[10px] mt-1">{group.bookings.length} item(s)</div>}
+                          {group.bookings.some((b) => b.verifiedAt) && (
+                            <div className="flex items-center gap-1 mt-1">
+                              <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-green-100 text-green-800">
+                                <ShieldCheck size={10} />
+                                Verified
+                              </span>
+                            </div>
+                          )}
                           {row.notes && (
                             <div className="text-gray-500 text-[10px] mt-1 italic">Note: {row.notes}</div>
                           )}
                         </td>
 
-                        {/* Equipment – list all for batch */}
+                        {/* Equipment – show individual bookings with individual actions */}
                         <td className="py-6 px-4">
                           {group.bookings.map((b, i) => (
-                            <div key={b.id} className="flex items-center gap-2 text-slate-700 mb-1">
-                              <Printer size={14} className="text-blue-400 flex-shrink-0" />
-                              <div>
-                                <div className="font-bold">{b.equipment?.equipmentName || 'N/A'}</div>
-                                {b.equipment?.brandName && (
-                                  <div className="text-gray-400 text-[10px]">{b.equipment.brandName}</div>
-                                )}
+                            <div key={b.id} className="flex items-center justify-between gap-2 text-slate-700 mb-2 p-2 bg-gray-50 rounded">
+                              <div className="flex items-center gap-2 flex-1">
+                                <Printer size={14} className="text-blue-400 flex-shrink-0" />
+                                <div>
+                                  <div className="font-bold">{b.equipment?.equipmentName || 'N/A'}</div>
+                                  {b.equipment?.brandName && (
+                                    <div className="text-gray-400 text-[10px]">{b.equipment.brandName}</div>
+                                  )}
+                                </div>
                               </div>
+                              {b.status === 'pending' && (
+                                <div className="flex gap-1">
+                                  <button
+                                    onClick={() => handleApprove(b.id)}
+                                    className="p-1.5 bg-green-50 text-green-600 rounded hover:bg-green-600 hover:text-white transition"
+                                    title={`Approve ${b.equipment?.equipmentName}`}
+                                  >
+                                    <Check size={12} strokeWidth={3} />
+                                  </button>
+                                  <button
+                                    onClick={() => handleReject(b.id)}
+                                    className="p-1.5 bg-red-50 text-red-600 rounded hover:bg-red-600 hover:text-white transition"
+                                    title={`Reject ${b.equipment?.equipmentName}`}
+                                  >
+                                    <X size={12} strokeWidth={3} />
+                                  </button>
+                                </div>
+                              )}
+                              {b.status === 'approved' && (
+                                <span className="text-[10px] text-green-600 font-semibold">Approved</span>
+                              )}
+                              {b.status === 'rejected' && (
+                                <span className="text-[10px] text-red-600 font-semibold">Rejected</span>
+                              )}
                             </div>
                           ))}
                         </td>
@@ -539,26 +581,9 @@ const Approval = () => {
                           </td>
                         )}
 
-                        {/* Actions – one Approve/Reject per request (batch or single) */}
+                        {/* Actions – Show invoice if all approved, or batch actions if all pending */}
                         <td className="py-6 px-4">
-                          {status === 'pending' ? (
-                            <div className="flex gap-2">
-                              <button
-                                onClick={() => group.batchId ? handleBatchApprove(group.batchId) : handleApprove(row.id)}
-                                className="p-2 bg-green-50 text-green-600 rounded-lg hover:bg-green-600 hover:text-white transition"
-                                title="Approve"
-                              >
-                                <Check size={16} strokeWidth={3} />
-                              </button>
-                              <button
-                                onClick={() => group.batchId ? handleBatchReject(group.batchId) : handleReject(row.id)}
-                                className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-600 hover:text-white transition"
-                                title="Reject"
-                              >
-                                <X size={16} strokeWidth={3} />
-                              </button>
-                            </div>
-                          ) : status === 'approved' ? (
+                          {group.bookings.every(b => b.status === 'approved') ? (
                             <button
                               onClick={() => handleShowInvoice(group.bookings)}
                               className="flex items-center gap-1 p-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-600 hover:text-white transition text-[10px] font-bold"
@@ -567,11 +592,28 @@ const Approval = () => {
                               <Printer size={14} />
                               <span>Invoice</span>
                             </button>
+                          ) : group.bookings.every(b => b.status === 'pending') ? (
+                            <div className="flex flex-col gap-1">
+                              <button
+                                onClick={() => handleBatchApprove(group.batchId || row.id)}
+                                className="p-2 bg-green-50 text-green-600 rounded-lg hover:bg-green-600 hover:text-white transition text-[10px] font-bold"
+                                title="Approve All"
+                              >
+                                <Check size={14} />
+                                <span className="ml-1">Approve All</span>
+                              </button>
+                              <button
+                                onClick={() => handleBatchReject(group.batchId || row.id)}
+                                className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-600 hover:text-white transition text-[10px] font-bold"
+                                title="Reject All"
+                              >
+                                <X size={14} />
+                                <span className="ml-1">Reject All</span>
+                              </button>
+                            </div>
                           ) : (
                             <span className="text-gray-400 text-[10px] italic">
-                              {status === 'rejected' && 'Rejected'}
-                              {status === 'completed' && 'Completed'}
-                              {status === 'cancelled' && 'Cancelled'}
+                              Mixed status - use individual actions
                             </span>
                           )}
                         </td>

@@ -491,18 +491,47 @@ export const submitCart = async (req, res) => {
     let submitted = 0;
     const skipped = [];
 
+    // Helper function to convert time to minutes
+    const timeToMinutes = (t) => {
+      const s = String(t);
+      const [h, m] = s.split(":").map(Number);
+      return (h || 0) * 60 + (m || 0);
+    };
+
     for (const booking of draftBookings) {
-      const conflict = await EquipmentBooking.findOne({
+      // Check for time slot overlap conflicts
+      const newStartMin = timeToMinutes(booking.bookingTime);
+      const newDurationHours = parseFloat(booking.duration) || 1;
+      const newEndMin = newStartMin + Math.round(newDurationHours * 60);
+
+      // Find all existing bookings for this equipment on this date
+      const existingBookings = await EquipmentBooking.findAll({
         where: {
           equipmentId: booking.equipmentId,
           bookingDate: booking.bookingDate,
           status: { [Op.in]: ["pending", "approved"] },
           id: { [Op.ne]: booking.id },
         },
+        attributes: ["id", "bookingTime", "duration"],
       });
 
-      if (conflict) {
-        skipped.push({ id: booking.id, reason: "Slot already taken" });
+      // Check if the new booking overlaps with any existing booking
+      let hasConflict = false;
+      for (const existing of existingBookings) {
+        const existingStartMin = timeToMinutes(existing.bookingTime);
+        const existingDurationHours = parseFloat(existing.duration) || 1;
+        const existingEndMin = existingStartMin + Math.round(existingDurationHours * 60);
+        
+        // Check for overlap: newStart < existingEnd AND newEnd > existingStart
+        const overlaps = newStartMin < existingEndMin && newEndMin > existingStartMin;
+        if (overlaps) {
+          hasConflict = true;
+          break;
+        }
+      }
+
+      if (hasConflict) {
+        skipped.push({ id: booking.id, reason: "Time slot overlaps with existing booking" });
         continue;
       }
 
@@ -675,6 +704,15 @@ export const verifyQRCode = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: "QR code data does not match booking records",
+      });
+    }
+
+    // Check if booking is already verified
+    if (booking.verifiedAt) {
+      return res.status(400).json({
+        success: false,
+        message: "This booking has already been verified",
+        data: booking,
       });
     }
 

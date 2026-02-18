@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Html5Qrcode } from "html5-qrcode";
-import { CheckCircle, XCircle, Camera, Loader2, ShieldCheck } from "lucide-react";
+import { CheckCircle, XCircle, Camera, Loader2, ShieldCheck, ChevronDown, Upload, Image as ImageIcon } from "lucide-react";
 import { axiosInstance } from "../../lib/axios";
 import { toast } from "react-hot-toast";
 
@@ -11,8 +11,35 @@ export default function QRScanner() {
   const [scanning, setScanning] = useState(false);
   const [verifying, setVerifying] = useState(false);
   const [cameraError, setCameraError] = useState("");
+  const [availableCameras, setAvailableCameras] = useState([]);
+  const [selectedCameraId, setSelectedCameraId] = useState(null);
+  const [cameraLabel, setCameraLabel] = useState("");
+  const [showCameraSelector, setShowCameraSelector] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [previewImage, setPreviewImage] = useState(null);
   const html5QrcodeRef = useRef(null);
   const onScanSuccessRef = useRef(null);
+  const cameraSelectorRef = useRef(null);
+  const fileInputRef = useRef(null);
+  const scannedQRRef = useRef(null); // Track last scanned QR code to prevent duplicates
+  const scannedBookingIdRef = useRef(null); // Track booking ID to prevent duplicate verifications
+  const isProcessingRef = useRef(false); // Prevent multiple simultaneous scans
+
+  // Close camera selector when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (cameraSelectorRef.current && !cameraSelectorRef.current.contains(event.target)) {
+        setShowCameraSelector(false);
+      }
+    };
+
+    if (showCameraSelector) {
+      document.addEventListener("mousedown", handleClickOutside);
+      return () => {
+        document.removeEventListener("mousedown", handleClickOutside);
+      };
+    }
+  }, [showCameraSelector]);
 
   const stopScanning = () => {
     if (html5QrcodeRef.current && html5QrcodeRef.current.isScanning) {
@@ -30,6 +57,99 @@ export default function QRScanner() {
     setScanning(false);
     setScanResult(null);
     setCameraError("");
+  };
+
+  // Function to get cameras with labels using enumerateDevices
+  const getCamerasWithLabels = async () => {
+    try {
+      // First request permission to get device labels
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      // Stop the temporary stream
+      stream.getTracks().forEach(track => track.stop());
+      
+      // Now enumerate devices to get labels
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const videoDevices = devices.filter(device => device.kind === "videoinput");
+      
+      return videoDevices.map((device, index) => ({
+        id: device.deviceId,
+        label: device.label || `Camera ${index + 1}`,
+      }));
+    } catch (err) {
+      // Fallback to Html5Qrcode.getCameras if enumerateDevices fails
+      const cameras = await Html5Qrcode.getCameras();
+      return cameras.map((camera, index) => ({
+        id: camera.id,
+        label: camera.label || `Camera ${index + 1}`,
+      }));
+    }
+  };
+
+  // Function to find the best camera (Camo > Back > First available)
+  const findBestCamera = (cameras) => {
+    if (!cameras || cameras.length === 0) return null;
+
+    // Priority 1: Find Camo camera
+    const camoCamera = cameras.find((c) => {
+      const label = (c.label || "").toLowerCase();
+      return label.includes("camo");
+    });
+    if (camoCamera) return camoCamera;
+
+    // Priority 2: Find back camera (mobile)
+    const backCamera = cameras.find((c) => {
+      const label = (c.label || "").toLowerCase();
+      return label.includes("back") || 
+             label.includes("rear") || 
+             label.includes("environment") ||
+             label.includes("facing back");
+    });
+    if (backCamera) return backCamera;
+
+    // Priority 3: First available camera
+    return cameras[0];
+  };
+
+  // Function to start camera with specific camera ID
+  const startCameraWithId = async (cameraId, cameras) => {
+    const element = document.getElementById(QR_READER_ID);
+    if (!element) {
+      setScanning(false);
+      return;
+    }
+
+    const html5QrCode = new Html5Qrcode(QR_READER_ID);
+    html5QrcodeRef.current = html5QrCode;
+
+    // Better config for mobile devices
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    const config = {
+      fps: isMobile ? 5 : 10,
+      qrbox: isMobile 
+        ? { width: Math.min(300, window.innerWidth * 0.8), height: Math.min(300, window.innerWidth * 0.8) }
+        : { width: 250, height: 250 },
+      aspectRatio: 1.0,
+    };
+
+    await html5QrCode.start(
+      cameraId,
+      config,
+      (decodedText) => {
+        // Only process if callback is available and not already processing
+        if (!onScanSuccessRef.current || isProcessingRef.current) return;
+        // Prevent duplicate scans of the same QR code
+        if (scannedQRRef.current === decodedText) return;
+        onScanSuccessRef.current(decodedText);
+      },
+      () => {}
+    );
+
+    // Update camera label
+    const selectedCamera = cameras.find(c => c.id === cameraId);
+    if (selectedCamera) {
+      setCameraLabel(selectedCamera.label);
+      setSelectedCameraId(cameraId);
+    }
   };
 
   useEffect(() => {
@@ -54,62 +174,28 @@ export default function QRScanner() {
           return;
         }
 
-        // Request camera permission first
-        const cameras = await Html5Qrcode.getCameras();
+        // Get cameras with labels
+        const cameras = await getCamerasWithLabels();
         if (!mounted || !cameras || cameras.length === 0) {
           setCameraError("No camera found. Please ensure your device has a camera and allow camera access.");
           setScanning(false);
           return;
         }
 
-        // Prefer back camera on mobile, front camera on desktop
-        let cameraId = cameras[0].id;
-        if (cameras.length > 1) {
-          // Try to find back camera (mobile)
-          const backCamera = cameras.find((c) => {
-            const label = (c.label || "").toLowerCase();
-            return label.includes("back") || 
-                   label.includes("rear") || 
-                   label.includes("environment") ||
-                   label.includes("facing back");
-          });
-          
-          if (backCamera) {
-            cameraId = backCamera.id;
-          } else {
-            // On desktop, prefer the first camera
-            cameraId = cameras[0].id;
-          }
-        }
+        // Store available cameras
+        setAvailableCameras(cameras);
 
-        const element = document.getElementById(QR_READER_ID);
-        if (!element || !mounted) {
+        // Find best camera (Camo > Back > First)
+        const bestCamera = findBestCamera(cameras);
+        if (!bestCamera) {
+          setCameraError("No suitable camera found.");
           setScanning(false);
           return;
         }
 
-        html5QrCode = new Html5Qrcode(QR_READER_ID);
-        html5QrcodeRef.current = html5QrCode;
+        // Start camera with best camera
+        await startCameraWithId(bestCamera.id, cameras);
 
-        // Better config for mobile devices
-        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-        const config = {
-          fps: isMobile ? 5 : 10, // Lower FPS on mobile for better performance
-          qrbox: isMobile 
-            ? { width: Math.min(300, window.innerWidth * 0.8), height: Math.min(300, window.innerWidth * 0.8) }
-            : { width: 250, height: 250 },
-          aspectRatio: 1.0,
-        };
-
-        await html5QrCode.start(
-          cameraId,
-          config,
-          (decodedText) => {
-            if (!onScanSuccessRef.current) return;
-            onScanSuccessRef.current(decodedText);
-          },
-          () => {}
-        );
       } catch (err) {
         if (!mounted) return;
         console.error("Camera error:", err);
@@ -136,7 +222,10 @@ export default function QRScanner() {
                   cameras[0].id,
                   { fps: 10, qrbox: { width: 250, height: 250 } },
                   (decodedText) => {
-                    if (!onScanSuccessRef.current) return;
+                    // Only process if callback is available and not already processing
+                    if (!onScanSuccessRef.current || isProcessingRef.current) return;
+                    // Prevent duplicate scans of the same QR code
+                    if (scannedQRRef.current === decodedText) return;
                     onScanSuccessRef.current(decodedText);
                   },
                   () => {}
@@ -177,10 +266,47 @@ export default function QRScanner() {
   }, [scanning]);
 
   const handleScanSuccess = async (decodedText) => {
-    if (verifying) return;
+    // Prevent multiple scans of the same QR code or simultaneous processing
+    if (verifying || isProcessingRef.current) return;
+    
+    // Prevent scanning the same QR code multiple times
+    if (scannedQRRef.current === decodedText) {
+      return;
+    }
+
+    // Extract booking ID from QR code to check for duplicate bookings
     try {
+      const parsedData = typeof decodedText === "string" ? JSON.parse(decodedText) : decodedText;
+      const bookingId = parsedData?.bookingId;
+      
+      // Prevent scanning the same booking ID multiple times
+      if (bookingId && scannedBookingIdRef.current === bookingId) {
+        toast.error("This booking has already been scanned");
+        return;
+      }
+    } catch (e) {
+      // If parsing fails, continue with verification (backend will handle validation)
+    }
+
+    try {
+      // Mark as processing and store scanned QR
+      isProcessingRef.current = true;
+      scannedQRRef.current = decodedText;
+      
+      // Extract and store booking ID
+      try {
+        const parsedData = typeof decodedText === "string" ? JSON.parse(decodedText) : decodedText;
+        if (parsedData?.bookingId) {
+          scannedBookingIdRef.current = parsedData.bookingId;
+        }
+      } catch (e) {
+        // Ignore parsing errors here, backend will validate
+      }
+      
+      // Stop scanner immediately to prevent multiple scans
       setScanning(false);
       setVerifying(true);
+      
       if (html5QrcodeRef.current && html5QrcodeRef.current.isScanning) {
         await html5QrcodeRef.current.stop();
         html5QrcodeRef.current.clear();
@@ -198,21 +324,37 @@ export default function QRScanner() {
           message: res.data.message,
         });
         toast.success("Booking marked as verified!");
+        // Keep scannedQRRef set to prevent re-scanning the same QR code
+        // Only reset when user clicks "Scan Another"
       } else {
         setScanResult({
           success: false,
           message: res.data?.message || "Verification failed",
         });
         toast.error(res.data?.message || "Verification failed");
+        // Reset scanned QR on failure so user can retry
+        scannedQRRef.current = null;
+        scannedBookingIdRef.current = null;
       }
     } catch (err) {
+      const errorMessage = err.response?.data?.message || "Failed to verify QR code";
       setScanResult({
         success: false,
-        message: err.response?.data?.message || "Failed to verify QR code",
+        message: errorMessage,
       });
-      toast.error(err.response?.data?.message || "Failed to verify QR code");
+      toast.error(errorMessage);
+      
+      // If already verified error, keep the scanned QR reference to prevent re-scanning
+      if (errorMessage.includes("already been verified")) {
+        // Keep scannedQRRef and scannedBookingIdRef set to prevent re-scanning
+      } else {
+        // Reset scanned QR on other errors so user can retry
+        scannedQRRef.current = null;
+        scannedBookingIdRef.current = null;
+      }
     } finally {
       setVerifying(false);
+      isProcessingRef.current = false;
     }
   };
 
@@ -221,12 +363,149 @@ export default function QRScanner() {
   const startScanning = () => {
     setScanResult(null);
     setCameraError("");
+    scannedQRRef.current = null; // Reset scanned QR when starting new scan
+    scannedBookingIdRef.current = null; // Reset booking ID when starting new scan
+    isProcessingRef.current = false; // Reset processing flag
     setScanning(true);
   };
 
   const reset = () => {
     stopScanning();
     setScanResult(null);
+    setSelectedCameraId(null);
+    setCameraLabel("");
+    setUploadingImage(false);
+    scannedQRRef.current = null; // Reset scanned QR
+    scannedBookingIdRef.current = null; // Reset booking ID
+    isProcessingRef.current = false; // Reset processing flag
+    if (previewImage) {
+      URL.revokeObjectURL(previewImage);
+    }
+    setPreviewImage(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const switchCamera = async (newCameraId) => {
+    if (!scanning || !html5QrcodeRef.current) return;
+
+    try {
+      // Stop current scanner
+      if (html5QrcodeRef.current.isScanning) {
+        await html5QrcodeRef.current.stop();
+        html5QrcodeRef.current.clear();
+      }
+
+      // Start with new camera
+      await startCameraWithId(newCameraId, availableCameras);
+      setShowCameraSelector(false);
+      toast.success("Camera switched successfully");
+    } catch (err) {
+      console.error("Camera switch error:", err);
+      toast.error("Failed to switch camera. Please try again.");
+    }
+  };
+
+  // Function to scan QR code from uploaded image
+  const scanImageFile = async (file) => {
+    if (!file) return;
+
+    try {
+      setUploadingImage(true);
+      setPreviewImage(URL.createObjectURL(file));
+
+      // Ensure the QR reader element exists (create hidden one if needed)
+      let element = document.getElementById(QR_READER_ID);
+      if (!element) {
+        element = document.createElement('div');
+        element.id = QR_READER_ID;
+        element.style.display = 'none';
+        document.body.appendChild(element);
+      }
+
+      // Create Html5Qrcode instance for file scanning
+      const html5QrCode = new Html5Qrcode(QR_READER_ID);
+      
+      // Scan the file
+      const decodedText = await html5QrCode.scanFile(file, true);
+      
+      // Clean up the Html5Qrcode instance
+      html5QrCode.clear();
+      
+      // Process the scanned QR code
+      if (decodedText) {
+        await handleScanSuccess(decodedText);
+        // Clean up preview image after successful scan
+        if (previewImage) {
+          URL.revokeObjectURL(previewImage);
+        }
+        setPreviewImage(null);
+      } else {
+        toast.error("Could not read QR code from image. Please try another image.");
+        setUploadingImage(false);
+        if (previewImage) {
+          URL.revokeObjectURL(previewImage);
+        }
+        setPreviewImage(null);
+      }
+    } catch (err) {
+      console.error("Image scan error:", err);
+      let errorMsg = "Failed to scan QR code from image.";
+      
+      if (err?.message?.includes("No QR code found") || err?.message?.includes("QR code parse error")) {
+        errorMsg = "No QR code found in the image. Please ensure the image contains a clear QR code.";
+      } else if (err?.message?.includes("file format") || err?.message?.includes("Invalid")) {
+        errorMsg = "Invalid image format. Please upload a valid image file (PNG, JPG, etc.).";
+      }
+      
+      toast.error(errorMsg);
+      setUploadingImage(false);
+      if (previewImage) {
+        URL.revokeObjectURL(previewImage);
+      }
+      setPreviewImage(null);
+    }
+  };
+
+  // Handle file input change
+  const handleFileChange = (event) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        toast.error("Please select an image file.");
+        return;
+      }
+      
+      // Validate file size (max 10MB)
+      if (file.size > 10 * 1024 * 1024) {
+        toast.error("Image size should be less than 10MB.");
+        return;
+      }
+      
+      scanImageFile(file);
+    }
+    
+    // Reset file input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  // Handle drag and drop
+  const handleDrop = (event) => {
+    event.preventDefault();
+    const file = event.dataTransfer.files?.[0];
+    if (file && file.type.startsWith('image/')) {
+      scanImageFile(file);
+    } else {
+      toast.error("Please drop an image file.");
+    }
+  };
+
+  const handleDragOver = (event) => {
+    event.preventDefault();
   };
 
   const formatDate = (dateString) => {
@@ -255,7 +534,7 @@ export default function QRScanner() {
         )}
       </div>
 
-      {!scanning && !scanResult && (
+      {!scanning && !scanResult && !uploadingImage && (
         <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
           <div className="text-center py-8">
             <Camera className="w-16 h-16 text-gray-300 mx-auto mb-4" />
@@ -263,15 +542,65 @@ export default function QRScanner() {
               Ready to scan
             </h3>
             <p className="text-gray-600 mb-6">
-              Click the button below to start. You may be asked to allow camera access.
+              Scan QR codes using your camera or upload an image containing a QR code.
             </p>
-            <button
-              onClick={startScanning}
-              className="inline-flex items-center gap-2 px-6 py-3 bg-teal-600 text-white rounded-lg font-medium hover:bg-teal-700 transition-colors"
+            <div className="flex flex-col sm:flex-row gap-3 justify-center items-center">
+              <button
+                onClick={startScanning}
+                className="inline-flex items-center gap-2 px-6 py-3 bg-teal-600 text-white rounded-lg font-medium hover:bg-teal-700 transition-colors"
+              >
+                <Camera className="w-5 h-5" />
+                Start Camera Scanner
+              </button>
+              <div className="relative">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileChange}
+                  className="hidden"
+                  id="qr-image-upload"
+                />
+                <label
+                  htmlFor="qr-image-upload"
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors cursor-pointer"
+                >
+                  <Upload className="w-5 h-5" />
+                  Upload QR Image
+                </label>
+              </div>
+            </div>
+            <div
+              onDrop={handleDrop}
+              onDragOver={handleDragOver}
+              className="mt-6 p-8 border-2 border-dashed border-gray-300 rounded-lg hover:border-teal-500 transition-colors"
             >
-              <Camera className="w-5 h-5" />
-              Start Scanner
-            </button>
+              <ImageIcon className="w-12 h-12 text-gray-400 mx-auto mb-2" />
+              <p className="text-sm text-gray-600 mb-1">
+                Or drag and drop an image here
+              </p>
+              <p className="text-xs text-gray-400">
+                Supports PNG, JPG, JPEG (Max 10MB)
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {uploadingImage && (
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+          <div className="flex flex-col items-center justify-center py-8">
+            {previewImage && (
+              <div className="mb-6 max-w-md">
+                <img
+                  src={previewImage}
+                  alt="QR Code preview"
+                  className="max-w-full h-auto rounded-lg border border-gray-200"
+                />
+              </div>
+            )}
+            <Loader2 className="w-10 h-10 text-teal-600 animate-spin mb-4" />
+            <p className="text-gray-600">Scanning QR code from image...</p>
           </div>
         </div>
       )}
@@ -279,20 +608,84 @@ export default function QRScanner() {
       {scanning && (
         <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">Scanning...</h3>
-            <button
-              onClick={stopScanning}
-              className="px-4 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50"
-            >
-              Stop Scanner
-            </button>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+                <h3 className="text-lg font-semibold text-gray-900">Scanning...</h3>
+              </div>
+              {cameraLabel && (
+                <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                  {cameraLabel}
+                </span>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              {availableCameras.length > 1 && (
+                <div className="relative" ref={cameraSelectorRef}>
+                  <button
+                    onClick={() => setShowCameraSelector(!showCameraSelector)}
+                    className="flex items-center gap-1 px-3 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50"
+                  >
+                    <Camera className="w-4 h-4" />
+                    Switch Camera
+                    <ChevronDown className={`w-4 h-4 transition-transform ${showCameraSelector ? 'rotate-180' : ''}`} />
+                  </button>
+                  {showCameraSelector && (
+                    <div className="absolute right-0 mt-2 w-56 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
+                      <div className="py-1">
+                        {availableCameras.map((camera) => (
+                          <button
+                            key={camera.id}
+                            onClick={() => switchCamera(camera.id)}
+                            className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 flex items-center justify-between ${
+                              selectedCameraId === camera.id ? 'bg-teal-50 text-teal-700' : 'text-gray-700'
+                            }`}
+                          >
+                            <span>{camera.label}</span>
+                            {selectedCameraId === camera.id && (
+                              <CheckCircle className="w-4 h-4" />
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+              <button
+                onClick={stopScanning}
+                className="px-4 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50"
+              >
+                Stop Scanner
+              </button>
+            </div>
           </div>
           {cameraError && (
             <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-sm text-red-800">
               {cameraError}
             </div>
           )}
-          <div id={QR_READER_ID} className="w-full min-h-[250px]" />
+          <div className="relative w-full flex justify-center">
+            <div className="relative inline-block w-full max-w-2xl">
+              {/* Scanner frame overlay */}
+              <div className="absolute inset-0 pointer-events-none z-10">
+                <div className="absolute top-0 left-0 w-12 h-12 border-t-4 border-l-4 border-teal-500 rounded-tl-lg"></div>
+                <div className="absolute top-0 right-0 w-12 h-12 border-t-4 border-r-4 border-teal-500 rounded-tr-lg"></div>
+                <div className="absolute bottom-0 left-0 w-12 h-12 border-b-4 border-l-4 border-teal-500 rounded-bl-lg"></div>
+                <div className="absolute bottom-0 right-0 w-12 h-12 border-b-4 border-r-4 border-teal-500 rounded-br-lg"></div>
+              </div>
+              {/* Scanning line animation */}
+              <div className="absolute top-0 left-0 right-0 h-1 bg-teal-500 opacity-50 animate-pulse z-10"></div>
+              <div 
+                id={QR_READER_ID} 
+                className="w-full min-h-[400px] rounded-lg overflow-hidden bg-black"
+                style={{ position: 'relative' }}
+              />
+            </div>
+          </div>
+          <p className="text-center text-sm text-gray-500 mt-4">
+            Position the QR code within the frame
+          </p>
         </div>
       )}
 
