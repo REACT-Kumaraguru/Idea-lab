@@ -1,5 +1,6 @@
 import { generateToken } from "../lib/utils.js";
 import Admin from "../models/AdminModel.js";
+import { sequelize } from "../lib/db.js";
 import bcrypt from "bcryptjs";
 
 export const login = async (req, res) => {
@@ -95,6 +96,91 @@ export const createAdmin = async (req, res) => {
     });
   } catch (error) {
     console.error("Error in createAdmin:", error);
+    res.status(500).json({ message: error.message || "Internal Server Error" });
+  }
+};
+
+// @desc    List all admins (no passwords)
+// @route   GET /api/admin/list
+// @access  Private/Admin
+export const listAdmins = async (req, res) => {
+  try {
+    const admins = await Admin.findAll({
+      attributes: [
+        "id",
+        "fullName",
+        "email",
+        [sequelize.col("created_at"), "createdAt"],
+      ],
+      order: [["created_at", "DESC"]],
+    });
+
+    res.status(200).json({
+      success: true,
+      data: admins,
+    });
+  } catch (error) {
+    console.error("Error in listAdmins:", error);
+    res.status(500).json({ message: error.message || "Internal Server Error" });
+  }
+};
+
+// @desc    Change an admin's password
+// @route   PUT /api/admin/:id/password
+// @access  Private/Admin
+export const changeAdminPassword = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { newPassword } = req.body;
+
+    if (!newPassword || newPassword.length < 6) {
+      return res.status(400).json({ message: "New password must be at least 6 characters" });
+    }
+
+    const admin = await Admin.findByPk(id);
+    if (!admin) {
+      return res.status(404).json({ message: "Admin not found" });
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(newPassword, salt);
+    await admin.update({ password: hashedPassword });
+
+    res.status(200).json({
+      success: true,
+      message: "Password updated successfully",
+    });
+  } catch (error) {
+    console.error("Error in changeAdminPassword:", error);
+    res.status(500).json({ message: error.message || "Internal Server Error" });
+  }
+};
+
+// @desc    Delete an admin
+// @route   DELETE /api/admin/:id
+// @access  Private/Admin
+export const deleteAdmin = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const currentAdminId = req.user.id;
+
+    if (Number(id) === Number(currentAdminId)) {
+      return res.status(400).json({ message: "You cannot delete your own account" });
+    }
+
+    const admin = await Admin.findByPk(id);
+    if (!admin) {
+      return res.status(404).json({ message: "Admin not found" });
+    }
+
+    await admin.destroy();
+
+    res.status(200).json({
+      success: true,
+      message: "Admin deleted successfully",
+    });
+  } catch (error) {
+    console.error("Error in deleteAdmin:", error);
     res.status(500).json({ message: error.message || "Internal Server Error" });
   }
 };

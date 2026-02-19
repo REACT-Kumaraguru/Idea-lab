@@ -5,7 +5,7 @@ import KctLogo from "../assets/kctlogo.png";
 import { Link } from "react-router-dom";
 
 
-const sections = ["about", "facilities", "activities", "benefits", "contact"];
+const sections = ["about", "facilities", "activities", "benefits","People", "contact"];
 
 const Header = () => {
   const [scrolled, setScrolled] = useState(false);

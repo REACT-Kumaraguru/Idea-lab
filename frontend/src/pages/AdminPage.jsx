@@ -1,12 +1,8 @@
-import React from 'react'
-import { Sidebar } from '../components/AdminCom/SideBar'
+import React from "react";
+import AdminDashboard from "../components/AdminCom/AdminDashboard";
 
 const AdminPage = () => {
-  return (
-    <div>
-      
-    </div>
-  )
-}
+  return <AdminDashboard />;
+};
 
-export default AdminPage
+export default AdminPage;

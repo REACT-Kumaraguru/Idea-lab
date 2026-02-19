@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Users, Clock, FileCheck, FileX, Download, Check, X, Printer, Search, FileText, ShieldCheck } from 'lucide-react';
+import { Users, Clock, FileCheck, FileX, Download, Check, X, Printer, Search, FileText, ShieldCheck, RefreshCw } from 'lucide-react';
 import { useAuthStore } from '../../../store/useAuthStore';
 import InvoiceModal from './PDFformat'; // Import the invoice modal
 
@@ -395,12 +395,23 @@ const Approval = () => {
         {/* Header */}
         <div className="flex justify-between items-center mb-10">
           <h2 className="text-2xl font-extrabold text-slate-800 tracking-tight">Booking Approval</h2>
-          <button 
-            onClick={exportToCSV}
-            className="flex items-center gap-2 px-5 py-2 border-2 border-blue-500 text-blue-600 rounded-lg hover:bg-blue-50 transition font-bold text-sm"
-          >
-            <Download size={18} /> Export List
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={fetchBookings}
+              disabled={loading}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+            >
+              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+              Refresh
+            </button>
+            <button 
+              onClick={exportToCSV}
+              className="flex items-center gap-2 px-5 py-2 border-2 border-blue-500 text-blue-600 rounded-lg hover:bg-blue-50 transition font-bold text-sm"
+            >
+              <Download size={18} /> Export List
+            </button>
+          </div>
         </div>
 
         {/* Search Bar - Only show on History tab */}
