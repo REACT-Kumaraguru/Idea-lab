@@ -20,8 +20,8 @@ app.use(cookieParser());
 app.use(
   cors({
     origin: [
-      "http://localhost:5173",  // Vite dev server
-      "http://localhost:3000",  // Dockerized frontend
+      "http://213.210.37.189:5173",  // Vite dev server
+      "http://213.210.37.189:3000",  // Dockerized frontend
     ],
     credentials: true,
   })
@@ -43,7 +43,7 @@ const startServer = async () => {
   const HOST = process.env.HOST || "0.0.0.0"; // Listen on all network interfaces
   app.listen(ENV.PORT, HOST, () => {
     console.log(`Server is running on http://${HOST}:${ENV.PORT}`);
-    console.log(`Local access: http://localhost:${ENV.PORT}`);
+    console.log(`Local access: http://213.210.37.189:${ENV.PORT}`);
   });
 };
 

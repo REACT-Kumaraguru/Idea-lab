@@ -44,8 +44,8 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        # URL the browser uses to call the API (e.g. http://localhost:5001 when both run on same host)
-        VITE_API_URL: ${VITE_API_URL:-http://localhost:5001}
+        # URL the browser uses to call the API (e.g. http://213.210.37.189:5001 when both run on same host)
+        VITE_API_URL: ${VITE_API_URL:-http://213.210.37.189:5001}
     ports:
       - "5173:80"
     depends_on:

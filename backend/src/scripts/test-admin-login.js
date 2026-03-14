@@ -4,7 +4,7 @@ import axios from 'axios';
 const testLogin = async () => {
   try {
     console.log("Testing Admin Login...");
-    const response = await axios.post('http://localhost:5001/api/admin/login', {
+    const response = await axios.post('http://213.210.37.189:5001/api/admin/login', {
       email: 'admin@example.com',
       password: 'adminpassword'
     });

@@ -161,13 +161,14 @@ export default function QRScanner() {
 
     const startCamera = async () => {
       try {
-        // Check if HTTPS or localhost
+        // Check if HTTPS or localhost or server IP
         const isSecure = window.location.protocol === "https:" || 
                          window.location.hostname === "localhost" || 
-                         window.location.hostname === "127.0.0.1";
+                         window.location.hostname === "127.0.0.1" ||
+                         window.location.hostname === "213.210.37.189";
         
         if (!isSecure) {
-          const msg = "Camera requires HTTPS or localhost. Access via https:// or use localhost.";
+          const msg = "Camera requires HTTPS or a trusted host (localhost / 213.210.37.189). Access via https:// or use a supported host.";
           setCameraError(msg);
           setScanning(false);
           toast.error(msg);
@@ -234,14 +235,15 @@ export default function QRScanner() {
               }
             }
           } catch (fallbackErr) {
-            msg = "Could not access camera. Ensure HTTPS or localhost and allow camera permission.";
+            msg = "Could not access camera. Ensure HTTPS or a trusted host and allow camera permission.";
           }
         } else {
           const isSecure = window.location.protocol === "https:" || 
                            window.location.hostname === "localhost" || 
-                           window.location.hostname === "127.0.0.1";
+                           window.location.hostname === "127.0.0.1" ||
+                           window.location.hostname === "213.210.37.189";
           if (!isSecure) {
-            msg = "Camera requires HTTPS or localhost. Access via https:// or use localhost.";
+            msg = "Camera requires HTTPS or a trusted host (localhost / 213.210.37.189). Access via https:// or use a supported host.";
           } else {
             msg = `Camera error: ${err?.message || "Unknown error"}. Ensure camera permission is granted.`;
           }
@@ -525,10 +527,11 @@ export default function QRScanner() {
         </p>
         {window.location.protocol !== "https:" && 
          window.location.hostname !== "localhost" && 
-         window.location.hostname !== "127.0.0.1" && (
+         window.location.hostname !== "127.0.0.1" &&
+         window.location.hostname !== "213.210.37.189" && (
           <div className="mt-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
             <p className="text-xs text-yellow-800">
-              ⚠️ <strong>Camera requires HTTPS:</strong> Access via <code className="bg-yellow-100 px-1 rounded">https://</code> or use <code className="bg-yellow-100 px-1 rounded">localhost</code> for camera to work.
+              ⚠️ <strong>Camera requires HTTPS:</strong> Access via <code className="bg-yellow-100 px-1 rounded">https://</code> or use <code className="bg-yellow-100 px-1 rounded">localhost</code> / <code className="bg-yellow-100 px-1 rounded">213.210.37.189</code> for camera to work.
             </p>
           </div>
         )}
