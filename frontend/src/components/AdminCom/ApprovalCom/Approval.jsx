@@ -2,10 +2,10 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Users, Clock, FileCheck, FileX, Download, Check, X, Printer, Search, FileText, ShieldCheck, RefreshCw } from 'lucide-react';
 import { useAuthStore } from '../../../store/useAuthStore';
 import InvoiceModal from './PDFformat'; // Import the invoice modal
+import { API_BASE } from '../../../lib/config.js';
 
 const Approval = () => {
-  // ===== API CONFIGURATION =====
-  const API_BASE_URL = 'http://localhost:5001/api';
+  const API_BASE_URL = `${API_BASE}/api`;
   
   // Get authenticated user from Zustand store
   const authUser = useAuthStore((state) => state.authUser);

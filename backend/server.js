@@ -10,6 +10,7 @@ import cookieParser from "cookie-parser";
 import { setupAssociations } from './src/models/associations.js';
 import cors from "cors";
 import { connectDB } from "./src/lib/db.js";
+import { ensureDefaultAdmin } from "./src/scripts/ensureDefaultAdmin.js";
 
 const app = express();
 
@@ -18,7 +19,10 @@ app.use(express.urlencoded({ extended: true, limit: "50mb" }));
 app.use(cookieParser());
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: [
+      "http://localhost:5173",  // Vite dev server
+      "http://localhost:3000",  // Dockerized frontend
+    ],
     credentials: true,
   })
 );
@@ -35,6 +39,7 @@ app.use("/src/uploads", express.static("src/uploads"));
 
 const startServer = async () => {
   await connectDB();
+  await ensureDefaultAdmin();
   const HOST = process.env.HOST || "0.0.0.0"; // Listen on all network interfaces
   app.listen(ENV.PORT, HOST, () => {
     console.log(`Server is running on http://${HOST}:${ENV.PORT}`);

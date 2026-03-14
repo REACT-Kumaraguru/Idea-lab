@@ -3,6 +3,7 @@ import Navbar from "./Navbar";
 import { Trash2, MapPin, Users, Calendar, Clock } from "lucide-react";
 import { useBookingStore } from "../store/useBookingStore";
 import { axiosInstance } from "../lib/axios";
+import { getImageUrl } from "../lib/config.js";
 
 const Cart = ({ cart = [], setCart = () => {} }) => {
   const { bookings, fetchMyBookings, isFetchingBookings, submitCart, isSubmittingCart } = useBookingStore();
@@ -14,12 +15,6 @@ const Cart = ({ cart = [], setCart = () => {} }) => {
     fetchMyBookings();
   }, [fetchMyBookings]);
 
-  // Helper to get full image URL (matches Listing.jsx)
-  const getImageUrl = (imagePath) => {
-    if (!imagePath) return null;
-    if (imagePath.startsWith("http")) return imagePath;
-    return `http://localhost:5001/${imagePath}`;
-  };
 
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString("en-US", {

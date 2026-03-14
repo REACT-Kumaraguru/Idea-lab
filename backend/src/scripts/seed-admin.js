@@ -7,10 +7,10 @@ const seedAdmin = async () => {
   try {
     await connectDB();
 
-    const email = "admin@example.com";
-    const password = "adminpassword"; // Change this!
-    const fullName = "Super Admin";
-    const phoneNumber = "1234567890";
+    const email = "idealab@kct.ac.in";
+    const password = "idealab-kct";
+    const fullName = "Idea Lab Admin";
+    const phoneNumber = "0000000000";
 
     const existingAdmin = await Admin.findOne({ where: { email } });
     if (existingAdmin) {

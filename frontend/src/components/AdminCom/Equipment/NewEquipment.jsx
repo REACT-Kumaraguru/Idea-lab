@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useEquipmentStore } from '../../../store/useEquipmentStore';
+import { getImageUrl } from '../../../lib/config.js';
 
 export default function NewEquipment() {
   const location = useLocation();
@@ -34,7 +35,7 @@ export default function NewEquipment() {
         isAvailable: editingEquipment.isAvailable
       });
       if (editingEquipment.image) {
-        setImagePreview(`http://localhost:5001/${editingEquipment.image}`);
+        setImagePreview(getImageUrl(editingEquipment.image));
       }
     }
   }, [editingEquipment]);

@@ -8,6 +8,7 @@ import {
   Filter
 } from 'lucide-react';
 import { useEquipmentStore } from '../../../store/useEquipmentStore';
+import { getImageUrl } from '../../../lib/config.js';
 
 const Equipment = () => {
   const navigate = useNavigate();
@@ -109,7 +110,7 @@ const Equipment = () => {
                     <tr key={item.id} className="hover:bg-gray-50/50 transition-colors group">
                       <td className="px-6 py-4">
                         {item.image ? (
-                          <img src={`http://localhost:5001/${item.image}`} alt={item.equipmentName} className="w-10 h-10 object-cover rounded-md" />
+                          <img src={getImageUrl(item.image)} alt={item.equipmentName} className="w-10 h-10 object-cover rounded-md" />
                         ) : (
                           <div className="w-10 h-10 bg-gray-200 rounded-md flex items-center justify-center text-gray-400 text-xs">No Img</div>
                         )}

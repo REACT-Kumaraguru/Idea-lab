@@ -20,7 +20,7 @@ const Header = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  return (
+  return (  
     <>
       <motion.header
         animate={{

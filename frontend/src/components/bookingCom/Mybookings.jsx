@@ -4,6 +4,7 @@ import { QRCodeSVG } from "qrcode.react";
 import Navbar from "../Navbar";
 import { useBookingStore } from "../../store/useBookingStore";
 import { axiosInstance } from "../../lib/axios";
+import { getImageUrl } from "../../lib/config.js";
 import InvoiceModal from "../AdminCom/ApprovalCom/PDFformat";
 
 const STATUS_OPTIONS = [
@@ -98,11 +99,6 @@ const MyBookings = () => {
     setDateFilter("all");
   };
 
-  const getImageUrl = (imagePath) => {
-    if (!imagePath) return null;
-    if (imagePath.startsWith("http")) return imagePath;
-    return `http://localhost:5001/${imagePath}`;
-  };
 
   const handleCancelBooking = async (bookingId) => {
     if (!window.confirm("Are you sure you want to cancel this booking?")) {

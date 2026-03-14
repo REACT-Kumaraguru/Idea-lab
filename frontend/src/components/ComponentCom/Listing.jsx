@@ -5,6 +5,7 @@ import EquipmentBooking from "../bookingCom/EquipmentBooking";
 import { Calendar, Users, MapPin, AlertCircle } from "lucide-react";
 import { toast } from "react-hot-toast";
 import axios from "axios";
+import { API_BASE, getImageUrl as getImageUrlFromConfig } from "../../lib/config.js";
 
 const Listing = ({ cart, setCart }) => {
 
@@ -30,7 +31,7 @@ const Listing = ({ cart, setCart }) => {
       setLoading(true);
       setError("");
 
-      const response = await axios.get("http://localhost:5001/api/equipment");
+      const response = await axios.get(`${API_BASE}/api/equipment`);
 
       // Handle response - it returns array directly or data object
       const equipmentData = Array.isArray(response.data)
@@ -46,14 +47,7 @@ const Listing = ({ cart, setCart }) => {
     }
   };
 
-  // Helper function to get full image URL
-  const getImageUrl = (imagePath) => {
-    if (!imagePath) return null;
-    // If it's already a full URL, return as is
-    if (imagePath.startsWith('http')) return imagePath;
-    // Otherwise, construct the full URL
-    return `http://localhost:5001/${imagePath}`;
-  };
+  const getImageUrl = getImageUrlFromConfig;
 
   // Filter equipment
   const filteredEquipment = labEquipment.filter((item) => {
