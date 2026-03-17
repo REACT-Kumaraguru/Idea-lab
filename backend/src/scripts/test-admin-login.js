@@ -1,16 +1,21 @@
 
-import axios from 'axios';
+import axios from "axios";
+
+const API_BASE = process.env.API_BASE || "http://idealab.kct.ac.in/api";
 
 const testLogin = async () => {
   try {
     console.log("Testing Admin Login...");
-    const response = await axios.post('http://213.210.37.189:5001/api/admin/login', {
-      email: 'admin@example.com',
-      password: 'adminpassword'
+    const response = await axios.post(`${API_BASE}/admin/login`, {
+      email: "admin@example.com",
+      password: "adminpassword",
     });
     console.log("Login Successful:", response.data);
   } catch (error) {
-    console.error("Login Failed:", error.response ? error.response.data : error.message);
+    console.error(
+      "Login Failed:",
+      error.response ? error.response.data : error.message
+    );
   }
 };
 

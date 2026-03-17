@@ -161,14 +161,14 @@ export default function QRScanner() {
 
     const startCamera = async () => {
       try {
-        // Check if HTTPS or localhost or server IP
+        // Check if HTTPS or localhost or production domain
         const isSecure = window.location.protocol === "https:" || 
                          window.location.hostname === "localhost" || 
                          window.location.hostname === "127.0.0.1" ||
-                         window.location.hostname === "213.210.37.189";
+                         window.location.hostname === "idealab.kct.ac.in";
         
         if (!isSecure) {
-          const msg = "Camera requires HTTPS or a trusted host (localhost / 213.210.37.189). Access via https:// or use a supported host.";
+          const msg = "Camera requires HTTPS or a trusted host (localhost / idealab.kct.ac.in). Access via https:// or use a supported host.";
           setCameraError(msg);
           setScanning(false);
           toast.error(msg);
@@ -241,9 +241,9 @@ export default function QRScanner() {
           const isSecure = window.location.protocol === "https:" || 
                            window.location.hostname === "localhost" || 
                            window.location.hostname === "127.0.0.1" ||
-                           window.location.hostname === "213.210.37.189";
+                           window.location.hostname === "idealab.kct.ac.in";
           if (!isSecure) {
-            msg = "Camera requires HTTPS or a trusted host (localhost / 213.210.37.189). Access via https:// or use a supported host.";
+            msg = "Camera requires HTTPS or a trusted host (localhost / idealab.kct.ac.in). Access via https:// or use a supported host.";
           } else {
             msg = `Camera error: ${err?.message || "Unknown error"}. Ensure camera permission is granted.`;
           }
