@@ -1,13 +1,24 @@
-import "dotenv/config";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 export const ENV = {
-  PORT: process.env.PORT || 3000,
+  PORT: process.env.PORT || 5001,
+
   DATABASE_URL: process.env.DATABASE_URL,
+  DB_HOST: process.env.DB_HOST,
+  DB_USER: process.env.DB_USER,
+  DB_PASSWORD: process.env.DB_PASSWORD,
+  DB_NAME: process.env.DB_NAME,
+
+  JWT_SECRET: process.env.JWT_SECRET,
+  NODE_ENV: process.env.NODE_ENV || "development",
+
+  CLIENT_URL: process.env.CLIENT_URL || "http://localhost:5173",
+
   CLERK_PUBLISHABLE_KEY: process.env.CLERK_PUBLISHABLE_KEY,
   CLERK_SECRET_KEY: process.env.CLERK_SECRET_KEY,
-  JWT_SECRET: process.env.JWT_SECRET,
-  NODE_ENV: process.env.NODE_ENV,
-  // Email (Nodemailer) - use no-reply sender; Gmail requires App Password for SMTP_PASS
+
   MAIL_FROM: process.env.MAIL_FROM || "Idea Lab <reactkumaraguru@gmail.com>",
   SMTP_HOST: process.env.SMTP_HOST,
   SMTP_PORT: process.env.SMTP_PORT ? Number(process.env.SMTP_PORT) : 587,

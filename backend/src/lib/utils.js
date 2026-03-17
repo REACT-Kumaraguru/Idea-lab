@@ -2,7 +2,7 @@ import jwt from "jsonwebtoken";
 import { ENV } from "./env.js";
 
 export const generateToken = (userId, res) => {
-  const { JWT_SECRET, NODE_ENV } = ENV; // Destructure from ENV
+  const { JWT_SECRET, NODE_ENV } = ENV;
   if (!JWT_SECRET) {
     throw new Error("JWT_SECRET is not configured");
   }
@@ -12,14 +12,11 @@ export const generateToken = (userId, res) => {
   });
 
   res.cookie("jwt", token, {
-    maxAge: 7 * 24 * 60 * 60 * 1000, // MS
-    httpOnly: true, // prevent XSS attacks: cross-site scripting
-    sameSite: "lax", // CSRF attacks
-    secure: process.env.NODE_ENV === "development" ? false : true,
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+    httpOnly: true,
+    sameSite: "lax",
+    secure: NODE_ENV === "production",
   });
 
   return token;
 };
-
-// http://213.210.37.189
-// https://dsmakmk.com

@@ -1,8 +1,11 @@
 /**
- * API base URL (origin, no trailing slash).
- * Set VITE_API_URL when building for production (e.g. https://api.yourdomain.com).
+ * API base URL (origin + /api, no trailing slash after /api).
+ * Example: http://idealab.kct.ac.in/api
+ *
+ * MUST be provided via Vite env:
+ * VITE_API_URL=http://idealab.kct.ac.in/api
  */
-export const API_BASE = import.meta.env.VITE_API_URL || "http://213.210.37.189:5001";
+export const API_BASE = import.meta.env.VITE_API_URL;
 
 export function getImageUrl(imagePath) {
   if (!imagePath) return null;
