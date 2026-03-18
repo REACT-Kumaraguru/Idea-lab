@@ -29,6 +29,11 @@ const User = sequelize.define(
       unique: true,
       field: "phone_number",
     },
+    role: {
+      type: DataTypes.ENUM("student", "external"),
+      allowNull: false,
+      defaultValue: "student",
+    },
   },
   {
     tableName: "users",

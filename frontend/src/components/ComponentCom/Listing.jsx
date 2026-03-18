@@ -4,8 +4,8 @@ import Sidebar from "../Sidebar";
 import EquipmentBooking from "../bookingCom/EquipmentBooking";
 import { Calendar, Users, MapPin, AlertCircle } from "lucide-react";
 import { toast } from "react-hot-toast";
-import axios from "axios";
-import { API_BASE, getImageUrl as getImageUrlFromConfig } from "../../lib/config.js";
+import { getImageUrl as getImageUrlFromConfig } from "../../lib/config.js";
+import { axiosInstance } from "../../lib/axios.js";
 
 const Listing = ({ cart, setCart }) => {
 
@@ -31,7 +31,7 @@ const Listing = ({ cart, setCart }) => {
       setLoading(true);
       setError("");
 
-      const response = await axios.get(`${API_BASE}/api/equipment`);
+      const response = await axiosInstance.get("/equipment");
 
       // Handle response - it returns array directly or data object
       const equipmentData = Array.isArray(response.data)

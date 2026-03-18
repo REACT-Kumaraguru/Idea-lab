@@ -17,7 +17,7 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
           script: |
-            cd /opt/idea-lab/Idea-lab
+            cd /opt/Idea-lab
             git pull
             docker compose down
             docker compose up --build -d

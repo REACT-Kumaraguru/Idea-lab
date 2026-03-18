@@ -23,6 +23,7 @@ services:
       - ./backend/.env
     environment:
       DATABASE_URL: postgres://idea_lab:idea_lab_secret@postgres:5432/idea_lab
+      SESSION_SECRET: ${SESSION_SECRET:-change-me-in-production}
     depends_on:
       postgres:
         condition: service_healthy
@@ -36,7 +37,7 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        VITE_API_URL: ${VITE_API_URL:-http://idealab.kct.ac.in/api}
+        VITE_API_URL: ${VITE_API_URL:-http://idealab.kct.ac.in}
     ports:
       - "80:80"
     depends_on:

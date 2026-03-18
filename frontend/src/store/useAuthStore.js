@@ -58,8 +58,7 @@ export const useAuthStore = create((set, get) => ({
 
   logout: async () => {
     try {
-      // Determine logout route based on current role (optional, but safe to try both or just auth one if they share cookie)
-      // Since cookie name 'jwt' is shared, hitting any logout endpoint that clears cookie works.
+      // User and admin sessions both clear the shared session cookie on logout.
       await axiosInstance.post("/auth/logout");
       set({ authUser: null });
       toast.success("Logged out successfully");

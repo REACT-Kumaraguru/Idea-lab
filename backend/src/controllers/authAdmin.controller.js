@@ -1,4 +1,3 @@
-import { generateToken } from "../lib/utils.js";
 import Admin from "../models/AdminModel.js";
 import { sequelize } from "../lib/db.js";
 import bcrypt from "bcryptjs";
@@ -17,7 +16,11 @@ export const login = async (req, res) => {
       return res.status(400).json({ message: "Invalid credentials" });
     }
 
-    generateToken(admin.id, res);
+    req.session.user = {
+      id: admin.id,
+      role: "admin",
+      email: admin.email,
+    };
 
     res.status(200).json({
       id: admin.id,
@@ -34,8 +37,13 @@ export const login = async (req, res) => {
 
 export const logout = (req, res) => {
   try {
-    res.cookie("jwt", "", { maxAge: 0 });
-    res.status(200).json({ message: "Logged out successfully" });
+    req.session.destroy((error) => {
+      if (error) {
+        return res.status(500).json({ message: "Failed to destroy session" });
+      }
+      res.clearCookie("connect.sid");
+      res.status(200).json({ success: true });
+    });
   } catch (error) {
     console.log("Error in admin logout controller", error.message);
     res.status(500).json({ message: "Internal Server Error" });

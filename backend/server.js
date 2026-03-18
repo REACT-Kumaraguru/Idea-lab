@@ -1,6 +1,8 @@
 import express from "express";
-import cookieParser from "cookie-parser";
 import cors from "cors";
+import helmet from "helmet";
+import session from "express-session";
+import connectPgSimple from "connect-pg-simple";
 
 import { ENV } from "./src/lib/env.js";
 import authRoutes from "./src/routes/auth.route.js";
@@ -13,17 +15,50 @@ import { connectDB } from "./src/lib/db.js";
 import { ensureDefaultAdmin } from "./src/scripts/ensureDefaultAdmin.js";
 
 const app = express();
+const PgSession = connectPgSimple(session);
 
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ extended: true, limit: "50mb" }));
-app.use(cookieParser());
+app.use(helmet());
 
-const allowedOrigins = [ENV.CLIENT_URL].filter(Boolean);
+const allowedOrigins = (ENV.CLIENT_URL || "")
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
 
 app.use(
   cors({
     origin: allowedOrigins,
     credentials: true,
+  })
+);
+
+if (!ENV.SESSION_SECRET) {
+  throw new Error("SESSION_SECRET is not configured");
+}
+
+if (ENV.NODE_ENV === "production") {
+  app.set("trust proxy", 1);
+}
+
+app.use(
+  session({
+    store: new PgSession({
+      conObject: {
+        connectionString: ENV.DATABASE_URL,
+      },
+      tableName: "session",
+      createTableIfMissing: true,
+    }),
+    secret: ENV.SESSION_SECRET,
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+      secure: ENV.NODE_ENV === "production",
+      httpOnly: true,
+      sameSite: "lax",
+    },
   })
 );
 
