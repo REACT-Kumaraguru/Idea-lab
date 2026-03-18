@@ -37,9 +37,7 @@ if (!ENV.SESSION_SECRET) {
   throw new Error("SESSION_SECRET is not configured");
 }
 
-if (ENV.NODE_ENV === "production") {
-  app.set("trust proxy", 1);
-}
+app.set("trust proxy", 1);
 
 app.use(
   session({
@@ -55,7 +53,7 @@ app.use(
     saveUninitialized: false,
     cookie: {
       maxAge: 7 * 24 * 60 * 60 * 1000,
-      secure: ENV.NODE_ENV === "production",
+      secure: ENV.NODE_ENV === "production" && !ENV.CLIENT_URL?.includes("localhost"),
       httpOnly: true,
       sameSite: "lax",
     },

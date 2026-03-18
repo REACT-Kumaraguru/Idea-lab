@@ -57,13 +57,23 @@ export const useAuthStore = create((set, get) => ({
   },
 
   logout: async () => {
+    const { authUser } = get();
+    const primaryRoute = authUser?.role === "admin" ? "/admin/logout" : "/auth/logout";
+    const fallbackRoute = authUser?.role === "admin" ? "/auth/logout" : "/admin/logout";
+    let ok = false;
     try {
-      // User and admin sessions both clear the shared session cookie on logout.
-      await axiosInstance.post("/auth/logout");
+      await axiosInstance.post(primaryRoute);
+      ok = true;
+    } catch (err) {
+      try {
+        await axiosInstance.post(fallbackRoute);
+        ok = true;
+      } catch {
+        toast.error(err.response?.data?.message || "Error logging out");
+      }
+    } finally {
       set({ authUser: null });
-      toast.success("Logged out successfully");
-    } catch (error) {
-      toast.error(error.response?.data?.message || "Error logging out");
+      if (ok) toast.success("Logged out successfully");
     }
   },
 }));

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 
 import Header from "./components/Header";
@@ -31,6 +31,43 @@ function Home() {
       <Header />
       <Hero />
     </>
+  );
+}
+
+function LoginOrRedirect({ authUser }) {
+  const navigate = useNavigate();
+  const { logout } = useAuthStore();
+
+  if (!authUser) return <Login />;
+
+  const handleLogout = async () => {
+    await logout();
+    navigate("/login");
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-gray-50 to-blue-100 flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full text-center">
+        <h1 className="text-xl font-bold text-gray-900 mb-2">Already logged in</h1>
+        <p className="text-gray-600 mb-6">
+          You are signed in as <span className="font-medium">{authUser.email}</span>
+        </p>
+        <div className="flex flex-col gap-3">
+          <button
+            onClick={() => navigate(authUser.role === "admin" ? "/admin/equipment" : "/products")}
+            className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700"
+          >
+            Continue to {authUser.role === "admin" ? "Admin" : "Equipment"}
+          </button>
+          <button
+            onClick={handleLogout}
+            className="w-full border border-gray-300 text-gray-700 py-3 rounded-lg font-medium hover:bg-gray-50"
+          >
+            Logout and sign in with another account
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -71,15 +108,7 @@ function App() {
 
         <Route
           path="/login"
-          element={
-            !authUser ? (
-              <Login />
-            ) : authUser.role === "admin" ? (
-              <Navigate to="/admin/equipment" />
-            ) : (
-              <Navigate to="/products" />
-            )
-          }
+          element={<LoginOrRedirect authUser={authUser} />}
         />
 
         {/* User Protected Routes */}
@@ -96,7 +125,13 @@ function App() {
 
         <Route
           path="/cart"
-          element={<Cart cart={cart} setCart={setCart} />}
+          element={
+            authUser ? (
+              <Cart cart={cart} setCart={setCart} />
+            ) : (
+              <Navigate to="/login" />
+            )
+          }
         />
 
         <Route

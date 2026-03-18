@@ -2,11 +2,9 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Users, Clock, FileCheck, FileX, Download, Check, X, Printer, Search, FileText, ShieldCheck, RefreshCw } from 'lucide-react';
 import { useAuthStore } from '../../../store/useAuthStore';
 import InvoiceModal from './PDFformat'; // Import the invoice modal
-import { API_BASE } from '../../../lib/config.js';
+import { axiosInstance } from '../../../lib/axios.js';
 
 const Approval = () => {
-  const API_BASE_URL = `${API_BASE}/api`;
-  
   // Get authenticated user from Zustand store
   const authUser = useAuthStore((state) => state.authUser);
   
@@ -32,39 +30,8 @@ const Approval = () => {
     try {
       setLoading(true);
       
-      console.log('Fetching bookings from:', `${API_BASE_URL}/bookings`);
-      
-      const response = await fetch(`${API_BASE_URL}/bookings`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        credentials: 'include'
-      });
-
-      const contentType = response.headers.get('content-type');
-      
-      if (!response.ok) {
-        let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
-        
-        if (contentType && contentType.includes('application/json')) {
-          const errorData = await response.json();
-          errorMessage = errorData.message || errorMessage;
-        } else {
-          const textError = await response.text();
-          console.error('Server returned non-JSON response:', textError.substring(0, 200));
-        }
-        
-        throw new Error(errorMessage);
-      }
-
-      if (!contentType || !contentType.includes('application/json')) {
-        const text = await response.text();
-        console.error('Expected JSON but got:', text.substring(0, 200));
-        throw new Error('Server returned non-JSON response. Check console for details.');
-      }
-
-      const result = await response.json();
+      const response = await axiosInstance.get('/bookings');
+      const result = response.data;
       console.log('API Response:', result);
       
       if (result.success && Array.isArray(result.data)) {
@@ -166,156 +133,66 @@ const Approval = () => {
   // Approve booking
   const handleApprove = async (id) => {
     try {
-      console.log('Approving booking:', id);
-      
-      const response = await fetch(`${API_BASE_URL}/bookings/${id}/status`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        credentials: 'include',
-        body: JSON.stringify({ status: 'approved' })
-      });
-
-      const contentType = response.headers.get('content-type');
-      
-      if (!response.ok) {
-        let errorMessage = `Failed to approve booking (${response.status})`;
-        
-        if (contentType && contentType.includes('application/json')) {
-          const errorData = await response.json();
-          errorMessage = errorData.message || errorMessage;
-        }
-        
-        throw new Error(errorMessage);
-      }
-
-      if (contentType && contentType.includes('application/json')) {
-        const result = await response.json();
-        console.log('Approve response:', result);
-        
-        if (result.success || result.data) {
-          setRequests(requests.map(req => 
-            req.id === id ? { ...req, status: 'approved', updated_at: new Date().toISOString() } : req
-          ));
-          alert('✅ Booking approved successfully!');
-          // Refresh bookings to get updated status
-          fetchBookings();
-        }
-      } else {
-        setRequests(requests.map(req => 
+      const { data: result } = await axiosInstance.put(`/bookings/${id}/status`, { status: 'approved' });
+      if (result.success || result.data) {
+        setRequests(requests.map(req =>
           req.id === id ? { ...req, status: 'approved', updated_at: new Date().toISOString() } : req
         ));
         alert('✅ Booking approved successfully!');
+        fetchBookings();
       }
     } catch (error) {
       console.error('Error approving booking:', error);
-      alert(`❌ Failed to approve booking: ${error.message}`);
+      alert(`❌ Failed to approve booking: ${error.response?.data?.message || error.message}`);
     }
   };
 
   // Reject booking
   const handleReject = async (id) => {
     try {
-      console.log('Rejecting booking:', id);
-      
-      const response = await fetch(`${API_BASE_URL}/bookings/${id}/status`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        credentials: 'include',
-        body: JSON.stringify({ status: 'rejected' })
-      });
-
-      const contentType = response.headers.get('content-type');
-      
-      if (!response.ok) {
-        let errorMessage = `Failed to reject booking (${response.status})`;
-        
-        if (contentType && contentType.includes('application/json')) {
-          const errorData = await response.json();
-          errorMessage = errorData.message || errorMessage;
-        }
-        
-        throw new Error(errorMessage);
-      }
-
-      if (contentType && contentType.includes('application/json')) {
-        const result = await response.json();
-        console.log('Reject response:', result);
-        
-        if (result.success || result.data) {
-          setRequests(requests.map(req => 
-            req.id === id ? { ...req, status: 'rejected', updated_at: new Date().toISOString() } : req
-          ));
-          alert('✅ Booking rejected successfully!');
-          // Refresh bookings to get updated status
-          fetchBookings();
-        }
-      } else {
-        setRequests(requests.map(req => 
+      const { data: result } = await axiosInstance.put(`/bookings/${id}/status`, { status: 'rejected' });
+      if (result.success || result.data) {
+        setRequests(requests.map(req =>
           req.id === id ? { ...req, status: 'rejected', updated_at: new Date().toISOString() } : req
         ));
         alert('✅ Booking rejected successfully!');
+        fetchBookings();
       }
     } catch (error) {
       console.error('Error rejecting booking:', error);
-      alert(`❌ Failed to reject booking: ${error.message}`);
+      alert(`❌ Failed to reject booking: ${error.response?.data?.message || error.message}`);
     }
   };
 
   // Approve whole cart (batch) – one request
   const handleBatchApprove = async (batchId) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/bookings/batch/${encodeURIComponent(batchId)}/status`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ status: 'approved' }),
-      });
-      if (!response.ok) {
-        const err = await response.json().catch(() => ({}));
-        throw new Error(err.message || `Failed (${response.status})`);
-      }
-      const result = await response.json();
+      const { data: result } = await axiosInstance.put(`/bookings/batch/${encodeURIComponent(batchId)}/status`, { status: 'approved' });
       if (result.success && result.data) {
         const ids = result.data.map(b => b.id);
         setRequests(requests.map(req => ids.includes(req.id) ? { ...req, status: 'approved', updated_at: new Date().toISOString() } : req));
         alert('✅ Request approved successfully!');
-        // Refresh bookings to get updated status
         fetchBookings();
       }
     } catch (error) {
       console.error('Error approving batch:', error);
-      alert(`❌ Failed to approve request: ${error.message}`);
+      alert(`❌ Failed to approve request: ${error.response?.data?.message || error.message}`);
     }
   };
 
   // Reject whole cart (batch) – one request
   const handleBatchReject = async (batchId) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/bookings/batch/${encodeURIComponent(batchId)}/status`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ status: 'rejected' }),
-      });
-      if (!response.ok) {
-        const err = await response.json().catch(() => ({}));
-        throw new Error(err.message || `Failed (${response.status})`);
-      }
-      const result = await response.json();
+      const { data: result } = await axiosInstance.put(`/bookings/batch/${encodeURIComponent(batchId)}/status`, { status: 'rejected' });
       if (result.success && result.data) {
         const ids = result.data.map(b => b.id);
         setRequests(requests.map(req => ids.includes(req.id) ? { ...req, status: 'rejected', updated_at: new Date().toISOString() } : req));
         alert('✅ Request rejected.');
-        // Refresh bookings to get updated status
         fetchBookings();
       }
     } catch (error) {
       console.error('Error rejecting batch:', error);
-      alert(`❌ Failed to reject request: ${error.message}`);
+      alert(`❌ Failed to reject request: ${error.response?.data?.message || error.message}`);
     }
   };
 

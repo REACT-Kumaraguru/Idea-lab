@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Search, X, ShoppingCart, LogOut, User, Mail, Phone } from "lucide-react";
 import Logo from ".././assets/idea-lab.png";
 import { useBookingStore } from "../store/useBookingStore";
@@ -9,9 +9,15 @@ const Navbar = ({
   searchQuery = "",
   setSearchQuery = () => {},
 }) => {
+  const navigate = useNavigate();
   const bookings = useBookingStore((state) => state.bookings);
   const cartCount = (Array.isArray(bookings) ? bookings : []).filter((b) => b.status === "draft").length;
   const { logout, authUser } = useAuthStore();
+
+  const handleLogout = async () => {
+    await logout();
+    navigate("/login");
+  };
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const profileRef = useRef(null);
 
@@ -147,7 +153,7 @@ const Navbar = ({
                 {/* Logout Button */}
                 <div className="px-2 py-2">
                   <button
-                    onClick={logout}
+                    onClick={handleLogout}
                     className="w-full flex items-center gap-2 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                   >
                     <LogOut className="w-4 h-4" />

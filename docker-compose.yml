@@ -37,9 +37,9 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        VITE_API_URL: ${VITE_API_URL:-http://idealab.kct.ac.in}
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:5173}
     ports:
-      - "80:80"
+      - "5173:80"
     depends_on:
       - backend
 
