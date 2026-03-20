@@ -4,18 +4,39 @@ import HackathonSession from "../../models/hackathon/HackathonSessionModel.js";
 
 const createSessionRow = async (req, user) => {
   // Best-effort: session cookie/DB row might be created slightly after response.
+  const sessionId = req.sessionID || req.session?.id;
+  if (!sessionId) return;
+
   await HackathonSession.upsert({
-    sessionId: req.sessionID,
+    sessionId,
     userId: user.id,
     role: user.role,
   });
 };
 
 export const register = async (req, res) => {
-  const { fullName, email, password, phoneNumber, role } = req.body || {};
+  const {
+    name,
+    fullName,
+    email,
+    password,
+    phone,
+    phoneNumber,
+    degree,
+    branch,
+    graduation_year,
+    role,
+  } = req.body || {};
   try {
-    if (!fullName?.trim() || !email?.trim() || !password || !phoneNumber) {
-      return res.status(400).json({ message: "All fields are required" });
+    // Keep backwards compatibility with older client payloads
+    const resolvedName = (name || fullName || "").trim();
+    const resolvedPhone = String(phone ?? phoneNumber ?? "").trim();
+    const resolvedDegree = degree;
+    const resolvedBranch = branch ?? null;
+    const resolvedGraduationYear = graduation_year ?? null;
+
+    if (!resolvedName || !email?.trim() || !password || !resolvedPhone || !resolvedDegree || !resolvedGraduationYear) {
+      return res.status(400).json({ message: "Name, email, phone, degree, graduation year and password are required" });
     }
     if (password.length < 6) {
       return res.status(400).json({ message: "Password must be at least 6 characters" });
@@ -27,20 +48,40 @@ export const register = async (req, res) => {
       return res.status(403).json({ message: "Only students can register for hackathon" });
     }
 
+    if (!/^\d+$/.test(resolvedPhone)) {
+      return res.status(400).json({ message: "Phone must be a number" });
+    }
+
+    // Ensure degree is one of allowed options
+    if (!["BE", "BTech", "BSc"].includes(resolvedDegree)) {
+      return res.status(400).json({ message: "Invalid degree" });
+    }
+
+    const yearNum = Number(resolvedGraduationYear);
+    if (!Number.isInteger(yearNum)) {
+      return res.status(400).json({ message: "Invalid graduation year" });
+    }
+
     // Uniqueness checks
     const existingByEmail = await HackathonUser.findOne({ where: { email: email.trim() } });
     if (existingByEmail) return res.status(400).json({ message: "Email already exists" });
 
-    const existingByPhone = await HackathonUser.findOne({ where: { phoneNumber } });
+    const existingByPhone = await HackathonUser.findOne({ where: { phoneNumber: resolvedPhone } });
     if (existingByPhone) return res.status(400).json({ message: "Phone number already exists" });
 
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
     const user = await HackathonUser.create({
-      fullName: fullName.trim(),
+      // Populate both the legacy and new columns
+      fullName: resolvedName,
+      name: resolvedName,
       email: email.trim(),
-      phoneNumber,
+      phoneNumber: resolvedPhone,
+      phone: resolvedPhone,
+      degree: resolvedDegree,
+      branch: resolvedBranch ? String(resolvedBranch).trim() : null,
+      graduationYear: yearNum,
       password: hashedPassword,
       role: resolvedRole,
     });

@@ -12,9 +12,10 @@ import bookingRoutes from "./src/routes/Booking.routes.js";
 import problemStatementRoutes from "./src/routes/problemStatement.route.js";
 import hackathonRoutes from "./src/routes/hackathon/hackathon.route.js";
 import { setupAssociations } from "./src/models/associations.js";
-import { connectDB } from "./src/lib/db.js";
+import { connectDB, sequelize } from "./src/lib/db.js";
 import { ensureDefaultAdmin } from "./src/scripts/ensureDefaultAdmin.js";
 import { ensureDefaultHackathonAdmin } from "./src/scripts/ensureDefaultHackathonAdmin.js";
+import { ensureHackathonUserColumns } from "./src/scripts/ensureHackathonUserColumns.js";
 
 const app = express();
 const PgSession = connectPgSimple(session);
@@ -78,6 +79,7 @@ app.use("/src/uploads", express.static("src/uploads"));
 
 const startServer = async () => {
   await connectDB();
+  await ensureHackathonUserColumns({ sequelize });
   await ensureDefaultAdmin();
   await ensureDefaultHackathonAdmin();
   const HOST = process.env.HOST || "0.0.0.0";
