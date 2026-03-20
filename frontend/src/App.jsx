@@ -25,6 +25,26 @@ import ProblemSubmissionInfo from "./components/ProblemCom/ProblemSubmissionInfo
 import ProjectForm from "./components/ProblemCom/ProjectForm";
 import MySubmissions from "./components/ProblemCom/MySubmissions";
 
+// Hackathon module (isolated)
+import HackathonProtectedPage from "./components/hackathon/HackathonProtectedPage";
+import HackathonLanding from "./pages/hackathon/HackathonLanding";
+import HackathonLogin from "./pages/hackathon/HackathonLogin";
+import HackathonRegister from "./pages/hackathon/HackathonRegister";
+import HackathonProblems from "./pages/hackathon/HackathonProblems";
+import HackathonGuidelines from "./pages/hackathon/HackathonGuidelines";
+import HackathonDashboard from "./pages/hackathon/HackathonDashboard";
+import HackathonTeam from "./pages/hackathon/HackathonTeam";
+import HackathonCreateTeam from "./pages/hackathon/HackathonCreateTeam";
+import HackathonJoinTeam from "./pages/hackathon/HackathonJoinTeam";
+import HackathonSubmit from "./pages/hackathon/HackathonSubmit";
+import HackathonStatus from "./pages/hackathon/HackathonStatus";
+import HackathonAdminHome from "./pages/hackathon/HackathonAdminHome";
+import HackathonAdminTeams from "./pages/hackathon/HackathonAdminTeams";
+import HackathonAdminProblems from "./pages/hackathon/HackathonAdminProblems";
+import HackathonAdminSubmissions from "./pages/hackathon/HackathonAdminSubmissions";
+import HackathonAdminMentors from "./pages/hackathon/HackathonAdminMentors";
+import HackathonAdminWinners from "./pages/hackathon/HackathonAdminWinners";
+
 function Home() {
   return (
     <>
@@ -203,6 +223,111 @@ function App() {
       <Route path="qr-scanner" element={<QRScanner />} />
       <Route path="users" element={<AdminAccess />} />
     </Route>
+
+        {/* Hackathon module routes */}
+        <Route path="/hackathon" element={<HackathonLanding />} />
+        <Route path="/hackathon/login" element={<HackathonLogin />} />
+        <Route path="/hackathon/register" element={<HackathonRegister />} />
+        <Route path="/hackathon/problems" element={<HackathonProblems />} />
+        <Route path="/hackathon/guidelines" element={<HackathonGuidelines />} />
+
+        <Route
+          path="/hackathon/dashboard"
+          element={
+            <HackathonProtectedPage allowedRoles={["student", "mentor"]}>
+              <HackathonDashboard />
+            </HackathonProtectedPage>
+          }
+        />
+        <Route
+          path="/hackathon/team"
+          element={
+            <HackathonProtectedPage allowedRoles={["student"]}>
+              <HackathonTeam />
+            </HackathonProtectedPage>
+          }
+        />
+        <Route
+          path="/hackathon/create-team"
+          element={
+            <HackathonProtectedPage allowedRoles={["student"]}>
+              <HackathonCreateTeam />
+            </HackathonProtectedPage>
+          }
+        />
+        <Route
+          path="/hackathon/join-team"
+          element={
+            <HackathonProtectedPage allowedRoles={["student"]}>
+              <HackathonJoinTeam />
+            </HackathonProtectedPage>
+          }
+        />
+        <Route
+          path="/hackathon/submit"
+          element={
+            <HackathonProtectedPage allowedRoles={["student"]}>
+              <HackathonSubmit />
+            </HackathonProtectedPage>
+          }
+        />
+        <Route
+          path="/hackathon/status"
+          element={
+            <HackathonProtectedPage allowedRoles={["student", "mentor"]}>
+              <HackathonStatus />
+            </HackathonProtectedPage>
+          }
+        />
+
+        <Route
+          path="/hackathon/admin"
+          element={
+            <HackathonProtectedPage allowedRoles={["admin"]}>
+              <HackathonAdminHome />
+            </HackathonProtectedPage>
+          }
+        />
+        <Route
+          path="/hackathon/admin/teams"
+          element={
+            <HackathonProtectedPage allowedRoles={["admin"]}>
+              <HackathonAdminTeams />
+            </HackathonProtectedPage>
+          }
+        />
+        <Route
+          path="/hackathon/admin/problems"
+          element={
+            <HackathonProtectedPage allowedRoles={["admin"]}>
+              <HackathonAdminProblems />
+            </HackathonProtectedPage>
+          }
+        />
+        <Route
+          path="/hackathon/admin/submissions"
+          element={
+            <HackathonProtectedPage allowedRoles={["admin"]}>
+              <HackathonAdminSubmissions />
+            </HackathonProtectedPage>
+          }
+        />
+        <Route
+          path="/hackathon/admin/mentors"
+          element={
+            <HackathonProtectedPage allowedRoles={["admin"]}>
+              <HackathonAdminMentors />
+            </HackathonProtectedPage>
+          }
+        />
+        <Route
+          path="/hackathon/admin/winners"
+          element={
+            <HackathonProtectedPage allowedRoles={["admin"]}>
+              <HackathonAdminWinners />
+            </HackathonProtectedPage>
+          }
+        />
 
       </Routes>
 

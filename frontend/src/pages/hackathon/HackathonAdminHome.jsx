@@ -1,0 +1,37 @@
+import React from "react";
+import { Link } from "react-router-dom";
+
+const HackathonAdminHome = () => {
+  return (
+    <div>
+      <h2 className="text-2xl font-bold text-gray-900">Admin Panel</h2>
+      <p className="text-gray-600 mt-1">Manage hackathon problems, teams, mentors, and winners.</p>
+
+      <div className="mt-6 grid md:grid-cols-2 gap-5">
+        <Link to="/hackathon/admin/teams" className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm hover:shadow-md transition">
+          <div className="font-bold text-gray-900">Teams</div>
+          <div className="text-gray-600 mt-1">Approve teams and review membership.</div>
+        </Link>
+        <Link to="/hackathon/admin/problems" className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm hover:shadow-md transition">
+          <div className="font-bold text-gray-900">Problems</div>
+          <div className="text-gray-600 mt-1">Add and publish industry problems.</div>
+        </Link>
+        <Link to="/hackathon/admin/submissions" className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm hover:shadow-md transition">
+          <div className="font-bold text-gray-900">Submissions</div>
+          <div className="text-gray-600 mt-1">Review PoC / Prototype submissions.</div>
+        </Link>
+        <Link to="/hackathon/admin/mentors" className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm hover:shadow-md transition">
+          <div className="font-bold text-gray-900">Mentors</div>
+          <div className="text-gray-600 mt-1">Assign mentors to teams.</div>
+        </Link>
+        <Link to="/hackathon/admin/winners" className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm hover:shadow-md transition md:col-span-2">
+          <div className="font-bold text-gray-900">Winners</div>
+          <div className="text-gray-600 mt-1">Select winners and manage prize / seed money.</div>
+        </Link>
+      </div>
+    </div>
+  );
+};
+
+export default HackathonAdminHome;
+

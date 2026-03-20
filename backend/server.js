@@ -10,6 +10,7 @@ import adminAuthRoutes from "./src/routes/adminauth.route.js";
 import equipmentRoutes from "./src/routes/equipment.route.js";
 import bookingRoutes from "./src/routes/Booking.routes.js";
 import problemStatementRoutes from "./src/routes/problemStatement.route.js";
+import hackathonRoutes from "./src/routes/hackathon/hackathon.route.js";
 import { setupAssociations } from "./src/models/associations.js";
 import { connectDB } from "./src/lib/db.js";
 import { ensureDefaultAdmin } from "./src/scripts/ensureDefaultAdmin.js";
@@ -53,9 +54,9 @@ app.use(
     saveUninitialized: false,
     cookie: {
       maxAge: 7 * 24 * 60 * 60 * 1000,
-      secure: ENV.NODE_ENV === "production" && !ENV.CLIENT_URL?.includes("localhost"),
+      secure:  ENV.NODE_ENV === "production" && !ENV.CLIENT_URL?.includes("localhost"),
       httpOnly: true,
-      sameSite: "lax",
+      sameSite: "strict",
     },
   })
 );
@@ -67,6 +68,10 @@ app.use("/api/admin", adminAuthRoutes);
 app.use("/api/equipment", equipmentRoutes);
 app.use("/api/bookings", bookingRoutes);
 app.use("/api/problems", problemStatementRoutes);
+
+// Hackathon module (isolated, additive)
+app.use("/hackathon", hackathonRoutes);
+app.use("/api/hackathon", hackathonRoutes);
 
 app.use("/src/uploads", express.static("src/uploads"));
 

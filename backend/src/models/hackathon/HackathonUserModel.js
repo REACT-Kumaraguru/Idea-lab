@@ -1,0 +1,48 @@
+import { DataTypes } from "sequelize";
+import { sequelize } from "../../lib/db.js";
+
+const HackathonUser = sequelize.define(
+  "HackathonUser",
+  {
+    id: {
+      type: DataTypes.INTEGER,
+      primaryKey: true,
+      autoIncrement: true,
+    },
+    email: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      unique: true,
+    },
+    fullName: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      field: "full_name",
+    },
+    phoneNumber: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      unique: true,
+      field: "phone_number",
+    },
+    password: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    // Hackathon module roles (separate from the core app roles)
+    role: {
+      type: DataTypes.ENUM("student", "mentor", "admin"),
+      allowNull: false,
+      defaultValue: "student",
+    },
+  },
+  {
+    tableName: "hackathon_users",
+    timestamps: true,
+    createdAt: "created_at",
+    updatedAt: "updated_at",
+  }
+);
+
+export default HackathonUser;
+

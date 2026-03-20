@@ -1,0 +1,186 @@
+import React, { useEffect, useState } from "react";
+import { axiosInstance } from "../../lib/axios.js";
+
+const HackathonAdminMentors = () => {
+  const [teams, setTeams] = useState([]);
+  const [mentors, setMentors] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const [createMentor, setCreateMentor] = useState({
+    fullName: "",
+    email: "",
+    password: "",
+    phoneNumber: "",
+    expertise: "",
+  });
+
+  const [assign, setAssign] = useState({
+    teamId: "",
+    mentorUserId: "",
+  });
+
+  useEffect(() => {
+    const load = async () => {
+      setLoading(true);
+      try {
+        const [tRes, mRes] = await Promise.all([
+          axiosInstance.get("/hackathon/admin/teams"),
+          axiosInstance.get("/hackathon/admin/mentors"),
+        ]);
+        setTeams(tRes.data.teams || []);
+        setMentors(mRes.data.mentors || []);
+      } catch (e) {
+        setError(e.response?.data?.message || "Failed to load mentors/teams");
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, []);
+
+  const onCreateMentor = async (e) => {
+    e.preventDefault();
+    setError(null);
+    try {
+      await axiosInstance.post("/hackathon/admin/mentors", {
+        ...createMentor,
+        expertise: createMentor.expertise || null,
+      });
+      const res = await axiosInstance.get("/hackathon/admin/mentors");
+      setMentors(res.data.mentors || []);
+      setCreateMentor({ fullName: "", email: "", password: "", phoneNumber: "", expertise: "" });
+    } catch (e2) {
+      setError(e2.response?.data?.message || "Failed to create mentor");
+    }
+  };
+
+  const onAssignMentor = async (e) => {
+    e.preventDefault();
+    setError(null);
+    try {
+      await axiosInstance.post("/hackathon/admin/mentors/assign", assign);
+      // For this MVP, we just reload mentors list; teams assignment isn't currently shown in this page
+      const res = await axiosInstance.get("/hackathon/admin/teams");
+      setTeams(res.data.teams || []);
+    } catch (e2) {
+      setError(e2.response?.data?.message || "Failed to assign mentor");
+    }
+  };
+
+  if (loading) return <div className="text-gray-600">Loading...</div>;
+
+  return (
+    <div>
+      <h2 className="text-xl font-bold text-gray-900">Mentors</h2>
+      {error ? <div className="mt-3 text-sm text-red-600 font-medium">{error}</div> : null}
+
+      <div className="mt-5 grid lg:grid-cols-2 gap-5">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+          <h3 className="font-bold text-gray-900">Assign Mentor to Team</h3>
+          <form onSubmit={onAssignMentor} className="mt-4 space-y-3">
+            <div>
+              <label className="text-sm font-medium text-gray-800">Team</label>
+              <select
+                value={assign.teamId}
+                onChange={(e) => setAssign((p) => ({ ...p, teamId: e.target.value }))}
+                className="mt-2 w-full rounded-xl border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required
+              >
+                <option value="">Select team</option>
+                {teams.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.teamName} ({t.status})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="text-sm font-medium text-gray-800">Mentor</label>
+              <select
+                value={assign.mentorUserId}
+                onChange={(e) => setAssign((p) => ({ ...p, mentorUserId: e.target.value }))}
+                className="mt-2 w-full rounded-xl border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required
+              >
+                <option value="">Select mentor</option>
+                {mentors.map((m) => (
+                  <option key={m.userId} value={m.userId}>
+                    {m.user?.fullName || m.userId}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <button className="w-full px-4 py-2 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 transition">
+              Assign
+            </button>
+          </form>
+        </div>
+
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+          <h3 className="font-bold text-gray-900">Create Mentor Account</h3>
+          <form onSubmit={onCreateMentor} className="mt-4 space-y-3">
+            <input
+              value={createMentor.fullName}
+              onChange={(e) => setCreateMentor((p) => ({ ...p, fullName: e.target.value }))}
+              placeholder="Full Name"
+              required
+              className="w-full rounded-xl border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <input
+              value={createMentor.email}
+              onChange={(e) => setCreateMentor((p) => ({ ...p, email: e.target.value }))}
+              placeholder="Email"
+              type="email"
+              required
+              className="w-full rounded-xl border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <input
+              value={createMentor.phoneNumber}
+              onChange={(e) => setCreateMentor((p) => ({ ...p, phoneNumber: e.target.value }))}
+              placeholder="Phone Number"
+              required
+              className="w-full rounded-xl border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <input
+              value={createMentor.password}
+              onChange={(e) => setCreateMentor((p) => ({ ...p, password: e.target.value }))}
+              placeholder="Password"
+              type="password"
+              required
+              className="w-full rounded-xl border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <input
+              value={createMentor.expertise}
+              onChange={(e) => setCreateMentor((p) => ({ ...p, expertise: e.target.value }))}
+              placeholder="Expertise (optional)"
+              className="w-full rounded-xl border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <button className="w-full px-4 py-2 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 transition">
+              Create Mentor
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <div className="mt-5">
+        <h3 className="font-bold text-gray-900 mb-3">Existing Mentors</h3>
+        <div className="space-y-3">
+          {mentors.map((m) => (
+            <div key={m.userId} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+              <div className="font-semibold text-gray-900">{m.user?.fullName}</div>
+              <div className="text-sm text-gray-600">{m.user?.email}</div>
+              {m.expertise ? <div className="text-sm text-gray-700 mt-2">Expertise: {m.expertise}</div> : null}
+            </div>
+          ))}
+          {mentors.length === 0 ? <div className="text-gray-700">No mentors yet.</div> : null}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default HackathonAdminMentors;
+
