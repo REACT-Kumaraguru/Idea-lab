@@ -10,6 +10,8 @@ const HackathonSubmit = () => {
 
   const [problems, setProblems] = useState([]);
   const [loadingProblems, setLoadingProblems] = useState(true);
+  const [team, setTeam] = useState(null);
+  const [loadingTeam, setLoadingTeam] = useState(true);
 
   const [problemId, setProblemId] = useState(initialProblemId);
   const [phase, setPhase] = useState("poc");
@@ -19,6 +21,20 @@ const HackathonSubmit = () => {
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const loadTeam = async () => {
+      try {
+        const res = await axiosInstance.get("/hackathon/team");
+        setTeam(res.data.team);
+      } catch {
+        setTeam(null);
+      } finally {
+        setLoadingTeam(false);
+      }
+    };
+    loadTeam();
+  }, []);
 
   useEffect(() => {
     const load = async () => {
@@ -42,6 +58,11 @@ const HackathonSubmit = () => {
   const onSubmit = async (e) => {
     e.preventDefault();
     setError(null);
+    if (team?.status !== "approved") {
+      if (team?.status === "pending") return setError("Your team is pending admin approval.");
+      if (team?.status === "rejected") return setError("Your team was rejected. Submission is not allowed.");
+      return setError("Submission is not allowed for this team status.");
+    }
     setSubmitting(true);
     try {
       const fd = new FormData();
@@ -70,16 +91,32 @@ const HackathonSubmit = () => {
   };
 
   const selectedProblem = problems.find((p) => String(p.id) === String(problemId));
+  const canSubmit = team?.status === "approved";
 
   return (
     <div>
       <h2 className="text-2xl font-bold text-gray-900">Submit PoC / Prototype</h2>
       <p className="text-gray-600 mt-1">Submit files for the selected problem and phase.</p>
 
-      {loadingProblems ? (
+      {loadingProblems || loadingTeam ? (
         <div className="mt-6 text-gray-600">Loading problems...</div>
       ) : (
         <form onSubmit={onSubmit} className="mt-6 bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+          {!team ? (
+            <div className="mb-4 bg-blue-50 border border-blue-100 text-gray-700 rounded-xl p-4 text-sm">
+              You are not part of any team yet. Create or join a team first.
+            </div>
+          ) : null}
+          {team?.status === "pending" ? (
+            <div className="mb-4 bg-yellow-50 border border-yellow-100 text-gray-700 rounded-xl p-4 text-sm">
+              Your team is pending admin approval. Submission will be enabled after approval.
+            </div>
+          ) : null}
+          {team?.status === "rejected" ? (
+            <div className="mb-4 bg-red-50 border border-red-100 text-gray-700 rounded-xl p-4 text-sm">
+              Your team was rejected. Submission is disabled.
+            </div>
+          ) : null}
           <div className="grid md:grid-cols-2 gap-4">
             <div>
               <label className="text-sm font-medium text-gray-800">Problem</label>
@@ -88,6 +125,7 @@ const HackathonSubmit = () => {
                 onChange={(e) => setProblemId(e.target.value)}
                 required
                 className="mt-2 w-full rounded-xl border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                disabled={!canSubmit}
               >
                 <option value="">Select a problem</option>
                 {problems.map((p) => (
@@ -114,6 +152,7 @@ const HackathonSubmit = () => {
                   setFiles([]);
                 }}
                 className="mt-2 w-full rounded-xl border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                disabled={!canSubmit}
               >
                 <option value="poc">PoC</option>
                 <option value="prototype">Prototype</option>
@@ -153,6 +192,7 @@ const HackathonSubmit = () => {
               multiple
               onChange={(e) => setFiles(Array.from(e.target.files || []))}
               className="mt-2 block w-full text-sm text-gray-700"
+              disabled={!canSubmit}
             />
           </div>
 
@@ -160,7 +200,7 @@ const HackathonSubmit = () => {
 
           <button
             type="submit"
-            disabled={submitting}
+            disabled={submitting || !canSubmit}
             className="mt-5 w-full px-4 py-2 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 disabled:opacity-60 transition"
           >
             {submitting ? "Submitting..." : "Submit"}

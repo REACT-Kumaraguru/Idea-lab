@@ -21,9 +21,10 @@ export const register = async (req, res) => {
       return res.status(400).json({ message: "Password must be at least 6 characters" });
     }
 
+    // Role-based hackathon registration: only students can self-register.
     const resolvedRole = role || "student";
-    if (!["student", "mentor", "admin"].includes(resolvedRole)) {
-      return res.status(400).json({ message: "Invalid role" });
+    if (resolvedRole !== "student") {
+      return res.status(403).json({ message: "Only students can register for hackathon" });
     }
 
     // Uniqueness checks

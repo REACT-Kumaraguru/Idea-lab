@@ -68,14 +68,14 @@ const HackathonAdminTeams = () => {
                     <button
                       className="px-3 py-1 rounded-lg bg-blue-600 text-white text-xs font-semibold hover:bg-blue-700 transition"
                       onClick={() => setTeamStatus(t.id, "approved")}
-                      disabled={t.status === "approved"}
+                      disabled={t.status !== "pending"}
                     >
                       Approve
                     </button>
                     <button
                       className="px-3 py-1 rounded-lg border border-gray-300 text-gray-700 text-xs font-semibold hover:bg-gray-50 transition"
                       onClick={() => setTeamStatus(t.id, "rejected")}
-                      disabled={t.status === "rejected"}
+                      disabled={t.status !== "pending"}
                     >
                       Reject
                     </button>

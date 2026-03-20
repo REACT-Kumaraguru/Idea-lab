@@ -60,7 +60,7 @@ const HackathonAdminWinners = () => {
                 </div>
               </div>
               <div className="text-right">
-                {s.status === "winner" && s.winnerAmount ? (
+                {s.winnerAmount ? (
                   <div className="text-sm text-blue-700 font-semibold">
                     ₹{s.winnerAmount} prize
                   </div>
@@ -91,9 +91,9 @@ const HackathonAdminWinners = () => {
                 <button
                   onClick={() => selectWinner(s)}
                   className="w-full px-4 py-2 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 transition disabled:opacity-60"
-                  disabled={s.status === "winner"}
+                  disabled={s.status !== "approved" || !!s.winnerAmount}
                 >
-                  {s.status === "winner" ? "Selected" : "Select Winner"}
+                  {s.status === "approved" && s.winnerAmount ? "Selected" : "Select Winner"}
                 </button>
               </div>
             </div>

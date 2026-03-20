@@ -14,7 +14,6 @@ const HackathonMentor = sequelize.define(
       allowNull: false,
       unique: true,
       field: "user_id",
-      references: { model: "hackathon_users", key: "id" },
     },
     expertise: {
       type: DataTypes.TEXT,

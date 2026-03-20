@@ -42,7 +42,14 @@ export const getDashboard = async (req, res) => {
 
     const team = await HackathonTeam.findByPk(teamId, {
       attributes: ["id", "teamName", "inviteCode", "status", "leaderUserId"],
-      include: [{ model: HackathonUser, as: "leader", attributes: ["id", "fullName", "email"] }],
+      include: [
+        { model: HackathonUser, as: "leader", attributes: ["id", "fullName", "email"] },
+        {
+          model: HackathonTeamMember,
+          as: "members",
+          include: [{ model: HackathonUser, as: "member", attributes: ["id", "fullName", "email", "phoneNumber", "role"] }],
+        },
+      ],
     });
 
     const assignment = await HackathonTeamMentor.findOne({
@@ -63,6 +70,8 @@ export const getDashboard = async (req, res) => {
       order: [["created_at", "DESC"]],
     });
 
+    const latestSubmission = submissions?.[0] || null;
+
     return res.status(200).json({
       team: team
         ? {
@@ -71,9 +80,19 @@ export const getDashboard = async (req, res) => {
             inviteCode: team.inviteCode,
             status: team.status,
             leader: team.leader || null,
+            members: (team.members || []).map((m) => ({
+              id: m.id,
+              userId: m.userId,
+              isLeader: m.isLeader,
+              member: m.member || null,
+            })),
           }
         : null,
       mentor: assignment?.mentor?.user || null,
+      selectedProblem: latestSubmission?.problem
+        ? { id: latestSubmission.problem.id, title: latestSubmission.problem.title, sector: latestSubmission.problem.sector }
+        : null,
+      submissionStatus: latestSubmission?.status || null,
       submissions,
       problems,
     });

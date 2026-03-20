@@ -9,43 +9,76 @@ import HackathonTeamMentor from "./HackathonTeamMentorModel.js";
 
 export const setupHackathonAssociations = () => {
   // Sessions
-  HackathonSession.belongsTo(HackathonUser, { foreignKey: "userId", as: "user" });
+  HackathonSession.belongsTo(HackathonUser, {
+    foreignKey: { name: "userId", field: "user_id" },
+    as: "user",
+  });
 
   // Teams
   HackathonTeam.belongsTo(HackathonUser, {
-    foreignKey: "leaderUserId",
+    foreignKey: { name: "leaderUserId", field: "leader_user_id" },
     as: "leader",
   });
   HackathonUser.hasMany(HackathonTeam, {
-    foreignKey: "leaderUserId",
+    foreignKey: { name: "leaderUserId", field: "leader_user_id" },
     as: "ledTeams",
   });
 
   // Team members
-  HackathonTeam.hasMany(HackathonTeamMember, { foreignKey: "teamId", as: "members" });
-  HackathonTeamMember.belongsTo(HackathonTeam, { foreignKey: "teamId", as: "team" });
+  HackathonTeam.hasMany(HackathonTeamMember, {
+    foreignKey: { name: "teamId", field: "team_id" },
+    as: "members",
+  });
+  HackathonTeamMember.belongsTo(HackathonTeam, {
+    foreignKey: { name: "teamId", field: "team_id" },
+    as: "team",
+  });
 
   HackathonUser.hasMany(HackathonTeamMember, {
-    foreignKey: "userId",
+    foreignKey: { name: "userId", field: "user_id" },
     as: "teamMemberships",
   });
-  HackathonTeamMember.belongsTo(HackathonUser, { foreignKey: "userId", as: "member" });
+  HackathonTeamMember.belongsTo(HackathonUser, {
+    foreignKey: { name: "userId", field: "user_id" },
+    as: "member",
+  });
 
   // Submissions
-  HackathonSubmission.belongsTo(HackathonTeam, { foreignKey: "teamId", as: "team" });
-  HackathonSubmission.belongsTo(HackathonProblem, { foreignKey: "problemId", as: "problem" });
+  HackathonSubmission.belongsTo(HackathonTeam, {
+    foreignKey: { name: "teamId", field: "team_id" },
+    as: "team",
+  });
+  HackathonSubmission.belongsTo(HackathonProblem, {
+    foreignKey: { name: "problemId", field: "problem_id" },
+    as: "problem",
+  });
   HackathonSubmission.belongsTo(HackathonUser, {
-    foreignKey: "submittedByUserId",
+    foreignKey: { name: "submittedByUserId", field: "submitted_by_user_id" },
     as: "submittedBy",
   });
 
-  HackathonTeam.hasMany(HackathonSubmission, { foreignKey: "teamId", as: "submissions" });
-  HackathonProblem.hasMany(HackathonSubmission, { foreignKey: "problemId", as: "submissions" });
+  HackathonTeam.hasMany(HackathonSubmission, {
+    foreignKey: { name: "teamId", field: "team_id" },
+    as: "submissions",
+  });
+  HackathonProblem.hasMany(HackathonSubmission, {
+    foreignKey: { name: "problemId", field: "problem_id" },
+    as: "submissions",
+  });
 
   // Mentors
-  HackathonMentor.belongsTo(HackathonUser, { foreignKey: "userId", as: "user" });
-  HackathonTeamMentor.belongsTo(HackathonTeam, { foreignKey: "teamId", as: "team" });
-  HackathonTeamMentor.belongsTo(HackathonMentor, { foreignKey: "mentorId", as: "mentor" });
+  HackathonMentor.belongsTo(HackathonUser, {
+    foreignKey: { name: "userId", field: "user_id" },
+    as: "user",
+  });
+  HackathonTeamMentor.belongsTo(HackathonTeam, {
+    foreignKey: { name: "teamId", field: "team_id" },
+    as: "team",
+  });
+  HackathonTeamMentor.belongsTo(HackathonMentor, {
+    foreignKey: { name: "mentorId", field: "mentor_id" },
+    as: "mentor",
+  });
 };
 
 export {

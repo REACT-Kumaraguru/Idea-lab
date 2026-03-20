@@ -1,10 +1,18 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { axiosInstance } from "../../lib/axios.js";
+import { useHackathonAuthStore } from "../../store/useHackathonAuthStore";
 
 const HackathonDashboard = () => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const { hackathonUser } = useHackathonAuthStore();
+
+  const mapSubmissionStatus = (s) => {
+    if (!s) return null;
+    if (s === "submitted" || s === "under_review") return "pending";
+    return s;
+  };
 
   useEffect(() => {
     const load = async () => {
@@ -23,6 +31,8 @@ const HackathonDashboard = () => {
   if (loading) return <div className="text-gray-600">Loading...</div>;
 
   const team = data?.team;
+  const selectedProblem = data?.selectedProblem;
+  const submissionStatus = mapSubmissionStatus(data?.submissionStatus);
 
   return (
     <div>
@@ -33,18 +43,24 @@ const HackathonDashboard = () => {
         </div>
         {!team ? (
           <div className="flex gap-3">
-            <Link
-              to="/hackathon/create-team"
-              className="px-4 py-2 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 transition"
-            >
-              Create Team
-            </Link>
-            <Link
-              to="/hackathon/join-team"
-              className="px-4 py-2 rounded-xl border border-gray-300 bg-white text-gray-800 font-semibold hover:bg-gray-50 transition"
-            >
-              Join Team
-            </Link>
+            {hackathonUser?.role === "mentor" ? (
+              <div className="text-gray-700">No assigned team yet.</div>
+            ) : (
+              <>
+                <Link
+                  to="/hackathon/create-team"
+                  className="px-4 py-2 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 transition"
+                >
+                  Create Team
+                </Link>
+                <Link
+                  to="/hackathon/join-team"
+                  className="px-4 py-2 rounded-xl border border-gray-300 bg-white text-gray-800 font-semibold hover:bg-gray-50 transition"
+                >
+                  Join Team
+                </Link>
+              </>
+            )}
           </div>
         ) : null}
       </div>
@@ -65,6 +81,46 @@ const HackathonDashboard = () => {
               <div>
                 <span className="font-semibold">Invite Code:</span>{" "}
                 <span className="font-mono">{team.inviteCode}</span>
+              </div>
+
+              <div className="pt-2">
+                <div className="font-semibold mb-2">Members ({team.members?.length || 0})</div>
+                <div className="space-y-2">
+                  {(team.members || []).map((m) => (
+                    <div key={m.userId} className="p-3 rounded-xl border border-gray-100 bg-gray-50 flex items-start justify-between gap-3">
+                      <div>
+                        <div className="font-semibold text-gray-900">{m.member?.fullName || "Member"}</div>
+                        <div className="text-xs text-gray-600">{m.member?.email}</div>
+                      </div>
+                      {m.isLeader ? (
+                        <div className="px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-semibold whitespace-nowrap">
+                          Leader
+                        </div>
+                      ) : (
+                        <div className="px-3 py-1 rounded-full bg-gray-100 text-gray-700 text-xs font-semibold whitespace-nowrap">
+                          Member
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="pt-2">
+                <div className="font-semibold">Selected Problem</div>
+                <div className="text-gray-700 mt-1">
+                  {selectedProblem ? selectedProblem.title : "Not selected yet"}
+                </div>
+                {submissionStatus ? (
+                  <div className="mt-2 flex items-center gap-2">
+                    <span className="text-sm font-semibold">Submission:</span>
+                    <span className="px-3 py-1 rounded-full bg-gray-100 text-gray-700 text-xs font-semibold">
+                      {submissionStatus}
+                    </span>
+                  </div>
+                ) : (
+                  <div className="mt-2 text-sm text-gray-600">Submission: Not submitted yet</div>
+                )}
               </div>
             </div>
           )}
@@ -102,7 +158,9 @@ const HackathonDashboard = () => {
                     <div className="text-gray-600 text-sm">{s.title}</div>
                   </div>
                   <div className="text-sm font-semibold">
-                    <span className="px-3 py-1 rounded-full bg-gray-100 text-gray-700">{s.status}</span>
+                    <span className="px-3 py-1 rounded-full bg-gray-100 text-gray-700">
+                      {mapSubmissionStatus(s.status) || s.status}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -113,13 +171,27 @@ const HackathonDashboard = () => {
         )}
 
         <div className="mt-4 flex gap-3 flex-wrap">
-          <Link to="/hackathon/problems" className="px-4 py-2 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 transition">
-            Select Problem
-          </Link>
-          <Link to="/hackathon/submit" className="px-4 py-2 rounded-xl border border-gray-300 bg-white text-gray-800 font-semibold hover:bg-gray-50 transition">
-            Submit
-          </Link>
-          <Link to="/hackathon/status" className="px-4 py-2 rounded-xl border border-gray-300 bg-white text-gray-800 font-semibold hover:bg-gray-50 transition">
+          {hackathonUser?.role === "student" ? (
+            <>
+              <Link
+                to="/hackathon/problems"
+                className="px-4 py-2 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 transition"
+              >
+                Select Problem
+              </Link>
+              <Link
+                to="/hackathon/submit"
+                className="px-4 py-2 rounded-xl border border-gray-300 bg-white text-gray-800 font-semibold hover:bg-gray-50 transition"
+              >
+                Submit
+              </Link>
+            </>
+          ) : null}
+
+          <Link
+            to="/hackathon/status"
+            className="px-4 py-2 rounded-xl border border-gray-300 bg-white text-gray-800 font-semibold hover:bg-gray-50 transition"
+          >
             View Status
           </Link>
         </div>

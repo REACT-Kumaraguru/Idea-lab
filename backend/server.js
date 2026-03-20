@@ -14,6 +14,7 @@ import hackathonRoutes from "./src/routes/hackathon/hackathon.route.js";
 import { setupAssociations } from "./src/models/associations.js";
 import { connectDB } from "./src/lib/db.js";
 import { ensureDefaultAdmin } from "./src/scripts/ensureDefaultAdmin.js";
+import { ensureDefaultHackathonAdmin } from "./src/scripts/ensureDefaultHackathonAdmin.js";
 
 const app = express();
 const PgSession = connectPgSimple(session);
@@ -78,6 +79,7 @@ app.use("/src/uploads", express.static("src/uploads"));
 const startServer = async () => {
   await connectDB();
   await ensureDefaultAdmin();
+  await ensureDefaultHackathonAdmin();
   const HOST = process.env.HOST || "0.0.0.0";
   app.listen(ENV.PORT, HOST, () => {
     console.log(`Server is running on http://${HOST}:${ENV.PORT}`);

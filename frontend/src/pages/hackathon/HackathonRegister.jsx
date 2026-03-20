@@ -11,14 +11,12 @@ const HackathonRegister = () => {
   const [email, setEmail] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState("student");
 
   const onSubmit = async (e) => {
     e.preventDefault();
     try {
-      const user = await register({ fullName, email, phoneNumber, password, role });
-      if (user.role === "admin") navigate("/hackathon/admin");
-      else navigate("/hackathon/dashboard");
+      await register({ fullName, email, phoneNumber, password });
+      navigate("/hackathon/dashboard");
     } catch {
       // errors handled by store/toast
     }
@@ -72,20 +70,9 @@ const HackathonRegister = () => {
           />
         </div>
 
-        <div className="mb-5">
-          <label className="text-sm font-medium text-gray-800">Role</label>
-          <select
-            value={role}
-            onChange={(e) => setRole(e.target.value)}
-            className="mt-2 w-full rounded-xl border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="student">Student</option>
-            <option value="mentor">Mentor</option>
-            <option value="admin">Admin</option>
-          </select>
-          <div className="text-xs text-gray-500 mt-2">
-            Role-based access is controlled inside the hackathon module.
-          </div>
+        <div className="mb-5 text-sm text-gray-600">
+          Registration is for <span className="font-semibold text-gray-900">students</span> only.
+          Admin/mentor accounts are managed by the hackathon team.
         </div>
 
         <button

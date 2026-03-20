@@ -14,13 +14,11 @@ const HackathonTeamMentor = sequelize.define(
       allowNull: false,
       field: "team_id",
       unique: true, // One mentor assignment per team
-      references: { model: "hackathon_teams", key: "id" },
     },
     mentorId: {
       type: DataTypes.INTEGER,
       allowNull: false,
       field: "mentor_id",
-      references: { model: "hackathon_mentors", key: "id" },
     },
   },
   {

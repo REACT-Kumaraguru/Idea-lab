@@ -13,13 +13,11 @@ const HackathonTeamMember = sequelize.define(
       type: DataTypes.INTEGER,
       allowNull: false,
       field: "team_id",
-      references: { model: "hackathon_teams", key: "id" },
     },
     userId: {
       type: DataTypes.INTEGER,
       allowNull: false,
       field: "user_id",
-      references: { model: "hackathon_users", key: "id" },
       // Ensures: one team per user
       unique: true,
     },
@@ -35,13 +33,6 @@ const HackathonTeamMember = sequelize.define(
     timestamps: true,
     createdAt: "created_at",
     updatedAt: "updated_at",
-    indexes: [
-      {
-        name: "uq_team_member_team_user",
-        unique: true,
-        fields: ["teamId", "userId"],
-      },
-    ],
   }
 );
 

@@ -24,7 +24,6 @@ const HackathonTeam = sequelize.define(
       type: DataTypes.INTEGER,
       allowNull: false,
       field: "leader_user_id",
-      references: { model: "hackathon_users", key: "id" },
     },
     status: {
       type: DataTypes.ENUM("pending", "approved", "rejected"),

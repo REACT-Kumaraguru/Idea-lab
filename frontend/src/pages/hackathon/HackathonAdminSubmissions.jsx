@@ -8,6 +8,12 @@ const HackathonAdminSubmissions = () => {
 
   const [adminNotes, setAdminNotes] = useState({});
 
+  const mapSubmissionStatus = (s) => {
+    if (!s) return null;
+    if (s === "submitted" || s === "under_review") return "pending";
+    return s;
+  };
+
   useEffect(() => {
     const load = async () => {
       try {
@@ -53,7 +59,7 @@ const HackathonAdminSubmissions = () => {
                 <div className="text-sm text-gray-600">{s.title}</div>
                 <div className="mt-2 text-xs">
                   <span className="px-2 py-1 rounded-full bg-gray-100 text-gray-700 text-xs font-semibold">
-                    {s.status}
+                    {mapSubmissionStatus(s.status) || s.status}
                   </span>
                 </div>
               </div>
@@ -62,18 +68,14 @@ const HackathonAdminSubmissions = () => {
                 <button
                   className="px-3 py-1 rounded-lg bg-blue-600 text-white text-xs font-semibold hover:bg-blue-700 transition"
                   onClick={() => updateStatus(s.id, "approved")}
+                  disabled={s.status === "approved" || s.status === "rejected" || s.status === "winner"}
                 >
                   Approve
                 </button>
                 <button
-                  className="px-3 py-1 rounded-lg border border-gray-300 text-gray-700 text-xs font-semibold hover:bg-gray-50 transition"
-                  onClick={() => updateStatus(s.id, "under_review")}
-                >
-                  Under Review
-                </button>
-                <button
                   className="px-3 py-1 rounded-lg border border-red-200 text-red-700 text-xs font-semibold hover:bg-red-50 transition"
                   onClick={() => updateStatus(s.id, "rejected")}
+                  disabled={s.status === "approved" || s.status === "rejected" || s.status === "winner"}
                 >
                   Reject
                 </button>

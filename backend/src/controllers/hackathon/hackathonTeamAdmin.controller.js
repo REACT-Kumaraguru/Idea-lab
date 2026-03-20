@@ -43,6 +43,11 @@ export const adminSetTeamStatus = async (req, res) => {
     const team = await HackathonTeam.findByPk(req.params.id);
     if (!team) return res.status(404).json({ message: "Team not found" });
 
+    // Lock after admin decision
+    if (team.status !== "pending") {
+      return res.status(400).json({ message: "Team decision is already locked" });
+    }
+
     await team.update({ status });
     return res.status(200).json({ team });
   } catch (error) {

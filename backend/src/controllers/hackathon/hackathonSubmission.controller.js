@@ -34,7 +34,13 @@ export const submit = async (req, res) => {
     }
 
     if (team.status !== "approved") {
-      return res.status(400).json({ message: "Your team is not approved yet" });
+      if (team.status === "pending") {
+        return res.status(400).json({ message: "Your team is pending admin approval" });
+      }
+      if (team.status === "rejected") {
+        return res.status(403).json({ message: "Your team was rejected. Submission is not allowed." });
+      }
+      return res.status(400).json({ message: "Submission is not allowed for this team status" });
     }
 
     const problem = await HackathonProblem.findByPk(problemId);
@@ -66,7 +72,7 @@ export const submit = async (req, res) => {
       const updated = await existing.update({
         title: title.trim(),
         description: description?.trim() || null,
-        status: "submitted",
+        status: "pending",
         submittedByUserId: userId,
         // Update only the relevant phase file paths
         pocFilePaths: resolvedPhase === "poc" ? pocFilePaths : existing.pocFilePaths,
@@ -82,7 +88,7 @@ export const submit = async (req, res) => {
       submissionPhase: resolvedPhase,
       title: title.trim(),
       description: description?.trim() || null,
-      status: "submitted",
+      status: "pending",
       submittedByUserId: userId,
       pocFilePaths: resolvedPhase === "poc" ? pocFilePaths : [],
       prototypeFilePaths: resolvedPhase === "prototype" ? prototypeFilePaths : [],
@@ -162,12 +168,24 @@ export const adminListSubmissions = async (req, res) => {
 export const adminSetSubmissionStatus = async (req, res) => {
   const { status, adminNotes } = req.body || {};
   try {
-    if (!status || !["under_review", "approved", "rejected"].includes(status)) {
+    if (!status || !["approved", "rejected"].includes(status)) {
       return res.status(400).json({ message: "Invalid status" });
     }
 
-    const submission = await HackathonSubmission.findByPk(req.params.id);
+    const submission = await HackathonSubmission.findByPk(req.params.id, {
+      include: [{ model: HackathonTeam, as: "team", attributes: ["id", "status"] }],
+    });
     if (!submission) return res.status(404).json({ message: "Submission not found" });
+
+    // Lock: once approved/rejected, status cannot change again.
+    if (["approved", "rejected", "winner"].includes(submission.status)) {
+      return res.status(400).json({ message: "Submission decision is locked" });
+    }
+
+    // Only allow final decision after the team itself is approved.
+    if (submission.team?.status !== "approved") {
+      return res.status(400).json({ message: "Team must be approved before reviewing submissions" });
+    }
 
     await submission.update({
       status,
@@ -189,8 +207,12 @@ export const adminSelectWinner = async (req, res) => {
     const submission = await HackathonSubmission.findByPk(submissionId);
     if (!submission) return res.status(404).json({ message: "Submission not found" });
 
+    // Keep status locked (do not modify submission.status here).
+    if (submission.status !== "approved") {
+      return res.status(400).json({ message: "Only approved submissions can be selected as winners" });
+    }
+
     await submission.update({
-      status: "winner",
       winnerAmount: winnerAmount ?? null,
       seedMoneyAmount: seedMoneyAmount ?? null,
     });

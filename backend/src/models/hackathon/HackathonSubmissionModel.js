@@ -13,13 +13,11 @@ const HackathonSubmission = sequelize.define(
       type: DataTypes.INTEGER,
       allowNull: false,
       field: "team_id",
-      references: { model: "hackathon_teams", key: "id" },
     },
     problemId: {
       type: DataTypes.INTEGER,
       allowNull: false,
       field: "problem_id",
-      references: { model: "hackathon_problems", key: "id" },
     },
     submissionPhase: {
       type: DataTypes.ENUM("poc", "prototype"),
@@ -70,9 +68,9 @@ const HackathonSubmission = sequelize.define(
       },
     },
     status: {
-      type: DataTypes.ENUM("submitted", "under_review", "approved", "rejected", "winner"),
+      type: DataTypes.ENUM("pending", "submitted", "under_review", "approved", "rejected", "winner"),
       allowNull: false,
-      defaultValue: "submitted",
+      defaultValue: "pending",
     },
     winnerAmount: {
       type: DataTypes.DECIMAL(10, 2),
@@ -93,7 +91,6 @@ const HackathonSubmission = sequelize.define(
       type: DataTypes.INTEGER,
       allowNull: false,
       field: "submitted_by_user_id",
-      references: { model: "hackathon_users", key: "id" },
     },
   },
   {
@@ -101,13 +98,6 @@ const HackathonSubmission = sequelize.define(
     timestamps: true,
     createdAt: "created_at",
     updatedAt: "updated_at",
-    indexes: [
-      {
-        name: "uq_submission_team_problem_phase",
-        unique: true,
-        fields: ["teamId", "problemId", "submissionPhase"],
-      },
-    ],
   }
 );
 

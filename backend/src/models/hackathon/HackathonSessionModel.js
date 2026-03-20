@@ -19,7 +19,6 @@ const HackathonSession = sequelize.define(
       type: DataTypes.INTEGER,
       allowNull: false,
       field: "user_id",
-      references: { model: "hackathon_users", key: "id" },
     },
     role: {
       type: DataTypes.ENUM("student", "mentor", "admin"),

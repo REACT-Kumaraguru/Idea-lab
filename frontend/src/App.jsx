@@ -242,7 +242,7 @@ function App() {
         <Route
           path="/hackathon/team"
           element={
-            <HackathonProtectedPage allowedRoles={["student"]}>
+            <HackathonProtectedPage allowedRoles={["student", "mentor"]}>
               <HackathonTeam />
             </HackathonProtectedPage>
           }

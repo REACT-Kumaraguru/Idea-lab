@@ -1,7 +1,12 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
+import { useHackathonAuthStore } from "../../store/useHackathonAuthStore";
 
 const HackathonGuidelines = () => {
+  const { hackathonUser } = useHackathonAuthStore();
+  // Mentors should not view guidelines/problems (only assigned progress/team).
+  if (hackathonUser?.role === "mentor") return <Navigate to="/hackathon/status" replace />;
+
   return (
     <div className="max-w-4xl mx-auto">
       <h2 className="text-2xl font-bold text-gray-900">Hackathon Guidelines</h2>

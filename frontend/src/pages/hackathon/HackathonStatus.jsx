@@ -23,6 +23,11 @@ const HackathonStatus = () => {
 
   const team = data?.team;
   const submissions = data?.submissions || [];
+  const mapSubmissionStatus = (s) => {
+    if (!s) return null;
+    if (s === "submitted" || s === "under_review") return "pending";
+    return s;
+  };
 
   return (
     <div>
@@ -57,9 +62,9 @@ const HackathonStatus = () => {
                   </div>
                   <div>
                     <span className="px-3 py-1 rounded-full bg-gray-100 text-gray-700 text-xs font-semibold">
-                      {s.status}
+                      {mapSubmissionStatus(s.status) || s.status}
                     </span>
-                    {s.status === "winner" && s.winnerAmount ? (
+                    {s.winnerAmount ? (
                       <div className="text-xs text-blue-700 font-semibold mt-2">
                         Winner Prize: ₹{s.winnerAmount}
                       </div>

@@ -28,9 +28,8 @@ const HackathonLayout = ({ children }) => {
 
   const mentorNav = [
     { to: "/hackathon/dashboard", label: "Dashboard" },
+    { to: "/hackathon/team", label: "Team" },
     { to: "/hackathon/status", label: "Status" },
-    { to: "/hackathon/problems", label: "Problems" },
-    { to: "/hackathon/guidelines", label: "Guidelines" },
   ];
 
   const adminNav = [

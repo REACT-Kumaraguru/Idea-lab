@@ -1,10 +1,15 @@
 import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 import { axiosInstance } from "../../lib/axios.js";
+import { useHackathonAuthStore } from "../../store/useHackathonAuthStore";
 
 const HackathonProblems = () => {
   const [problems, setProblems] = useState([]);
   const [loading, setLoading] = useState(true);
+  const { hackathonUser } = useHackathonAuthStore();
+
+  // Mentors should not browse problems/guidelines; they only view assigned progress.
+  if (hackathonUser?.role === "mentor") return <Navigate to="/hackathon/status" replace />;
 
   useEffect(() => {
     const load = async () => {
