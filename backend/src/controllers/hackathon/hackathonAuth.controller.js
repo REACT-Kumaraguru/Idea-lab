@@ -31,7 +31,9 @@ export const register = async (req, res) => {
     // Keep backwards compatibility with older client payloads
     const resolvedName = (name || fullName || "").trim();
     const resolvedPhone = String(phone ?? phoneNumber ?? "").trim();
-    const resolvedDegree = degree;
+    const resolvedDegree = String(degree ?? "")
+      .trim()
+      .toUpperCase();
     const resolvedBranch = branch ?? null;
     const resolvedGraduationYear = graduation_year ?? null;
 
@@ -53,8 +55,8 @@ export const register = async (req, res) => {
     }
 
     // Ensure degree is one of allowed options
-    if (!["BE", "BTech", "BSc"].includes(resolvedDegree)) {
-      return res.status(400).json({ message: "Invalid degree" });
+    if (!["UG", "PG"].includes(resolvedDegree)) {
+      return res.status(400).json({ message: "Degree must be UG or PG" });
     }
 
     const yearNum = Number(resolvedGraduationYear);

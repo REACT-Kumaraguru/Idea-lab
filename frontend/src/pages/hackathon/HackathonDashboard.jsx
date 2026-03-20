@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { axiosInstance } from "../../lib/axios.js";
 import { useHackathonAuthStore } from "../../store/useHackathonAuthStore";
-import { AlertTriangle, Upload } from "lucide-react";
+import { AlertTriangle } from "lucide-react";
 
 const HackathonDashboard = () => {
   const { hackathonUser } = useHackathonAuthStore();
@@ -207,6 +207,13 @@ const HackathonDashboard = () => {
 
   const latestSubmission = (statusData?.submissions || [])[0] || null;
   const displayedSubmissionStatus = mapSubmissionStatus(latestSubmission?.status) || latestSubmission?.status || null;
+  const getTeamStatusBadge = (status) => {
+    const key = String(status || "").toLowerCase();
+    if (key === "approved") return "bg-[#ECFDF3] text-[#15803D] border border-[#22C55E]/30";
+    if (key === "pending") return "bg-[#FFFBEB] text-[#92400E] border border-[#F59E0B]/30";
+    if (key === "rejected") return "bg-[#FEF2F2] text-[#B91C1C] border border-[#EF4444]/30";
+    return "bg-[#F5F7FB] text-gray-700 border border-[#E2E8F0]";
+  };
 
   const AlertCard = ({ tone = "warning", children }) => {
     const isSuccess = tone === "success";
@@ -226,7 +233,7 @@ const HackathonDashboard = () => {
   };
 
   return (
-    <div>
+    <div className="text-gray-700">
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Dashboard</h2>
@@ -256,7 +263,7 @@ const HackathonDashboard = () => {
           <button
             key={t.key}
             onClick={() => setActiveTab(t.key)}
-            className={`px-4 py-2 rounded-full text-sm font-semibold transition border focus:outline-none focus:ring-2 focus:ring-[#2563EB]/25 ${
+            className={`px-4 py-2 rounded-full text-xs sm:text-sm font-semibold transition border focus:outline-none focus:ring-2 focus:ring-[#2563EB]/25 ${
               activeTab === t.key
                 ? "bg-[#2563EB] text-white border-[#2563EB]"
                 : "bg-white border-[#E2E8F0] text-gray-800 hover:bg-[#F5F7FB]"
@@ -268,7 +275,7 @@ const HackathonDashboard = () => {
         {role === "student" ? (
           <button
             onClick={() => setGuidelinesOpen(true)}
-            className={`px-4 py-2 rounded-full text-sm font-semibold transition border focus:outline-none focus:ring-2 focus:ring-[#2563EB]/25 bg-white border-[#E2E8F0] text-gray-800 hover:bg-[#F5F7FB]`}
+            className={`px-4 py-2 rounded-full text-xs sm:text-sm font-semibold transition border focus:outline-none focus:ring-2 focus:ring-[#2563EB]/25 bg-white border-[#E2E8F0] text-gray-800 hover:bg-[#F5F7FB]`}
           >
             Guidelines
           </button>
@@ -291,7 +298,9 @@ const HackathonDashboard = () => {
             <div className="mt-3 bg-white rounded-3xl border border-[#E2E8F0] p-6 shadow-sm">
               <div className="flex items-start justify-between gap-4 flex-wrap">
                 <div>
-                  <div className="text-sm font-semibold text-[#2563EB]">{team.status}</div>
+                  <div className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold ${getTeamStatusBadge(team.status)}`}>
+                    {team.status}
+                  </div>
                   <div className="text-2xl font-extrabold text-gray-900 mt-1">{team.teamName}</div>
                   <div className="text-sm text-gray-600 mt-1">
                     Invite Code: <span className="font-mono">{team.inviteCode}</span>
@@ -482,11 +491,14 @@ const HackathonDashboard = () => {
       {activeTab === "status" ? (
         <div className="mt-5">
           {statusLoading ? <div className="text-gray-600">Loading status...</div> : null}
+          <div className="max-w-4xl mx-auto space-y-4">
           {!statusData?.team ? (
             <AlertCard tone="warning">No team found. Create/join a team to track submissions.</AlertCard>
           ) : (
             <div className="bg-white rounded-3xl border border-[#E2E8F0] p-6 shadow-sm">
-              <div className="text-sm font-semibold text-[#2563EB]">{statusData.team.status}</div>
+              <div className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold ${getTeamStatusBadge(statusData.team.status)}`}>
+                {statusData.team.status}
+              </div>
               <div className="text-2xl font-extrabold text-gray-900 mt-2">{statusData.team.teamName}</div>
               <div className="text-sm text-gray-600 mt-1">
                 Invite Code: <span className="font-mono">{statusData.team.inviteCode}</span>
@@ -536,6 +548,7 @@ const HackathonDashboard = () => {
               </div>
             </div>
           )}
+          </div>
         </div>
       ) : null}
 
