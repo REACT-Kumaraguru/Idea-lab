@@ -6,95 +6,151 @@ import HackathonSubmission from "../../models/hackathon/HackathonSubmissionModel
 import HackathonMentor from "../../models/hackathon/HackathonMentorModel.js";
 import HackathonTeamMentor from "../../models/hackathon/HackathonTeamMentorModel.js";
 
+const getUserIdFromSession = (req) => {
+  const id = req.hackathonUser?.id ?? req.session?.user?.id;
+  return Number(id);
+};
+
+const buildTeamSummary = async ({ team, currentUserId }) => {
+  const membersRows = await HackathonTeamMember.findAll({
+    where: { teamId: team.id },
+    order: [["created_at", "ASC"]],
+  });
+
+  const members = await Promise.all(
+    membersRows.map(async (m) => {
+      const memberUser = await HackathonUser.findByPk(m.userId, {
+        attributes: { exclude: ["password"] },
+      });
+
+      return {
+        id: m.id,
+        userId: m.userId,
+        isLeader: m.isLeader === true,
+        member: memberUser
+          ? {
+              id: memberUser.id,
+              fullName: memberUser.fullName,
+              email: memberUser.email,
+              phoneNumber: memberUser.phoneNumber,
+              role: memberUser.role,
+            }
+          : null,
+      };
+    })
+  );
+
+  return {
+    id: team.id,
+    teamName: team.teamName,
+    inviteCode: team.inviteCode,
+    status: team.status,
+    leaderUserId: team.leaderUserId,
+    isLeader: team.leaderUserId === currentUserId,
+    members,
+  };
+};
+
+const getTeamForStudentUserId = async (userId) => {
+  const member = await HackathonTeamMember.findOne({ where: { userId } });
+  if (member?.teamId) {
+    const team = await HackathonTeam.findByPk(member.teamId);
+    if (!team) return null;
+    return buildTeamSummary({ team, currentUserId: userId });
+  }
+
+  const leaderTeam = await HackathonTeam.findOne({ where: { leaderUserId: userId } });
+  if (!leaderTeam) return null;
+  return buildTeamSummary({ team: leaderTeam, currentUserId: userId });
+};
+
+const getTeamForMentorUserId = async (userId) => {
+  const mentorRow = await HackathonMentor.findOne({ where: { userId } });
+  if (!mentorRow) return null;
+
+  const assignment = await HackathonTeamMentor.findOne({ where: { mentorId: mentorRow.id } });
+  if (!assignment?.teamId) return null;
+
+  const team = await HackathonTeam.findByPk(assignment.teamId);
+  if (!team) return null;
+  return buildTeamSummary({ team, currentUserId: userId });
+};
+
 export const getDashboard = async (req, res) => {
   try {
-    const userId = Number(req.hackathonUser.id);
+    const userId = getUserIdFromSession(req);
     const role = req.hackathonUser.role;
-
-    let teamId = null;
-
-    if (role === "student") {
-      const member = await HackathonTeamMember.findOne({ where: { userId } });
-      teamId = member?.teamId || null;
-      if (!teamId) {
-        const leaderTeam = await HackathonTeam.findOne({ where: { leaderUserId: userId }, attributes: ["id"] });
-        teamId = leaderTeam?.id || null;
-      }
-    } else if (role === "mentor") {
-      const mentor = await HackathonMentor.findOne({ where: { userId } });
-      if (mentor) {
-        const assignment = await HackathonTeamMentor.findOne({ where: { mentorId: mentor.id } });
-        teamId = assignment?.teamId || null;
-      }
-    } else {
-      return res.status(403).json({ message: "Forbidden" });
-    }
 
     const problems = await HackathonProblem.findAll({
       order: [["created_at", "DESC"]],
       attributes: ["id", "title", "sector", "prizeAmount", "seedMoneyAmount"],
     });
 
-    if (!teamId) {
+    let team = null;
+    if (role === "student") team = await getTeamForStudentUserId(userId);
+    else if (role === "mentor") team = await getTeamForMentorUserId(userId);
+    else return res.status(403).json({ message: "Forbidden" });
+
+    if (!team) {
       return res.status(200).json({
         team: null,
         mentor: null,
+        selectedProblem: null,
+        submissionStatus: null,
         submissions: [],
         problems,
       });
     }
 
-    const team = await HackathonTeam.findByPk(teamId, {
-      attributes: ["id", "teamName", "inviteCode", "status", "leaderUserId"],
-      include: [
-        { model: HackathonUser, as: "leader", attributes: ["id", "fullName", "email"] },
-        {
-          model: HackathonTeamMember,
-          as: "members",
-          include: [{ model: HackathonUser, as: "member", attributes: ["id", "fullName", "email", "phoneNumber", "role"] }],
-        },
-      ],
-    });
+    const teamId = team.id;
 
-    const assignment = await HackathonTeamMentor.findOne({
+    const latestSubmission = await HackathonSubmission.findOne({
       where: { teamId },
-      include: [
-        {
-          model: HackathonMentor,
-          as: "mentor",
-          attributes: ["id", "expertise", "userId"],
-          include: [{ model: HackathonUser, as: "user", attributes: ["id", "fullName", "email", "phoneNumber"] }],
-        },
-      ],
-    });
-
-    const submissions = await HackathonSubmission.findAll({
-      where: { teamId },
-      include: [{ model: HackathonProblem, as: "problem", attributes: ["id", "title", "sector"] }],
       order: [["created_at", "DESC"]],
     });
 
-    const latestSubmission = submissions?.[0] || null;
+    const selectedProblem = latestSubmission
+      ? await HackathonProblem.findByPk(latestSubmission.problemId, {
+          attributes: ["id", "title", "sector"],
+        })
+      : null;
+
+    const submissionsRows = await HackathonSubmission.findAll({
+      where: { teamId },
+      order: [["created_at", "DESC"]],
+    });
+
+    const submissions = await Promise.all(
+      submissionsRows.map(async (s) => {
+        const problem = await HackathonProblem.findByPk(s.problemId, {
+          attributes: ["id", "title", "sector"],
+        });
+        const submittedBy = await HackathonUser.findByPk(s.submittedByUserId, {
+          attributes: { exclude: ["password"] },
+        });
+
+        return {
+          ...(s.toJSON ? s.toJSON() : s),
+          problem: problem
+            ? { id: problem.id, title: problem.title, sector: problem.sector }
+            : null,
+          submittedBy: submittedBy
+            ? {
+                id: submittedBy.id,
+                fullName: submittedBy.fullName,
+                email: submittedBy.email,
+                role: submittedBy.role,
+              }
+            : null,
+        };
+      })
+    );
 
     return res.status(200).json({
-      team: team
-        ? {
-            id: team.id,
-            teamName: team.teamName,
-            inviteCode: team.inviteCode,
-            status: team.status,
-            leader: team.leader || null,
-            members: (team.members || []).map((m) => ({
-              id: m.id,
-              userId: m.userId,
-              isLeader: m.isLeader,
-              member: m.member || null,
-            })),
-          }
-        : null,
-      mentor: assignment?.mentor?.user || null,
-      selectedProblem: latestSubmission?.problem
-        ? { id: latestSubmission.problem.id, title: latestSubmission.problem.title, sector: latestSubmission.problem.sector }
+      team,
+      mentor: null,
+      selectedProblem: selectedProblem
+        ? { id: selectedProblem.id, title: selectedProblem.title, sector: selectedProblem.sector }
         : null,
       submissionStatus: latestSubmission?.status || null,
       submissions,

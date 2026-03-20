@@ -107,11 +107,10 @@ export const submit = async (req, res) => {
 
 export const getStatus = async (req, res) => {
   try {
-    const userId = Number(req.hackathonUser.id);
+    const userId = Number(req.hackathonUser?.id ?? req.session?.user?.id);
     const role = req.hackathonUser.role;
 
     let teamId = null;
-
     if (role === "student") {
       const member = await HackathonTeamMember.findOne({ where: { userId } });
       teamId = member?.teamId || null;
@@ -125,7 +124,6 @@ export const getStatus = async (req, res) => {
       const assignment = await HackathonTeamMentor.findOne({ where: { mentorId: mentor.id } });
       teamId = assignment?.teamId || null;
     } else {
-      // Admin can see global status through admin endpoints.
       return res.status(403).json({ message: "Forbidden" });
     }
 
@@ -136,19 +134,36 @@ export const getStatus = async (req, res) => {
     });
     if (!team) return res.status(200).json({ team: null, submissions: [] });
 
-    const submissions = await HackathonSubmission.findAll({
+    const submissionsRows = await HackathonSubmission.findAll({
       where: { teamId },
-      include: [
-        { model: HackathonProblem, as: "problem", attributes: ["id", "title", "sector"] },
-        { model: HackathonUser, as: "submittedBy", attributes: ["id", "fullName", "email", "role"] },
-      ],
       order: [["created_at", "DESC"]],
     });
 
-    return res.status(200).json({
-      team,
-      submissions,
-    });
+    const submissions = await Promise.all(
+      submissionsRows.map(async (s) => {
+        const problem = await HackathonProblem.findByPk(s.problemId, {
+          attributes: ["id", "title", "sector"],
+        });
+        const submittedBy = await HackathonUser.findByPk(s.submittedByUserId, {
+          attributes: { exclude: ["password"] },
+        });
+
+        return {
+          ...(s.toJSON ? s.toJSON() : s),
+          problem: problem ? { id: problem.id, title: problem.title, sector: problem.sector } : null,
+          submittedBy: submittedBy
+            ? {
+                id: submittedBy.id,
+                fullName: submittedBy.fullName,
+                email: submittedBy.email,
+                role: submittedBy.role,
+              }
+            : null,
+        };
+      })
+    );
+
+    return res.status(200).json({ team, submissions });
   } catch (error) {
     console.log("Error in getStatus:", error.message);
     return res.status(500).json({ message: "Internal Server Error" });
@@ -158,13 +173,26 @@ export const getStatus = async (req, res) => {
 // Admin: list all submissions
 export const adminListSubmissions = async (req, res) => {
   try {
-    const submissions = await HackathonSubmission.findAll({
-      include: [
-        { model: HackathonTeam, as: "team", attributes: ["id", "teamName", "status"] },
-        { model: HackathonProblem, as: "problem", attributes: ["id", "title", "sector"] },
-      ],
+    const submissionsRows = await HackathonSubmission.findAll({
       order: [["created_at", "DESC"]],
     });
+
+    const submissions = await Promise.all(
+      submissionsRows.map(async (s) => {
+        const team = await HackathonTeam.findByPk(s.teamId, {
+          attributes: ["id", "teamName", "status"],
+        });
+        const problem = await HackathonProblem.findByPk(s.problemId, {
+          attributes: ["id", "title", "sector"],
+        });
+        return {
+          ...(s.toJSON ? s.toJSON() : s),
+          team: team ? { id: team.id, teamName: team.teamName, status: team.status } : null,
+          problem: problem ? { id: problem.id, title: problem.title, sector: problem.sector } : null,
+        };
+      })
+    );
+
     return res.status(200).json({ submissions });
   } catch (error) {
     console.log("Error in adminListSubmissions:", error.message);
@@ -180,9 +208,7 @@ export const adminSetSubmissionStatus = async (req, res) => {
       return res.status(400).json({ message: "Invalid status" });
     }
 
-    const submission = await HackathonSubmission.findByPk(req.params.id, {
-      include: [{ model: HackathonTeam, as: "team", attributes: ["id", "status"] }],
-    });
+    const submission = await HackathonSubmission.findByPk(req.params.id);
     if (!submission) return res.status(404).json({ message: "Submission not found" });
 
     // Lock: once approved/rejected, status cannot change again.
@@ -191,7 +217,8 @@ export const adminSetSubmissionStatus = async (req, res) => {
     }
 
     // Only allow final decision after the team itself is approved.
-    if (submission.team?.status !== "approved") {
+    const team = await HackathonTeam.findByPk(submission.teamId, { attributes: ["id", "status"] });
+    if (!team || team.status !== "approved") {
       return res.status(400).json({ message: "Team must be approved before reviewing submissions" });
     }
 

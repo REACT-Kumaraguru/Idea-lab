@@ -11,12 +11,84 @@ const generateInviteCode = () => {
   return out;
 };
 
+const getUserIdFromSession = (req) => {
+  const id = req.hackathonUser?.id ?? req.session?.user?.id;
+  return Number(id);
+};
+
+const buildTeamSummary = async ({ team, currentUserId }) => {
+  const membersRows = await HackathonTeamMember.findAll({
+    where: { teamId: team.id },
+    order: [["created_at", "ASC"]],
+  });
+
+  const members = await Promise.all(
+    membersRows.map(async (m) => {
+      const memberUser = await HackathonUser.findByPk(m.userId, {
+        attributes: { exclude: ["password"] },
+      });
+
+      return {
+        id: m.id,
+        userId: m.userId,
+        isLeader: m.isLeader === true,
+        member: memberUser
+          ? {
+              id: memberUser.id,
+              fullName: memberUser.fullName,
+              email: memberUser.email,
+              phoneNumber: memberUser.phoneNumber,
+              role: memberUser.role,
+            }
+          : null,
+      };
+    })
+  );
+
+  return {
+    id: team.id,
+    teamName: team.teamName,
+    inviteCode: team.inviteCode,
+    status: team.status,
+    leaderUserId: team.leaderUserId,
+    // Useful for UI, but not required by API consumers
+    isLeader: team.leaderUserId === currentUserId,
+    members,
+  };
+};
+
+const getTeamForStudentUserId = async (userId) => {
+  const member = await HackathonTeamMember.findOne({ where: { userId } });
+  if (member?.teamId) {
+    const team = await HackathonTeam.findByPk(member.teamId);
+    if (!team) return null;
+    return buildTeamSummary({ team, currentUserId: userId });
+  }
+
+  // Fallback if membership row is missing for some reason
+  const leaderTeam = await HackathonTeam.findOne({ where: { leaderUserId: userId } });
+  if (!leaderTeam) return null;
+  return buildTeamSummary({ team: leaderTeam, currentUserId: userId });
+};
+
+const getTeamForMentorUserId = async (userId) => {
+  const mentorRow = await HackathonMentor.findOne({ where: { userId } });
+  if (!mentorRow) return null;
+
+  const assignment = await HackathonTeamMentor.findOne({ where: { mentorId: mentorRow.id } });
+  if (!assignment?.teamId) return null;
+
+  const team = await HackathonTeam.findByPk(assignment.teamId);
+  if (!team) return null;
+  return buildTeamSummary({ team, currentUserId: userId });
+};
+
 export const createTeam = async (req, res) => {
   const { teamName } = req.body || {};
   try {
     if (!teamName?.trim()) return res.status(400).json({ message: "Team name is required" });
 
-    const userId = Number(req.hackathonUser.id);
+    const userId = getUserIdFromSession(req);
 
     const existingMembership = await HackathonTeamMember.findOne({ where: { userId } });
     if (existingMembership) {
@@ -45,13 +117,8 @@ export const createTeam = async (req, res) => {
       isLeader: true,
     });
 
-    return res.status(201).json({
-      id: team.id,
-      teamName: team.teamName,
-      inviteCode: team.inviteCode,
-      status: team.status,
-      leaderUserId: team.leaderUserId,
-    });
+    const teamSummary = await buildTeamSummary({ team, currentUserId: userId });
+    return res.status(201).json(teamSummary);
   } catch (error) {
     console.log("Error in createTeam:", error.message);
     return res.status(500).json({ message: "Internal Server Error" });
@@ -63,7 +130,7 @@ export const joinTeam = async (req, res) => {
   try {
     if (!inviteCode?.trim()) return res.status(400).json({ message: "Invite code is required" });
 
-    const userId = Number(req.hackathonUser.id);
+    const userId = getUserIdFromSession(req);
 
     const existingMembership = await HackathonTeamMember.findOne({ where: { userId } });
     if (existingMembership) return res.status(400).json({ message: "You already belong to a team" });
@@ -82,13 +149,8 @@ export const joinTeam = async (req, res) => {
       isLeader: false,
     });
 
-    return res.status(201).json({
-      id: team.id,
-      teamName: team.teamName,
-      inviteCode: team.inviteCode,
-      status: team.status,
-      memberId: membership.id,
-    });
+    const teamSummary = await buildTeamSummary({ team, currentUserId: userId });
+    return res.status(201).json(teamSummary);
   } catch (error) {
     console.log("Error in joinTeam:", error.message);
     return res.status(500).json({ message: "Internal Server Error" });
@@ -97,109 +159,17 @@ export const joinTeam = async (req, res) => {
 
 export const getMyTeam = async (req, res) => {
   try {
-    const userId = Number(req.hackathonUser.id);
+    const userId = getUserIdFromSession(req);
     const role = req.hackathonUser.role;
+    let teamSummary = null;
 
-    // Student: team membership via hackathon_team_members
     if (role === "student") {
-      const member = await HackathonTeamMember.findOne({ where: { userId } });
-
-      // Fallback: if membership row missing, try leader_user_id.
-      const team =
-        member?.teamId
-          ? await HackathonTeam.findOne({
-              where: { id: member.teamId },
-              include: [
-                { model: HackathonTeamMember, as: "members", include: [{ model: HackathonUser, as: "member" }] },
-                {
-                  model: HackathonUser,
-                  as: "leader",
-                  attributes: ["id", "fullName", "email", "phoneNumber", "role"],
-                },
-              ],
-            })
-          : await HackathonTeam.findOne({
-              where: { leaderUserId: userId },
-              include: [
-                { model: HackathonTeamMember, as: "members", include: [{ model: HackathonUser, as: "member" }] },
-                {
-                  model: HackathonUser,
-                  as: "leader",
-                  attributes: ["id", "fullName", "email", "phoneNumber", "role"],
-                },
-              ],
-            });
-
-      if (!team) return res.status(200).json({ team: null });
-
-      return res.status(200).json({
-        id: team.id,
-        teamName: team.teamName,
-        inviteCode: team.inviteCode,
-        status: team.status,
-        leaderUserId: team.leaderUserId,
-        isLeader: member ? member.isLeader : team.leaderUserId === userId,
-        members: (team.members || []).map((m) => ({
-          id: m.id,
-          userId: m.userId,
-          isLeader: m.isLeader,
-          member: m.member
-            ? {
-                id: m.member.id,
-                fullName: m.member.fullName,
-                email: m.member.email,
-                phoneNumber: m.member.phoneNumber,
-                role: m.member.role,
-              }
-            : null,
-        })),
-      });
+      teamSummary = await getTeamForStudentUserId(userId);
+    } else if (role === "mentor") {
+      teamSummary = await getTeamForMentorUserId(userId);
     }
 
-    // Mentor: assigned team via hackathon_team_mentor
-    if (role === "mentor") {
-      const mentorRow = await HackathonMentor.findOne({ where: { userId } });
-      if (!mentorRow) return res.status(200).json({ team: null });
-
-      const assignment = await HackathonTeamMentor.findOne({ where: { mentorId: mentorRow.id } });
-      const teamId = assignment?.teamId || null;
-      if (!teamId) return res.status(200).json({ team: null });
-
-      const team = await HackathonTeam.findOne({
-        where: { id: teamId },
-        include: [
-          { model: HackathonTeamMember, as: "members", include: [{ model: HackathonUser, as: "member" }] },
-          { model: HackathonUser, as: "leader", attributes: ["id", "fullName", "email", "phoneNumber", "role"] },
-        ],
-      });
-
-      if (!team) return res.status(200).json({ team: null });
-
-      return res.status(200).json({
-        id: team.id,
-        teamName: team.teamName,
-        inviteCode: team.inviteCode,
-        status: team.status,
-        leaderUserId: team.leaderUserId,
-        isLeader: false,
-        members: (team.members || []).map((m) => ({
-          id: m.id,
-          userId: m.userId,
-          isLeader: m.isLeader,
-          member: m.member
-            ? {
-                id: m.member.id,
-                fullName: m.member.fullName,
-                email: m.member.email,
-                phoneNumber: m.member.phoneNumber,
-                role: m.member.role,
-              }
-            : null,
-        })),
-      });
-    }
-
-    return res.status(200).json({ team: null });
+    return res.status(200).json({ team: teamSummary || null });
   } catch (error) {
     console.log("Error in getMyTeam:", error.message);
     return res.status(500).json({ message: "Internal Server Error" });
