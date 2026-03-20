@@ -2,8 +2,6 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Loader } from "lucide-react";
 import { useHackathonAuthStore } from "../../store/useHackathonAuthStore";
-import IdeaLabLogo from "../../assets/idea-lab.png";
-import KctLogo from "../../assets/kctlogo.png";
 
 const HackathonRegister = () => {
   const navigate = useNavigate();
@@ -12,29 +10,41 @@ const HackathonRegister = () => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
-  const [degree, setDegree] = useState("BE");
+  const [degree, setDegree] = useState("UG");
   const [branch, setBranch] = useState("");
   const [graduationYear, setGraduationYear] = useState("2026");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [error, setError] = useState(null);
+
+  const passwordStrength = () => {
+    let score = 0;
+    if (password.length >= 6) score++;
+    if (password.length >= 10) score++;
+    if (/\d/.test(password)) score++;
+    if (/[^a-zA-Z0-9]/.test(password)) score++;
+    return score;
+  };
+
+  const strengthColors = ["#e5e7eb", "#fbbf24", "#34d399", "#22c55e"];
+  const strength = passwordStrength();
 
   const onSubmit = async (e) => {
     e.preventDefault();
     setError(null);
 
+    if (!branch.trim()) {
+      setError("Branch is required");
+      return;
+    }
     if (password !== confirmPassword) {
       setError("Password and confirm password must match");
       return;
     }
-
-    if (!name.trim() || !email.trim() || !phone.trim() || !degree || !graduationYear || !password) {
-      setError("Please fill all required fields");
-      return;
-    }
-
     if (!/^\d+$/.test(phone.trim())) {
-      setError("Phone must be a number");
+      setError("Phone must contain numbers only");
       return;
     }
 
@@ -44,7 +54,7 @@ const HackathonRegister = () => {
         email,
         phone,
         degree,
-        branch: branch ? branch : null,
+        branch,
         graduation_year: graduationYear,
         password,
       });
@@ -54,181 +64,202 @@ const HackathonRegister = () => {
     }
   };
 
+  const inputClass =
+    "mt-1 w-full rounded-md border border-gray-300 px-3 py-2.5 text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition";
+  const labelClass = "block text-xs font-medium text-gray-500 mb-0.5";
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-6xl mx-auto px-4 py-10 grid md:grid-cols-2 gap-6 items-stretch">
-        <div className="flex items-center justify-center">
-          <div className="w-full max-w-md">
-            <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 sm:p-8">
-              <div className="mb-6">
-                <h2 className="text-2xl font-bold text-gray-900">Hackathon Register</h2>
-                <p className="text-gray-600 mt-2">Create your hackathon account.</p>
+    <div className="min-h-screen bg-white">
+      <div className="max-w-xl mx-auto px-6 py-10">
+        {/* Top bar */}
+        <div className="flex items-start justify-between mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">Register</h1>
+          <p className="text-sm text-gray-500 mt-1.5">
+            Already have an account?{" "}
+            <Link to="/hackathon/login" className="text-blue-600 font-medium hover:underline">
+              Login.
+            </Link>
+          </p>
+        </div>
+
+        <form onSubmit={onSubmit}>
+          {/* Section 1 — Basic Info */}
+          <div className="mb-8">
+            <h2 className="text-base font-semibold text-gray-900 border-b border-gray-200 pb-2 mb-5">
+              Your Basic Information
+            </h2>
+
+            <div className="grid grid-cols-2 gap-x-5 gap-y-4">
+              <div>
+                <label className={labelClass}>Name</label>
+                <input
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
+                  placeholder="Full name"
+                  className={inputClass}
+                />
               </div>
 
-              <form onSubmit={onSubmit}>
-                <div className="mb-4">
-                  <label className="text-sm font-medium text-gray-800">Name</label>
-                  <input
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    required
-                    className="mt-2 w-full rounded-xl border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
+              <div>
+                <label className={labelClass}>Email</label>
+                <input
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  type="email"
+                  required
+                  placeholder="you@kct.ac.in"
+                  className={inputClass}
+                />
+              </div>
 
-                <div className="mb-4">
-                  <label className="text-sm font-medium text-gray-800">Email</label>
-                  <input
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    type="email"
-                    required
-                    className="mt-2 w-full rounded-xl border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
+              <div>
+                <label className={labelClass}>Phone Number</label>
+                <input
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  required
+                  type="tel"
+                  placeholder="9876543210"
+                  className={inputClass}
+                />
+              </div>
 
-                <div className="mb-4">
-                  <label className="text-sm font-medium text-gray-800">Phone</label>
-                  <input
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    required
-                    type="number"
-                    className="mt-2 w-full rounded-xl border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
+              <div>
+                <label className={labelClass}>Degree</label>
+                <select
+                  value={degree}
+                  onChange={(e) => setDegree(e.target.value)}
+                  required
+                  className={inputClass}
+                >
+                  <option value="UG">UG</option>
+                  <option value="PG">PG</option>
+                </select>
+              </div>
 
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div className="mb-4">
-                    <label className="text-sm font-medium text-gray-800">Degree</label>
-                    <select
-                      value={degree}
-                      onChange={(e) => setDegree(e.target.value)}
-                      required
-                      className="mt-2 w-full rounded-xl border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="BE">BE</option>
-                      <option value="BTech">BTech</option>
-                      <option value="BSc">BSc</option>
-                    </select>
-                  </div>
+              <div>
+                <label className={labelClass}>Graduation Year</label>
+                <select
+                  value={graduationYear}
+                  onChange={(e) => setGraduationYear(e.target.value)}
+                  required
+                  className={inputClass}
+                >
+                  <option value="2026">2026</option>
+                  <option value="2027">2027</option>
+                  <option value="2028">2028</option>
+                  <option value="2029">2029</option>
+                </select>
+              </div>
 
-                  <div className="mb-4">
-                    <label className="text-sm font-medium text-gray-800">Graduation Year</label>
-                    <select
-                      value={graduationYear}
-                      onChange={(e) => setGraduationYear(e.target.value)}
-                      required
-                      className="mt-2 w-full rounded-xl border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="2026">2026</option>
-                      <option value="2027">2027</option>
-                      <option value="2028">2028</option>
-                      <option value="2029">2029</option>
-                    </select>
-                  </div>
-                </div>
+              <div className="col-span-2">
+                <label className={labelClass}>Branch</label>
+                <input
+                  value={branch}
+                  onChange={(e) => setBranch(e.target.value)}
+                  required
+                  placeholder="e.g., Computer Science / Mechanical / Electronics"
+                  className={inputClass}
+                />
+              </div>
+            </div>
+          </div>
 
-                <div className="mb-4">
-                  <label className="text-sm font-medium text-gray-800">Branch (optional)</label>
-                  <input
-                    value={branch}
-                    onChange={(e) => setBranch(e.target.value)}
-                    className="mt-2 w-full rounded-xl border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="e.g., Computer Science / Mechanical / Electronics"
-                  />
-                </div>
+          {/* Section 2 — Password */}
+          <div className="mb-6">
+            <h2 className="text-base font-semibold text-gray-900 border-b border-gray-200 pb-2 mb-5">
+              Choose Your Password
+            </h2>
 
-                <div className="mb-4">
-                  <label className="text-sm font-medium text-gray-800">Password</label>
+            <div className="grid grid-cols-2 gap-x-5 gap-y-4">
+              <div>
+                <label className={labelClass}>Password</label>
+                <div className="relative mt-1">
                   <input
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    type="password"
+                    type={showPassword ? "text" : "password"}
                     required
-                    className="mt-2 w-full rounded-xl border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full rounded-md border border-gray-300 px-3 py-2.5 pr-14 text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition"
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-semibold tracking-wider text-gray-400 hover:text-gray-600"
+                  >
+                    {showPassword ? "HIDE" : "SHOW"}
+                  </button>
                 </div>
+              </div>
 
-                <div className="mb-5">
-                  <label className="text-sm font-medium text-gray-800">Confirm Password</label>
+              <div>
+                <label className={labelClass}>Confirm Password</label>
+                <div className="relative mt-1">
                   <input
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    type="password"
+                    type={showConfirm ? "text" : "password"}
                     required
-                    className="mt-2 w-full rounded-xl border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full rounded-md border border-gray-300 px-3 py-2.5 pr-14 text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition"
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirm(!showConfirm)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-semibold tracking-wider text-gray-400 hover:text-gray-600"
+                  >
+                    {showConfirm ? "HIDE" : "SHOW"}
+                  </button>
                 </div>
-
-                {error ? <div className="mb-4 text-sm text-red-600 font-medium">{error}</div> : null}
-
-                <button
-                  type="submit"
-                  disabled={isSigningUp}
-                  className="w-full px-4 py-2 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 disabled:opacity-60"
-                >
-                  {isSigningUp ? (
-                    <span className="flex items-center justify-center gap-2">
-                      <Loader className="size-4 animate-spin" />
-                      Creating...
-                    </span>
-                  ) : (
-                    "Register"
-                  )}
-                </button>
-
-                <div className="mt-4 text-center text-sm text-gray-600">
-                  Already have an account?{" "}
-                  <Link to="/hackathon/login" className="text-blue-700 font-semibold hover:underline">
-                    Login
-                  </Link>
-                </div>
-              </form>
+              </div>
             </div>
+
+            {/* Strength bar */}
+            {password.length > 0 && (
+              <div className="mt-3">
+                <div className="flex gap-1">
+                  {[0, 1, 2, 3].map((i) => (
+                    <div
+                      key={i}
+                      className="flex-1 h-[3px] rounded-full transition-all"
+                      style={{ background: i < strength ? strengthColors[strength - 1] : "#e5e7eb" }}
+                    />
+                  ))}
+                </div>
+                <div className="mt-2 flex flex-col gap-1">
+                  <p className={`text-xs flex items-center gap-1.5 ${password.length >= 6 ? "text-green-500" : "text-gray-400"}`}>
+                    <span>{password.length >= 6 ? "✓" : "○"}</span> 6 character minimum
+                  </p>
+                  <p className={`text-xs flex items-center gap-1.5 ${/\d/.test(password) ? "text-green-500" : "text-gray-400"}`}>
+                    <span>{/\d/.test(password) ? "✓" : "○"}</span> Must contain one number
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
-        </div>
 
-        <div className="hidden md:flex rounded-3xl overflow-hidden relative border border-indigo-500/10 bg-gradient-to-br from-indigo-500/10 via-cyan-500/10 to-transparent">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(99,102,241,0.28),transparent_50%),radial-gradient(circle_at_bottom,rgba(34,211,238,0.18),transparent_55%)]" />
-          <div className="relative w-full p-10 flex flex-col justify-between">
-            <div>
-              <div className="flex items-center gap-3">
-                <img src={KctLogo} alt="KCT" className="h-10 w-auto" />
-                <img src={IdeaLabLogo} alt="IDEA Lab" className="h-10 w-auto" />
-              </div>
-              <h2 className="mt-6 text-3xl font-extrabold tracking-tight text-gray-900">Welcome to Hackathon 2026</h2>
-              <p className="mt-3 text-gray-600">
-                Register as a student, form your team, pick a problem, and submit your PoC/Prototype.
-              </p>
+          {error && (
+            <p className="mb-4 text-sm text-red-600 font-medium">{error}</p>
+          )}
 
-              <div className="mt-6 space-y-3 text-sm">
-                <div className="flex items-start gap-2">
-                  <span className="mt-1 h-2 w-2 rounded-full bg-indigo-500" />
-                  <span className="text-gray-800">Dashboard shows team, selected problem, and submission status.</span>
-                </div>
-                <div className="flex items-start gap-2">
-                  <span className="mt-1 h-2 w-2 rounded-full bg-cyan-500" />
-                  <span className="text-gray-800">Submission is allowed only after approval.</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-8">
-              <div className="rounded-2xl bg-white/70 backdrop-blur p-4 border border-white/60">
-                <p className="text-sm font-semibold text-gray-900">₹500 registration fee</p>
-                <p className="mt-1 text-xs text-gray-700">Fee is required only after team and problem approval by admin.</p>
-              </div>
-              <p className="mt-3 text-xs text-gray-600">
-                Secure student registration with session-based login.
-              </p>
-            </div>
-          </div>
-        </div>
+          <button
+            type="submit"
+            disabled={isSigningUp}
+            className="w-full py-3 rounded-lg bg-[#2B2D42] text-white text-sm font-medium hover:bg-[#1a1c2e] disabled:opacity-60 transition"
+          >
+            {isSigningUp ? (
+              <span className="flex items-center justify-center gap-2">
+                <Loader className="size-4 animate-spin" />
+                Creating account...
+              </span>
+            ) : (
+              "Register"
+            )}
+          </button>
+        </form>
       </div>
     </div>
   );
 };
 
 export default HackathonRegister;
-

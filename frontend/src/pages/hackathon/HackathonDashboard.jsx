@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { axiosInstance } from "../../lib/axios.js";
 import { useHackathonAuthStore } from "../../store/useHackathonAuthStore";
+import { AlertTriangle, Upload } from "lucide-react";
 
 const HackathonDashboard = () => {
   const { hackathonUser } = useHackathonAuthStore();
@@ -207,6 +208,23 @@ const HackathonDashboard = () => {
   const latestSubmission = (statusData?.submissions || [])[0] || null;
   const displayedSubmissionStatus = mapSubmissionStatus(latestSubmission?.status) || latestSubmission?.status || null;
 
+  const AlertCard = ({ tone = "warning", children }) => {
+    const isSuccess = tone === "success";
+    return (
+      <div
+        className={[
+          "flex items-start gap-3 rounded-2xl border p-4 shadow-sm",
+          isSuccess
+            ? "bg-[#ECFDF3] border-[#22C55E]/20"
+            : "bg-[#FFFBEB] border-[#F59E0B]/20",
+        ].join(" ")}
+      >
+        <AlertTriangle className={`mt-0.5 w-5 h-5 ${isSuccess ? "text-[#22C55E]" : "text-[#F59E0B]"}`} />
+        <div className="text-sm font-medium text-gray-800">{children}</div>
+      </div>
+    );
+  };
+
   return (
     <div>
       <div className="flex items-start justify-between gap-4 flex-wrap">
@@ -219,13 +237,13 @@ const HackathonDashboard = () => {
           <div className="flex gap-3">
             <Link
               to="/hackathon/create-team"
-              className="px-4 py-2 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 transition"
+              className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#2563EB] to-[#1D4ED8] text-white font-semibold hover:from-[#1D4ED8] hover:to-[#2563EB] transition shadow-sm hover:shadow-md"
             >
               Create Team
             </Link>
             <Link
               to="/hackathon/join-team"
-              className="px-4 py-2 rounded-xl border border-gray-300 bg-white text-gray-800 font-semibold hover:bg-gray-50 transition"
+              className="px-4 py-2 rounded-xl border border-[#E2E8F0] bg-white text-gray-800 font-semibold hover:bg-[#F5F7FB] transition shadow-sm hover:shadow-md"
             >
               Join Team
             </Link>
@@ -233,13 +251,15 @@ const HackathonDashboard = () => {
         ) : null}
       </div>
 
-      <div className="mt-5 flex gap-2 flex-wrap">
+      <div className="mt-5 flex items-center gap-2 overflow-x-auto whitespace-nowrap pb-1">
         {tabs.map((t) => (
           <button
             key={t.key}
             onClick={() => setActiveTab(t.key)}
-            className={`px-4 py-2 rounded-xl text-sm font-semibold transition ${
-              activeTab === t.key ? "bg-blue-600 text-white" : "bg-white border border-gray-300 text-gray-800 hover:bg-gray-50"
+            className={`px-4 py-2 rounded-full text-sm font-semibold transition border focus:outline-none focus:ring-2 focus:ring-[#2563EB]/25 ${
+              activeTab === t.key
+                ? "bg-[#2563EB] text-white border-[#2563EB]"
+                : "bg-white border-[#E2E8F0] text-gray-800 hover:bg-[#F5F7FB]"
             }`}
           >
             {t.label}
@@ -248,7 +268,7 @@ const HackathonDashboard = () => {
         {role === "student" ? (
           <button
             onClick={() => setGuidelinesOpen(true)}
-            className="px-4 py-2 rounded-xl text-sm font-semibold bg-white border border-gray-300 text-gray-800 hover:bg-gray-50 transition"
+            className={`px-4 py-2 rounded-full text-sm font-semibold transition border focus:outline-none focus:ring-2 focus:ring-[#2563EB]/25 bg-white border-[#E2E8F0] text-gray-800 hover:bg-[#F5F7FB]`}
           >
             Guidelines
           </button>
@@ -261,15 +281,17 @@ const HackathonDashboard = () => {
           {teamLoading ? (
             <div className="text-gray-600">Loading team...</div>
           ) : !team ? (
-            <div className="mt-3 bg-white rounded-2xl border border-gray-100 p-6 shadow-sm text-gray-700">
+            <AlertCard>
               <div className="font-semibold text-gray-900">You are not part of any team yet.</div>
-              <div className="mt-2 text-sm text-gray-600">Create or join a team to enable problem selection and submissions.</div>
-            </div>
+              <div className="mt-1 text-sm text-gray-600">
+                Create or join a team to enable problem selection and submissions.
+              </div>
+            </AlertCard>
           ) : (
-            <div className="mt-3 bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
+            <div className="mt-3 bg-white rounded-3xl border border-[#E2E8F0] p-6 shadow-sm">
               <div className="flex items-start justify-between gap-4 flex-wrap">
                 <div>
-                  <div className="text-sm font-semibold text-blue-700">{team.status}</div>
+                  <div className="text-sm font-semibold text-[#2563EB]">{team.status}</div>
                   <div className="text-2xl font-extrabold text-gray-900 mt-1">{team.teamName}</div>
                   <div className="text-sm text-gray-600 mt-1">
                     Invite Code: <span className="font-mono">{team.inviteCode}</span>
@@ -277,7 +299,7 @@ const HackathonDashboard = () => {
                 </div>
                 <div className="text-right">
                   <div className="text-sm text-gray-600">Submission Status</div>
-                  <div className="mt-1 px-3 py-1 rounded-full bg-gray-100 text-gray-700 text-xs font-semibold">
+                  <div className="mt-1 px-3 py-1 rounded-full bg-[#F5F7FB] border border-[#E2E8F0] text-gray-800 text-xs font-semibold">
                     {displayedSubmissionStatus || "Not submitted yet"}
                   </div>
                 </div>
@@ -287,7 +309,10 @@ const HackathonDashboard = () => {
                 <div className="font-bold text-gray-900">Team Members</div>
                 <div className="mt-3 space-y-2">
                   {(team.members || []).map((m) => (
-                    <div key={m.userId} className="flex items-start justify-between gap-3 bg-gray-50 border border-gray-100 rounded-xl p-4">
+                    <div
+                      key={m.userId}
+                      className="flex items-start justify-between gap-3 bg-[#F5F7FB] border border-[#E2E8F0] rounded-2xl p-4"
+                    >
                       <div>
                         <div className="font-semibold text-gray-900">{m.member?.fullName || "Member"}</div>
                         <div className="text-xs text-gray-600">{m.member?.email}</div>
@@ -325,8 +350,8 @@ const HackathonDashboard = () => {
           ) : problems.length ? (
             <div className="grid md:grid-cols-2 gap-5">
               {problems.map((p) => (
-                <div key={p.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-                  <div className="text-xs font-semibold text-blue-700">{p.sector || "Category"}</div>
+                <div key={p.id} className="bg-white rounded-3xl border border-[#E2E8F0] shadow-sm p-5">
+                  <div className="text-xs font-semibold text-[#2563EB]">{p.sector || "Category"}</div>
                   <div className="text-lg font-bold text-gray-900 mt-2">{p.title}</div>
                   <div className="text-gray-700 mt-3 text-sm whitespace-pre-line">
                     {p.description?.slice(0, 220)}
@@ -336,7 +361,7 @@ const HackathonDashboard = () => {
                     <div className="text-xs text-gray-500">Prize: {p.prizeAmount ? `₹${p.prizeAmount}` : "TBD"}</div>
                     <button
                       onClick={() => onSelectProblem(p)}
-                      className="px-4 py-2 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 transition"
+                      className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#2563EB] to-[#1D4ED8] text-white font-semibold hover:from-[#1D4ED8] hover:to-[#2563EB] transition shadow-sm hover:shadow-md"
                     >
                       Select
                     </button>
@@ -345,7 +370,7 @@ const HackathonDashboard = () => {
               ))}
             </div>
           ) : (
-            <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm text-gray-700">
+            <div className="bg-white rounded-3xl border border-[#E2E8F0] p-6 shadow-sm text-gray-700">
               No problems available yet.
             </div>
           )}
@@ -357,40 +382,42 @@ const HackathonDashboard = () => {
         <div className="mt-5">
           {teamLoading || problemsLoading ? <div className="text-gray-600">Loading...</div> : null}
           {!team ? (
-            <div className="bg-blue-50 border border-blue-100 rounded-2xl p-6 text-gray-700">
-              You are not part of any team yet. Create or join a team first.
-            </div>
+            <AlertCard tone="warning">You are not part of any team yet. Create or join a team first.</AlertCard>
           ) : team.status === "pending" ? (
-            <div className="bg-yellow-50 border border-yellow-100 rounded-2xl p-6 text-gray-700">
-              Your team is pending admin approval. Submission will be enabled after approval.
-            </div>
+            <AlertCard tone="warning">Your team is pending admin approval. Submission will be enabled after approval.</AlertCard>
           ) : team.status === "rejected" ? (
-            <div className="bg-red-50 border border-red-100 rounded-2xl p-6 text-gray-700">
-              Your team was rejected. Submission is disabled.
-            </div>
+            <AlertCard tone="warning">Your team was rejected. Submission is disabled.</AlertCard>
           ) : null}
 
-          <form onSubmit={onSubmit} className="mt-4 bg-white rounded-2xl border border-gray-100 p-6 shadow-sm" aria-disabled={!submitAllowed}>
+          <form
+            onSubmit={onSubmit}
+            className="mt-4 bg-white rounded-3xl border border-[#E2E8F0] p-6 shadow-sm"
+            aria-disabled={!submitAllowed}
+          >
             {!submitAllowed ? (
-              <div className="mb-3 text-sm text-gray-600">{submissionBlockedReason || "Select a problem and ensure your team is approved."}</div>
+              <div className="mb-4">
+                <AlertCard tone="warning">
+                  {submissionBlockedReason || "Select a problem and ensure your team is approved."}
+                </AlertCard>
+              </div>
             ) : null}
 
             <div className="grid md:grid-cols-2 gap-4">
               <div>
-                <label className="text-sm font-medium text-gray-800">Selected Problem</label>
-                <div className="mt-2 text-sm text-gray-700">
+                <label className="text-sm font-semibold text-gray-800">Selected Problem</label>
+                <div className="mt-2 text-base text-gray-800">
                   {selectedProblem ? selectedProblem.title : "Not selected yet"}
                 </div>
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-800">Phase</label>
+                <label className="text-sm font-semibold text-gray-800">Phase</label>
                 <select
                   value={phase}
                   onChange={(e) => {
                     setPhase(e.target.value);
                     setFiles([]);
                   }}
-                  className="mt-2 w-full rounded-xl border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="mt-2 w-full rounded-2xl border border-[#E2E8F0] px-4 py-3 text-base bg-white focus:outline-none focus:ring-2 focus:ring-[#2563EB]/25"
                   disabled={!submitAllowed}
                 >
                   <option value="poc">PoC</option>
@@ -400,46 +427,50 @@ const HackathonDashboard = () => {
             </div>
 
             <div className="mt-4">
-              <label className="text-sm font-medium text-gray-800">Title</label>
+              <label className="text-sm font-semibold text-gray-800">Title</label>
               <input
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 required
                 disabled={!submitAllowed}
-                className="mt-2 w-full rounded-xl border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="mt-2 w-full rounded-2xl border border-[#E2E8F0] px-4 py-3 text-base bg-white focus:outline-none focus:ring-2 focus:ring-[#2563EB]/25"
                 placeholder="e.g., AI-enabled predictive maintenance for motors"
               />
             </div>
 
             <div className="mt-4">
-              <label className="text-sm font-medium text-gray-800">Description (optional)</label>
+              <label className="text-sm font-semibold text-gray-800">Description (optional)</label>
               <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 rows={4}
                 disabled={!submitAllowed}
-                className="mt-2 w-full rounded-xl border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="mt-2 w-full rounded-2xl border border-[#E2E8F0] px-4 py-3 text-base bg-white focus:outline-none focus:ring-2 focus:ring-[#2563EB]/25"
                 placeholder="Summarize your approach."
               />
             </div>
 
             <div className="mt-4">
-              <label className="text-sm font-medium text-gray-800">Upload {phase === "poc" ? "PoC" : "Prototype"} files</label>
+              <label className="text-sm font-semibold text-gray-800">Upload {phase === "poc" ? "PoC" : "Prototype"} files</label>
               <input
                 type="file"
                 multiple
                 disabled={!submitAllowed}
                 onChange={(e) => setFiles(Array.from(e.target.files || []))}
-                className="mt-2 block w-full text-sm text-gray-700"
+                className="mt-2 block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-2xl file:border-0 file:text-sm file:font-semibold file:bg-gradient-to-r file:from-[#2563EB] file:to-[#1D4ED8] file:text-white file:hover:shadow-md"
               />
             </div>
 
-            {submitError ? <div className="mt-3 text-sm text-red-600 font-medium">{submitError}</div> : null}
+            {submitError ? (
+              <div className="mt-4">
+                <AlertCard tone="warning">{submitError}</AlertCard>
+              </div>
+            ) : null}
 
             <button
               type="submit"
               disabled={submitting || !submitAllowed}
-              className="mt-5 w-full px-4 py-2 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 disabled:opacity-60 transition"
+              className="mt-5 w-full px-6 py-3 rounded-2xl bg-gradient-to-r from-[#2563EB] to-[#1D4ED8] text-white font-semibold hover:from-[#1D4ED8] hover:to-[#2563EB] disabled:opacity-60 transition shadow-sm hover:shadow-md"
             >
               {submitting ? "Submitting..." : "Submit"}
             </button>
@@ -452,12 +483,10 @@ const HackathonDashboard = () => {
         <div className="mt-5">
           {statusLoading ? <div className="text-gray-600">Loading status...</div> : null}
           {!statusData?.team ? (
-            <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm text-gray-700">
-              No team found. Create/join a team to track submissions.
-            </div>
+            <AlertCard tone="warning">No team found. Create/join a team to track submissions.</AlertCard>
           ) : (
-            <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
-              <div className="text-sm font-semibold text-blue-700">{statusData.team.status}</div>
+            <div className="bg-white rounded-3xl border border-[#E2E8F0] p-6 shadow-sm">
+              <div className="text-sm font-semibold text-[#2563EB]">{statusData.team.status}</div>
               <div className="text-2xl font-extrabold text-gray-900 mt-2">{statusData.team.teamName}</div>
               <div className="text-sm text-gray-600 mt-1">
                 Invite Code: <span className="font-mono">{statusData.team.inviteCode}</span>
@@ -468,7 +497,7 @@ const HackathonDashboard = () => {
                 {statusData.submissions?.length ? (
                   <div className="mt-4 space-y-4">
                     {statusData.submissions.map((s) => (
-                      <div key={s.id} className="p-5 rounded-2xl border border-gray-100">
+                      <div key={s.id} className="p-5 rounded-2xl border border-[#E2E8F0] bg-white">
                         <div className="flex items-start justify-between gap-3 flex-wrap">
                           <div>
                             <div className="font-semibold text-gray-900">
@@ -477,11 +506,24 @@ const HackathonDashboard = () => {
                             <div className="text-sm text-gray-600">{s.title}</div>
                           </div>
                           <div>
-                            <span className="px-3 py-1 rounded-full bg-gray-100 text-gray-700 text-xs font-semibold">
-                              {mapSubmissionStatus(s.status) || s.status}
-                            </span>
+                            {(() => {
+                              const statusLabel = mapSubmissionStatus(s.status) || s.status;
+                              const tone =
+                                statusLabel === "pending"
+                                  ? "bg-[#FFFBEB] border border-[#F59E0B]/20 text-[#92400E]"
+                                  : statusLabel === "winner"
+                                    ? "bg-[#ECFDF3] border border-[#22C55E]/20 text-[#15803D]"
+                                    : "bg-[#F5F7FB] border border-[#E2E8F0] text-gray-800";
+                              return (
+                                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${tone}`}>
+                                  {statusLabel}
+                                </span>
+                              );
+                            })()}
                             {s.winnerAmount ? (
-                              <div className="text-xs text-blue-700 font-semibold mt-2">Winner Prize: ₹{s.winnerAmount}</div>
+                              <div className="text-xs text-[#15803D] font-semibold mt-2">
+                                Winner Prize: ₹{s.winnerAmount}
+                              </div>
                             ) : null}
                           </div>
                         </div>
@@ -499,7 +541,7 @@ const HackathonDashboard = () => {
 
       {guidelinesOpen ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-2xl bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
+          <div className="w-full max-w-2xl bg-white rounded-3xl shadow-sm border border-[#E2E8F0] p-6">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <h3 className="text-xl font-bold text-gray-900">Hackathon Guidelines</h3>
@@ -507,14 +549,14 @@ const HackathonDashboard = () => {
               </div>
               <button
                 onClick={() => setGuidelinesOpen(false)}
-                className="px-3 py-2 rounded-lg border border-gray-300 hover:bg-gray-50 text-gray-700 font-semibold"
+                className="px-4 py-2 rounded-xl border border-[#E2E8F0] hover:bg-[#F5F7FB] text-gray-700 font-semibold transition"
               >
                 Close
               </button>
             </div>
 
             <div className="mt-4 space-y-3 text-gray-700">
-              <div className="bg-blue-50 border border-blue-100 rounded-xl p-4">
+              <div className="bg-[#2563EB]/5 border border-[#2563EB]/20 rounded-2xl p-4">
                 <div className="font-semibold text-gray-900">Team Rules</div>
                 <ul className="mt-2 space-y-1 text-sm">
                   <li>Max 4 members per team</li>
@@ -522,7 +564,7 @@ const HackathonDashboard = () => {
                   <li>Submit PoC / Prototype only once</li>
                 </ul>
               </div>
-              <div className="bg-white border border-gray-100 rounded-xl p-4">
+              <div className="bg-white border border-[#E2E8F0] rounded-2xl p-4">
                 <div className="font-semibold text-gray-900">Prizes & Support</div>
                 <ul className="mt-2 space-y-1 text-sm">
                   <li>Prize up to ₹60,000</li>
@@ -537,7 +579,7 @@ const HackathonDashboard = () => {
                   setGuidelinesOpen(false);
                   setActiveTab("problems");
                 }}
-                className="px-4 py-2 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 transition"
+                className="px-5 py-2 rounded-xl bg-gradient-to-r from-[#2563EB] to-[#1D4ED8] text-white font-semibold hover:from-[#1D4ED8] hover:to-[#2563EB] transition shadow-sm hover:shadow-md"
               >
                 Select Problems
               </button>

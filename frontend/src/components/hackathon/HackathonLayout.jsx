@@ -1,12 +1,20 @@
-import React from "react";
+import React, { useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { LogOut } from "lucide-react";
+import {
+  Activity,
+  ClipboardList,
+  Crown,
+  LayoutDashboard,
+  LogOut,
+  Menu,
+  Shield,
+  UploadCloud,
+  Users,
+} from "lucide-react";
 import { useHackathonAuthStore } from "../../store/useHackathonAuthStore";
 
-const navClasses = (active) =>
-  `px-3 py-2 rounded-lg text-sm font-medium transition ${
-    active ? "bg-blue-600 text-white" : "text-gray-700 hover:bg-blue-50"
-  }`;
+const baseNavItem =
+  "w-full flex items-center gap-3 px-4 py-2 rounded-xl text-sm font-semibold transition";
 
 const HackathonLayout = ({ children }) => {
   const { hackathonUser, logout } = useHackathonAuthStore();
@@ -15,63 +23,114 @@ const HackathonLayout = ({ children }) => {
 
   const role = hackathonUser?.role;
 
-  const studentNav = [
-    { to: "/hackathon/dashboard", label: "Dashboard" },
-  ];
+  const tab = useMemo(() => {
+    const params = new URLSearchParams(location.search);
+    return params.get("tab");
+  }, [location.search]);
 
-  const mentorNav = [
-    { to: "/hackathon/dashboard", label: "Dashboard" },
-  ];
+  const activeTabKey = useMemo(() => {
+    if (location.pathname !== "/hackathon/dashboard") return null;
+    if (!tab) return "dashboard";
+    if (["team", "problems", "submit", "status"].includes(tab)) return tab;
+    return "dashboard";
+  }, [location.pathname, tab]);
 
-  const adminNav = [
-    { to: "/hackathon/admin", label: "Admin Home" },
-    { to: "/hackathon/admin/teams", label: "Teams" },
-    { to: "/hackathon/admin/problems", label: "Problems" },
-    { to: "/hackathon/admin/submissions", label: "Submissions" },
-    { to: "/hackathon/admin/mentors", label: "Mentors" },
-    { to: "/hackathon/admin/winners", label: "Winners" },
-  ];
+  const studentNav = useMemo(
+    () => [
+      { to: "/hackathon/dashboard", label: "Dashboard", tabKey: "dashboard", icon: LayoutDashboard },
+      { to: "/hackathon/dashboard?tab=team", label: "Team", tabKey: "team", icon: Users },
+      { to: "/hackathon/dashboard?tab=problems", label: "Problems", tabKey: "problems", icon: ClipboardList },
+      { to: "/hackathon/dashboard?tab=submit", label: "Submit", tabKey: "submit", icon: UploadCloud },
+      { to: "/hackathon/dashboard?tab=status", label: "Status", tabKey: "status", icon: Activity },
+    ],
+    []
+  );
+
+  // Mentors also use the same portal sections (some pages redirect internally).
+  const mentorNav = useMemo(
+    () => [
+      { to: "/hackathon/dashboard", label: "Dashboard", tabKey: "dashboard", icon: LayoutDashboard },
+      { to: "/hackathon/dashboard?tab=team", label: "Team", tabKey: "team", icon: Users },
+      { to: "/hackathon/dashboard?tab=status", label: "Problems", tabKey: "problems", icon: ClipboardList },
+      { to: "/hackathon/dashboard?tab=status", label: "Submit", tabKey: "submit", icon: UploadCloud },
+      { to: "/hackathon/dashboard?tab=status", label: "Status", tabKey: "status", icon: Activity },
+    ],
+    []
+  );
+
+  const adminNav = useMemo(
+    () => [
+      { to: "/hackathon/admin", label: "Admin Home", icon: Shield },
+      { to: "/hackathon/admin/teams", label: "Teams", icon: Users },
+      { to: "/hackathon/admin/problems", label: "Problems", icon: ClipboardList },
+      { to: "/hackathon/admin/submissions", label: "Submissions", icon: Activity },
+      { to: "/hackathon/admin/mentors", label: "Mentors", icon: Users },
+      { to: "/hackathon/admin/winners", label: "Winners", icon: Crown },
+    ],
+    []
+  );
 
   const nav = role === "admin" ? adminNav : role === "mentor" ? mentorNav : studentNav;
+  const navActiveLabel =
+    role === "admin"
+      ? nav.find((n) => n.to === location.pathname)?.label || "Dashboard"
+      : nav.find((n) => n.tabKey === activeTabKey)?.label || "Dashboard";
+
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   const handleLogout = async () => {
     await logout();
     navigate("/hackathon/login");
+    setMobileOpen(false);
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-gray-50 to-blue-100">
-      <div className="max-w-7xl mx-auto px-4 py-6">
-        <div className="flex gap-6">
-          <aside className="w-72 hidden md:block">
-            <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-4">
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <div className="text-xs font-semibold text-gray-500">AICTE IDEA Lab</div>
-                  <div className="text-lg font-bold text-gray-900">Hackathon 2026</div>
-                </div>
+    <div className="min-h-screen bg-[#F5F7FB]">
+      <div className="max-w-7xl mx-auto px-4 py-5">
+        <div className="flex gap-5 md:gap-6">
+          {/* Sidebar (desktop) */}
+          <aside className="hidden md:block w-[280px]">
+            <div className="h-[calc(100vh-2.5rem)] sticky top-5 overflow-y-auto bg-[#0B1220] rounded-3xl border border-white/10 shadow-sm p-4">
+              <div className="mb-6 px-1 pt-2">
+                <div className="text-xs font-semibold text-white/60">AICTE IDEA Lab</div>
+                <div className="mt-1 text-xl font-extrabold text-white">Hackathon 2026</div>
               </div>
 
-              <div className="text-sm text-gray-700 mb-4">
-                Signed in as <span className="font-semibold">{hackathonUser?.fullName}</span>
-                <div className="text-xs text-gray-500">{hackathonUser?.role}</div>
+              <div className="mb-5 px-1 text-sm text-white/80">
+                <div>
+                  Signed in as{" "}
+                  <span className="font-semibold text-white">{hackathonUser?.fullName}</span>
+                </div>
+                <div className="mt-1 text-xs text-white/55">{hackathonUser?.role}</div>
               </div>
 
               <nav className="flex flex-col gap-2">
-                {nav.map((item) => (
-                  <Link
-                    key={item.to}
-                    to={item.to}
-                    className={navClasses(location.pathname === item.to)}
-                  >
-                    {item.label}
-                  </Link>
-                ))}
+                {nav.map((item) => {
+                  const isActive =
+                    role === "admin"
+                      ? item.to === location.pathname
+                      : item.tabKey === activeTabKey;
+                  const ItemIcon = item.icon;
+                  return (
+                    <Link
+                      key={item.to}
+                      to={item.to}
+                      className={`${baseNavItem} ${
+                        isActive
+                          ? "bg-[#2563EB] text-white"
+                          : "bg-white/0 text-white/80 hover:bg-white/5"
+                      }`}
+                    >
+                      <ItemIcon className="w-4 h-4" />
+                      {item.label}
+                    </Link>
+                  );
+                })}
               </nav>
 
               <button
                 onClick={handleLogout}
-                className="mt-5 w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg border border-gray-200 hover:bg-gray-50 text-gray-700 text-sm font-medium"
+                className="mt-5 w-full flex items-center justify-center gap-3 px-4 py-3 rounded-2xl bg-white/5 hover:bg-white/10 text-white text-sm font-semibold transition border border-white/10"
               >
                 <LogOut className="w-4 h-4" />
                 Logout
@@ -79,13 +138,104 @@ const HackathonLayout = ({ children }) => {
             </div>
           </aside>
 
+          {/* Main */}
           <main className="flex-1">
-            <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
+            {/* Top header */}
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <button
+                  className="md:hidden inline-flex items-center justify-center w-11 h-11 rounded-2xl bg-white border border-[#E2E8F0] shadow-sm"
+                  onClick={() => setMobileOpen(true)}
+                  aria-label="Open menu"
+                >
+                  <Menu className="w-5 h-5 text-gray-800" />
+                </button>
+                <div>
+                  <div className="text-lg font-extrabold text-gray-900">Hackathon Portal</div>
+                  <div className="text-xs text-gray-600">You are viewing: {navActiveLabel}</div>
+                </div>
+              </div>
+
+              <div className="hidden sm:flex items-center gap-3">
+                <div className="text-sm text-gray-700">
+                  Signed in as{" "}
+                  <span className="font-semibold text-gray-900">{hackathonUser?.fullName}</span>
+                </div>
+                <span className="text-xs font-semibold px-3 py-1 rounded-full bg-[#2563EB]/10 text-[#2563EB] border border-[#2563EB]/20">
+                  {hackathonUser?.role}
+                </span>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-3xl border border-[#E2E8F0] shadow-sm p-4 sm:p-6">
               {children}
             </div>
           </main>
         </div>
       </div>
+
+      {/* Mobile Drawer */}
+      {mobileOpen ? (
+        <div className="fixed inset-0 z-50">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setMobileOpen(false)} />
+          <aside className="absolute left-0 top-0 bottom-0 w-[280px] bg-[#0B1220] border-r border-white/10 p-4 overflow-y-auto">
+            <div className="flex items-center justify-between mb-5">
+              <div>
+                <div className="text-xs font-semibold text-white/60">AICTE IDEA Lab</div>
+                <div className="mt-1 text-xl font-extrabold text-white">Hackathon 2026</div>
+              </div>
+              <button
+                className="w-11 h-11 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center transition"
+                onClick={() => setMobileOpen(false)}
+                aria-label="Close menu"
+              >
+                <span className="text-white font-bold text-lg leading-none">x</span>
+              </button>
+            </div>
+
+            <div className="mb-5 text-sm text-white/80">
+              <div>
+                Signed in as{" "}
+                <span className="font-semibold text-white">{hackathonUser?.fullName}</span>
+              </div>
+              <div className="mt-1 text-xs text-white/55">{hackathonUser?.role}</div>
+            </div>
+
+            <nav className="flex flex-col gap-2">
+              {nav.map((item) => {
+                const isActive =
+                  role === "admin"
+                    ? item.to === location.pathname
+                    : item.tabKey === activeTabKey;
+                const ItemIcon = item.icon;
+                return (
+                  <Link
+                    key={item.to}
+                    to={item.to}
+                    onClick={() => setMobileOpen(false)}
+                    className={`${baseNavItem} ${
+                      isActive
+                        ? "bg-[#2563EB] text-white"
+                        : "bg-white/0 text-white/80 hover:bg-white/5"
+                    }`}
+                  >
+                    <ItemIcon className="w-4 h-4" />
+                    {item.label}
+                  </Link>
+                );
+              })}
+            </nav>
+
+            <button
+              onClick={handleLogout}
+              className="mt-5 w-full flex items-center justify-center gap-3 px-4 py-3 rounded-2xl bg-white/5 hover:bg-white/10 text-white text-sm font-semibold transition border border-white/10"
+            >
+              <LogOut className="w-4 h-4" />
+              Logout
+            </button>
+          </aside>
+        </div>
+      ) : null}
     </div>
   );
 };
