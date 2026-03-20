@@ -4,8 +4,9 @@ import { useHackathonAuthStore } from "../../store/useHackathonAuthStore";
 
 const HackathonGuidelines = () => {
   const { hackathonUser } = useHackathonAuthStore();
-  // Mentors should not view guidelines/problems (only assigned progress/team).
-  if (hackathonUser?.role === "mentor") return <Navigate to="/hackathon/status" replace />;
+  // Students/Mentors: guidelines are shown as a modal inside the dashboard.
+  if (hackathonUser?.role === "mentor") return <Navigate to="/hackathon/dashboard?tab=status" replace />;
+  if (hackathonUser?.role === "student") return <Navigate to="/hackathon/dashboard?tab=team" replace />;
 
   return (
     <div className="max-w-4xl mx-auto">

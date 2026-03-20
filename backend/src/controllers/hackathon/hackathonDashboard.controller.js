@@ -8,7 +8,7 @@ import HackathonTeamMentor from "../../models/hackathon/HackathonTeamMentorModel
 
 export const getDashboard = async (req, res) => {
   try {
-    const userId = req.hackathonUser.id;
+    const userId = Number(req.hackathonUser.id);
     const role = req.hackathonUser.role;
 
     let teamId = null;
@@ -16,6 +16,10 @@ export const getDashboard = async (req, res) => {
     if (role === "student") {
       const member = await HackathonTeamMember.findOne({ where: { userId } });
       teamId = member?.teamId || null;
+      if (!teamId) {
+        const leaderTeam = await HackathonTeam.findOne({ where: { leaderUserId: userId }, attributes: ["id"] });
+        teamId = leaderTeam?.id || null;
+      }
     } else if (role === "mentor") {
       const mentor = await HackathonMentor.findOne({ where: { userId } });
       if (mentor) {

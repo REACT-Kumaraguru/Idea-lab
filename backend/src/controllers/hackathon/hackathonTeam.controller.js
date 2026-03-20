@@ -16,7 +16,7 @@ export const createTeam = async (req, res) => {
   try {
     if (!teamName?.trim()) return res.status(400).json({ message: "Team name is required" });
 
-    const userId = req.hackathonUser.id;
+    const userId = Number(req.hackathonUser.id);
 
     const existingMembership = await HackathonTeamMember.findOne({ where: { userId } });
     if (existingMembership) {
@@ -63,7 +63,7 @@ export const joinTeam = async (req, res) => {
   try {
     if (!inviteCode?.trim()) return res.status(400).json({ message: "Invite code is required" });
 
-    const userId = req.hackathonUser.id;
+    const userId = Number(req.hackathonUser.id);
 
     const existingMembership = await HackathonTeamMember.findOne({ where: { userId } });
     if (existingMembership) return res.status(400).json({ message: "You already belong to a team" });
@@ -97,21 +97,38 @@ export const joinTeam = async (req, res) => {
 
 export const getMyTeam = async (req, res) => {
   try {
-    const userId = req.hackathonUser.id;
+    const userId = Number(req.hackathonUser.id);
     const role = req.hackathonUser.role;
 
     // Student: team membership via hackathon_team_members
     if (role === "student") {
       const member = await HackathonTeamMember.findOne({ where: { userId } });
-      if (!member) return res.status(200).json({ team: null });
 
-      const team = await HackathonTeam.findOne({
-        where: { id: member.teamId },
-        include: [
-          { model: HackathonTeamMember, as: "members", include: [{ model: HackathonUser, as: "member" }] },
-          { model: HackathonUser, as: "leader", attributes: ["id", "fullName", "email", "phoneNumber", "role"] },
-        ],
-      });
+      // Fallback: if membership row missing, try leader_user_id.
+      const team =
+        member?.teamId
+          ? await HackathonTeam.findOne({
+              where: { id: member.teamId },
+              include: [
+                { model: HackathonTeamMember, as: "members", include: [{ model: HackathonUser, as: "member" }] },
+                {
+                  model: HackathonUser,
+                  as: "leader",
+                  attributes: ["id", "fullName", "email", "phoneNumber", "role"],
+                },
+              ],
+            })
+          : await HackathonTeam.findOne({
+              where: { leaderUserId: userId },
+              include: [
+                { model: HackathonTeamMember, as: "members", include: [{ model: HackathonUser, as: "member" }] },
+                {
+                  model: HackathonUser,
+                  as: "leader",
+                  attributes: ["id", "fullName", "email", "phoneNumber", "role"],
+                },
+              ],
+            });
 
       if (!team) return res.status(200).json({ team: null });
 
@@ -121,7 +138,7 @@ export const getMyTeam = async (req, res) => {
         inviteCode: team.inviteCode,
         status: team.status,
         leaderUserId: team.leaderUserId,
-        isLeader: member.isLeader,
+        isLeader: member ? member.isLeader : team.leaderUserId === userId,
         members: (team.members || []).map((m) => ({
           id: m.id,
           userId: m.userId,

@@ -28,7 +28,7 @@ const HackathonJoinTeam = () => {
     setError(null);
     try {
       await axiosInstance.post("/hackathon/team/join", { inviteCode });
-      navigate("/hackathon/team");
+      navigate("/hackathon/dashboard");
     } catch (err) {
       setError(err.response?.data?.message || "Failed to join team");
     }

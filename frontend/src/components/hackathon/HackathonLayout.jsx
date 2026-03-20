@@ -17,19 +17,10 @@ const HackathonLayout = ({ children }) => {
 
   const studentNav = [
     { to: "/hackathon/dashboard", label: "Dashboard" },
-    { to: "/hackathon/team", label: "Team" },
-    { to: "/hackathon/problems", label: "Problems" },
-    { to: "/hackathon/create-team", label: "Create Team" },
-    { to: "/hackathon/join-team", label: "Join Team" },
-    { to: "/hackathon/submit", label: "Submit" },
-    { to: "/hackathon/status", label: "Status" },
-    { to: "/hackathon/guidelines", label: "Guidelines" },
   ];
 
   const mentorNav = [
     { to: "/hackathon/dashboard", label: "Dashboard" },
-    { to: "/hackathon/team", label: "Team" },
-    { to: "/hackathon/status", label: "Status" },
   ];
 
   const adminNav = [

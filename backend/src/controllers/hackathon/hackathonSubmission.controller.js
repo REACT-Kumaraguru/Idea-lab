@@ -16,7 +16,7 @@ const phaseEnum = ["poc", "prototype"];
 export const submit = async (req, res) => {
   const { problemId, phase, title, description } = req.body || {};
   try {
-    const userId = req.hackathonUser.id;
+    const userId = Number(req.hackathonUser.id);
     const resolvedPhase = phaseEnum.includes(phase) ? phase : null;
     if (!problemId || !resolvedPhase) {
       return res.status(400).json({ message: "problemId and phase are required" });
@@ -24,12 +24,16 @@ export const submit = async (req, res) => {
     if (!title?.trim()) return res.status(400).json({ message: "title is required" });
 
     const teamMember = await HackathonTeamMember.findOne({ where: { userId } });
-    if (!teamMember) return res.status(400).json({ message: "You must be part of a team" });
 
-    const team = await HackathonTeam.findByPk(teamMember.teamId);
-    if (!team) return res.status(400).json({ message: "Team not found" });
+    // Fallback: if membership row missing, allow based on leader_user_id.
+    const team = teamMember?.teamId
+      ? await HackathonTeam.findByPk(teamMember.teamId)
+      : await HackathonTeam.findOne({ where: { leaderUserId: userId } });
 
-    if (teamMember.isLeader !== true || team.leaderUserId !== userId) {
+    if (!team) return res.status(400).json({ message: "You must be part of a team" });
+
+    const isLeader = teamMember ? teamMember.isLeader === true : team.leaderUserId === userId;
+    if (!isLeader || team.leaderUserId !== userId) {
       return res.status(403).json({ message: "Only team leader can submit" });
     }
 
@@ -103,7 +107,7 @@ export const submit = async (req, res) => {
 
 export const getStatus = async (req, res) => {
   try {
-    const userId = req.hackathonUser.id;
+    const userId = Number(req.hackathonUser.id);
     const role = req.hackathonUser.role;
 
     let teamId = null;
@@ -111,6 +115,10 @@ export const getStatus = async (req, res) => {
     if (role === "student") {
       const member = await HackathonTeamMember.findOne({ where: { userId } });
       teamId = member?.teamId || null;
+      if (!teamId) {
+        const leaderTeam = await HackathonTeam.findOne({ where: { leaderUserId: userId }, attributes: ["id"] });
+        teamId = leaderTeam?.id || null;
+      }
     } else if (role === "mentor") {
       const mentor = await HackathonMentor.findOne({ where: { userId } });
       if (!mentor) return res.status(200).json({ team: null, submissions: [] });

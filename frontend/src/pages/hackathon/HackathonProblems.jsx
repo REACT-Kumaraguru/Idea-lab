@@ -9,7 +9,8 @@ const HackathonProblems = () => {
   const { hackathonUser } = useHackathonAuthStore();
 
   // Mentors should not browse problems/guidelines; they only view assigned progress.
-  if (hackathonUser?.role === "mentor") return <Navigate to="/hackathon/status" replace />;
+  if (hackathonUser?.role === "mentor") return <Navigate to="/hackathon/dashboard?tab=status" replace />;
+  if (hackathonUser?.role === "student") return <Navigate to="/hackathon/dashboard?tab=problems" replace />;
 
   useEffect(() => {
     const load = async () => {

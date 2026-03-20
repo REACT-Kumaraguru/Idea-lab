@@ -29,7 +29,7 @@ const HackathonCreateTeam = () => {
     try {
       const res = await axiosInstance.post("/hackathon/team/create", { teamName });
       setTeam(res.data);
-      navigate("/hackathon/team");
+      navigate("/hackathon/dashboard");
     } catch (err) {
       setError(err.response?.data?.message || "Failed to create team");
     }
