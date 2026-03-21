@@ -3,6 +3,10 @@ import HackathonTeamMember from "../../models/hackathon/HackathonTeamMemberModel
 import HackathonTeam from "../../models/hackathon/HackathonTeamModel.js";
 import HackathonProblem from "../../models/hackathon/HackathonProblemModel.js";
 import HackathonUser from "../../models/hackathon/HackathonUserModel.js";
+import {
+  buildSubmissionApprovedEmailHtml,
+  sendHackathonNotificationEmail,
+} from "../../services/mailService.js";
 import HackathonMentor from "../../models/hackathon/HackathonMentorModel.js";
 import HackathonTeamMentor from "../../models/hackathon/HackathonTeamMentorModel.js";
 
@@ -229,6 +233,30 @@ export const adminSetSubmissionStatus = async (req, res) => {
     });
 
     await submission.reload();
+
+    if (status === "approved") {
+      const teamFull = await HackathonTeam.findByPk(submission.teamId, {
+        attributes: ["id", "teamName", "leaderUserId"],
+      });
+      const leader = teamFull
+        ? await HackathonUser.findByPk(teamFull.leaderUserId, {
+            attributes: ["email", "fullName"],
+          })
+        : null;
+      if (leader?.email && teamFull) {
+        const html = buildSubmissionApprovedEmailHtml({
+          leaderName: leader.fullName || leader.email,
+          teamName: teamFull.teamName,
+          projectTitle: submission.title,
+        });
+        await sendHackathonNotificationEmail({
+          to: leader.email,
+          subject: "IDEA Lab — Your submission has been approved",
+          html,
+        });
+      }
+    }
+
     const payload = await serializeSubmissionForAdmin(submission);
     return res.status(200).json({ submission: payload });
   } catch (error) {

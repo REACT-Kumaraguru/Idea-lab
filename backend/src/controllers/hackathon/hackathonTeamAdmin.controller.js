@@ -1,6 +1,10 @@
 import HackathonTeam from "../../models/hackathon/HackathonTeamModel.js";
 import HackathonTeamMember from "../../models/hackathon/HackathonTeamMemberModel.js";
 import HackathonUser from "../../models/hackathon/HackathonUserModel.js";
+import {
+  buildTeamApprovedEmailHtml,
+  sendHackathonNotificationEmail,
+} from "../../services/mailService.js";
 
 async function serializeTeamForAdmin(teamInstance) {
   const team = teamInstance.toJSON ? teamInstance.toJSON() : teamInstance;
@@ -82,6 +86,23 @@ export const adminSetTeamStatus = async (req, res) => {
 
     await team.update({ status });
     await team.reload();
+
+    if (status === "approved") {
+      const leader = await HackathonUser.findByPk(team.leaderUserId, {
+        attributes: ["email", "fullName"],
+      });
+      if (leader?.email) {
+        const html = buildTeamApprovedEmailHtml({
+          leaderName: leader.fullName || leader.email,
+          teamName: team.teamName,
+        });
+        await sendHackathonNotificationEmail({
+          to: leader.email,
+          subject: "IDEA Lab — Your team has been approved",
+          html,
+        });
+      }
+    }
 
     const payload = await serializeTeamForAdmin(team);
     return res.status(200).json({ team: payload });
