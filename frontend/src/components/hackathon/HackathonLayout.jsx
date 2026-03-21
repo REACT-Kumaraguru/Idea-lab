@@ -5,7 +5,6 @@ import {
   ChevronLeft,
   ChevronRight,
   ClipboardList,
-  Crown,
   LayoutDashboard,
   LogOut,
   Menu,
@@ -66,8 +65,6 @@ const HackathonLayout = ({ children }) => {
       { to: "/hackathon/admin/teams", label: "Teams", icon: Users },
       { to: "/hackathon/admin/problems", label: "Problems", icon: ClipboardList },
       { to: "/hackathon/admin/submissions", label: "Submissions", icon: Activity },
-      { to: "/hackathon/admin/mentors", label: "Mentors", icon: Users },
-      { to: "/hackathon/admin/winners", label: "Winners", icon: Crown },
     ],
     []
   );

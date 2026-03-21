@@ -1,4 +1,5 @@
 import HackathonProblem from "../../models/hackathon/HackathonProblemModel.js";
+import HackathonSubmission from "../../models/hackathon/HackathonSubmissionModel.js";
 
 export const getProblems = async (req, res) => {
   try {
@@ -43,6 +44,28 @@ export const adminGetProblems = async (req, res) => {
     return res.status(200).json({ problems });
   } catch (error) {
     console.log("Error in adminGetProblems:", error.message);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+export const adminDeleteProblem = async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id)) {
+      return res.status(400).json({ message: "Invalid problem id" });
+    }
+
+    const problem = await HackathonProblem.findByPk(id);
+    if (!problem) {
+      return res.status(404).json({ message: "Problem not found" });
+    }
+
+    await HackathonSubmission.destroy({ where: { problemId: id } });
+    await problem.destroy();
+
+    return res.status(200).json({ message: "Problem deleted", id });
+  } catch (error) {
+    console.log("Error in adminDeleteProblem:", error.message);
     return res.status(500).json({ message: "Internal Server Error" });
   }
 };

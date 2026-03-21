@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { axiosInstance } from "../../lib/axios.js";
 
 const HackathonAdminProblems = () => {
@@ -10,6 +10,9 @@ const HackathonAdminProblems = () => {
   const [description, setDescription] = useState("");
   const [prizeAmount, setPrizeAmount] = useState("");
   const [seedMoneyAmount, setSeedMoneyAmount] = useState("");
+
+  const [search, setSearch] = useState("");
+  const [deletingId, setDeletingId] = useState(null);
 
   const [error, setError] = useState(null);
 
@@ -26,6 +29,15 @@ const HackathonAdminProblems = () => {
     };
     load();
   }, []);
+
+  const filteredProblems = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return problems;
+    return problems.filter((p) => {
+      const blob = `${p.title || ""} ${p.sector || ""} ${p.description || ""}`.toLowerCase();
+      return blob.includes(q);
+    });
+  }, [problems, search]);
 
   const addProblem = async (e) => {
     e.preventDefault();
@@ -47,6 +59,20 @@ const HackathonAdminProblems = () => {
       setSeedMoneyAmount("");
     } catch (e2) {
       setError(e2.response?.data?.message || "Failed to add problem");
+    }
+  };
+
+  const deleteProblem = async (id) => {
+    if (!window.confirm("Delete this problem? Related submissions will also be removed.")) return;
+    setDeletingId(id);
+    setError(null);
+    try {
+      await axiosInstance.delete(`/hackathon/admin/problems/${id}`);
+      setProblems((prev) => prev.filter((p) => p.id !== id));
+    } catch (e2) {
+      setError(e2.response?.data?.message || "Failed to delete problem");
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -117,23 +143,44 @@ const HackathonAdminProblems = () => {
       </form>
 
       <div className="mt-6">
-        <h3 className="font-bold text-gray-900">Existing Problems</h3>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <h3 className="font-bold text-gray-900">Existing Problems</h3>
+          <input
+            type="search"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search title, sector, description…"
+            className="w-full sm:max-w-xs rounded-xl border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
         <div className="mt-4 space-y-4">
-          {problems.map((p) => (
+          {filteredProblems.map((p) => (
             <div key={p.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
               <div className="flex items-start justify-between gap-4 flex-wrap">
                 <div>
                   <div className="text-xs font-semibold text-blue-700">{p.sector || "Sector"}</div>
                   <div className="text-lg font-bold text-gray-900 mt-1">{p.title}</div>
                 </div>
-                <div className="text-xs text-gray-600">
-                  Prize: {p.prizeAmount ? `₹${p.prizeAmount}` : "TBD"}
+                <div className="flex items-center gap-3">
+                  <div className="text-xs text-gray-600">
+                    Prize: {p.prizeAmount ? `₹${p.prizeAmount}` : "TBD"}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => deleteProblem(p.id)}
+                    disabled={deletingId === p.id}
+                    className="px-3 py-1.5 rounded-lg border border-red-200 text-red-700 text-xs font-semibold hover:bg-red-50 disabled:opacity-50"
+                  >
+                    {deletingId === p.id ? "Deleting…" : "Delete"}
+                  </button>
                 </div>
               </div>
               <div className="mt-3 text-sm text-gray-700 whitespace-pre-line">{p.description}</div>
             </div>
           ))}
-          {problems.length === 0 ? <div className="text-gray-700">No problems yet.</div> : null}
+          {filteredProblems.length === 0 ? (
+            <div className="text-gray-700">{problems.length === 0 ? "No problems yet." : "No matches for your search."}</div>
+          ) : null}
         </div>
       </div>
     </div>
@@ -141,4 +188,3 @@ const HackathonAdminProblems = () => {
 };
 
 export default HackathonAdminProblems;
-

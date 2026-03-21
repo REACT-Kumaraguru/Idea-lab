@@ -13,6 +13,21 @@ const toFileUrl = (file) => {
 
 const phaseEnum = ["poc", "prototype"];
 
+async function serializeSubmissionForAdmin(submissionInstance) {
+  const row = submissionInstance.toJSON ? submissionInstance.toJSON() : submissionInstance;
+  const team = await HackathonTeam.findByPk(row.teamId, {
+    attributes: ["id", "teamName", "status"],
+  });
+  const problem = await HackathonProblem.findByPk(row.problemId, {
+    attributes: ["id", "title", "sector"],
+  });
+  return {
+    ...row,
+    team: team ? { id: team.id, teamName: team.teamName, status: team.status } : null,
+    problem: problem ? { id: problem.id, title: problem.title, sector: problem.sector } : null,
+  };
+}
+
 export const submit = async (req, res) => {
   const { problemId, phase, title, description } = req.body || {};
   try {
@@ -177,21 +192,7 @@ export const adminListSubmissions = async (req, res) => {
       order: [["created_at", "DESC"]],
     });
 
-    const submissions = await Promise.all(
-      submissionsRows.map(async (s) => {
-        const team = await HackathonTeam.findByPk(s.teamId, {
-          attributes: ["id", "teamName", "status"],
-        });
-        const problem = await HackathonProblem.findByPk(s.problemId, {
-          attributes: ["id", "title", "sector"],
-        });
-        return {
-          ...(s.toJSON ? s.toJSON() : s),
-          team: team ? { id: team.id, teamName: team.teamName, status: team.status } : null,
-          problem: problem ? { id: problem.id, title: problem.title, sector: problem.sector } : null,
-        };
-      })
-    );
+    const submissions = await Promise.all(submissionsRows.map((s) => serializeSubmissionForAdmin(s)));
 
     return res.status(200).json({ submissions });
   } catch (error) {
@@ -227,7 +228,9 @@ export const adminSetSubmissionStatus = async (req, res) => {
       adminNotes: adminNotes?.trim() || null,
     });
 
-    return res.status(200).json({ submission });
+    await submission.reload();
+    const payload = await serializeSubmissionForAdmin(submission);
+    return res.status(200).json({ submission: payload });
   } catch (error) {
     console.log("Error in adminSetSubmissionStatus:", error.message);
     return res.status(500).json({ message: "Internal Server Error" });

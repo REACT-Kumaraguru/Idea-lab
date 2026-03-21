@@ -23,7 +23,7 @@ const HackathonAdminTeams = () => {
   const setTeamStatus = async (teamId, status) => {
     try {
       const res = await axiosInstance.post(`/hackathon/admin/teams/${teamId}/status`, { status });
-      setTeams((prev) => prev.map((t) => (t.id === teamId ? res.data.team || t : t)));
+      setTeams((prev) => prev.map((t) => (t.id === teamId ? res.data.team : t)));
     } catch (e) {
       setError(e.response?.data?.message || "Failed to update status");
     }
@@ -45,6 +45,7 @@ const HackathonAdminTeams = () => {
               <th className="p-3">Leader</th>
               <th className="p-3">Members</th>
               <th className="p-3">Status</th>
+              <th className="p-3 min-w-[140px]">Details</th>
               <th className="p-3">Actions</th>
             </tr>
           </thead>
@@ -63,29 +64,67 @@ const HackathonAdminTeams = () => {
                     {t.status}
                   </span>
                 </td>
-                <td className="p-3">
-                  <div className="flex gap-2 flex-wrap">
-                    <button
-                      className="px-3 py-1 rounded-lg bg-blue-600 text-white text-xs font-semibold hover:bg-blue-700 transition"
-                      onClick={() => setTeamStatus(t.id, "approved")}
-                      disabled={t.status !== "pending"}
-                    >
-                      Approve
-                    </button>
-                    <button
-                      className="px-3 py-1 rounded-lg border border-gray-300 text-gray-700 text-xs font-semibold hover:bg-gray-50 transition"
-                      onClick={() => setTeamStatus(t.id, "rejected")}
-                      disabled={t.status !== "pending"}
-                    >
-                      Reject
-                    </button>
-                  </div>
+                <td className="p-3 align-top">
+                  <details className="max-w-xs">
+                    <summary className="cursor-pointer text-blue-600 text-xs font-semibold hover:underline">
+                      View team details
+                    </summary>
+                    <div className="mt-2 pl-2 border-l-2 border-gray-200 text-xs text-gray-700 space-y-2">
+                      <div>
+                        <span className="font-semibold text-gray-900">Team name:</span> {t.teamName}
+                      </div>
+                      <div>
+                        <span className="font-semibold text-gray-900">Invite code:</span>{" "}
+                        <span className="font-mono">{t.inviteCode}</span>
+                      </div>
+                      <div>
+                        <span className="font-semibold text-gray-900">Status:</span> {t.status}
+                      </div>
+                      <div className="font-semibold text-gray-900 pt-1">Members</div>
+                      <ul className="space-y-2">
+                        {(t.members || []).map((m) => (
+                          <li key={m.id} className="border-b border-gray-100 pb-2 last:border-0">
+                            <div>
+                              {m.fullName || "—"}
+                              {m.isLeader ? (
+                                <span className="ml-1 text-[10px] uppercase text-blue-600 font-bold">Leader</span>
+                              ) : null}
+                            </div>
+                            <div className="text-gray-500">{m.email || "—"}</div>
+                            {m.phoneNumber ? <div className="text-gray-500">{m.phoneNumber}</div> : null}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </details>
+                </td>
+                <td className="p-3 align-top">
+                  {t.status === "pending" ? (
+                    <div className="flex gap-2 flex-wrap">
+                      <button
+                        type="button"
+                        className="px-3 py-1 rounded-lg bg-blue-600 text-white text-xs font-semibold hover:bg-blue-700 transition"
+                        onClick={() => setTeamStatus(t.id, "approved")}
+                      >
+                        Approve
+                      </button>
+                      <button
+                        type="button"
+                        className="px-3 py-1 rounded-lg border border-gray-300 text-gray-700 text-xs font-semibold hover:bg-gray-50 transition"
+                        onClick={() => setTeamStatus(t.id, "rejected")}
+                      >
+                        Reject
+                      </button>
+                    </div>
+                  ) : (
+                    <span className="text-xs text-gray-500">—</span>
+                  )}
                 </td>
               </tr>
             ))}
             {teams.length === 0 && (
               <tr>
-                <td colSpan={6} className="p-4 text-gray-700">
+                <td colSpan={7} className="p-4 text-gray-700">
                   No teams found.
                 </td>
               </tr>
@@ -98,4 +137,3 @@ const HackathonAdminTeams = () => {
 };
 
 export default HackathonAdminTeams;
-

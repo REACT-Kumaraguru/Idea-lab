@@ -14,7 +14,12 @@ import {
   joinTeam,
   getMyTeam,
 } from "../../controllers/hackathon/hackathonTeam.controller.js";
-import { getProblems, adminAddProblem, adminGetProblems } from "../../controllers/hackathon/hackathonProblem.controller.js";
+import {
+  getProblems,
+  adminAddProblem,
+  adminGetProblems,
+  adminDeleteProblem,
+} from "../../controllers/hackathon/hackathonProblem.controller.js";
 import {
   submit,
   getStatus,
@@ -75,6 +80,7 @@ router.post("/admin/teams/:id/status", protectHackathonRoute, requireHackathonAd
 
 router.get("/admin/problems", protectHackathonRoute, requireHackathonAdminRole, adminGetProblems);
 router.post("/admin/problems", protectHackathonRoute, requireHackathonAdminRole, adminAddProblem);
+router.delete("/admin/problems/:id", protectHackathonRoute, requireHackathonAdminRole, adminDeleteProblem);
 
 router.get("/admin/submissions", protectHackathonRoute, requireHackathonAdminRole, adminListSubmissions);
 router.post("/admin/submissions/:id/status", protectHackathonRoute, requireHackathonAdminRole, adminSetSubmissionStatus);

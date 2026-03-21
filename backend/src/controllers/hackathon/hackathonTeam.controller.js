@@ -1,3 +1,4 @@
+import { Op } from "sequelize";
 import HackathonUser from "../../models/hackathon/HackathonUserModel.js";
 import HackathonTeam from "../../models/hackathon/HackathonTeamModel.js";
 import HackathonTeamMember from "../../models/hackathon/HackathonTeamMemberModel.js";
@@ -87,6 +88,13 @@ export const createTeam = async (req, res) => {
   const { teamName } = req.body || {};
   try {
     if (!teamName?.trim()) return res.status(400).json({ message: "Team name is required" });
+
+    const nameTaken = await HackathonTeam.findOne({
+      where: { teamName: { [Op.iLike]: teamName.trim() } },
+    });
+    if (nameTaken) {
+      return res.status(400).json({ message: "This team name is already taken" });
+    }
 
     const userId = getUserIdFromSession(req);
 
