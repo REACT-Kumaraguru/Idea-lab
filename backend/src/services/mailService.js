@@ -216,6 +216,107 @@ export function buildSubmissionApprovedEmailHtml({ leaderName, teamName, project
 `.trim();
 }
 
+/**
+ * Admin broadcast / reminder email (HTML). Leader + team context; message is plain text (escaped).
+ */
+export function buildAdminTeamNotificationHtml({ leaderName, teamName, subjectLine, messageBody }) {
+  const ln = escapeHtml(leaderName);
+  const tn = escapeHtml(teamName);
+  const title = escapeHtml(subjectLine);
+  const bodyEscaped = escapeHtml(messageBody || "").replace(/\n/g, "<br/>");
+  const portalHref = getPortalHref();
+
+  return `
+<div style="font-family: Arial, sans-serif; background:#f4f6f8; padding:20px;">
+  <div style="max-width:600px; margin:auto; background:white; border-radius:8px; overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,0.1);">
+
+    <!-- Header -->
+    <div style="background:#0f172a; color:white; padding:15px; text-align:center;">
+      <h2 style="margin:0;">IDEA Lab Portal</h2>
+      <p style="margin:0; font-size:12px;">Kumaraguru College of Technology</p>
+    </div>
+
+    <!-- Body -->
+    <div style="padding:25px;">
+
+      <h3 style="margin-top:0; color:#0f172a;">${title}</h3>
+
+      <p>Hello <b>${ln}</b>,</p>
+
+      <p>This is a reminder from IDEA Lab.</p>
+
+      <table style="width:100%; border-collapse:collapse; margin-top:12px; margin-bottom:16px; font-size:14px;">
+        <tr>
+          <td style="padding:6px 8px; font-weight:bold; width:35%; vertical-align:top;">Team name</td>
+          <td style="padding:6px 8px;">${tn}</td>
+        </tr>
+        <tr>
+          <td style="padding:6px 8px; font-weight:bold; vertical-align:top;">Team leader</td>
+          <td style="padding:6px 8px;">${ln}</td>
+        </tr>
+      </table>
+
+      <div style="font-size:14px; color:#334155; line-height:1.6;">${bodyEscaped}</div>
+
+      <div style="text-align:center; margin:24px 0 8px;">
+        <a href="${portalHref}"
+           style="
+             background:#2563eb;
+             color:white;
+             padding:10px 18px;
+             text-decoration:none;
+             border-radius:6px;
+             font-weight:bold;
+             display:inline-block;
+           ">
+           Go to Portal
+        </a>
+      </div>
+
+      <p style="font-size:12px; color:#64748b; margin-bottom:0;">
+        This is an automated email.
+      </p>
+
+    </div>
+
+    <!-- Footer -->
+    <div style="background:#f1f5f9; padding:15px; text-align:center; font-size:12px; color:#475569;">
+      IDEA Lab Portal<br/>
+      Kumaraguru College of Technology<br/>
+      This is an automated email. Please do not reply.
+    </div>
+
+  </div>
+</div>
+`.trim();
+}
+
+/**
+ * Sends admin team notification; throws {@link AppError} if SMTP is missing or send fails.
+ */
+export async function sendAdminTeamNotificationEmail({ to, subject, html, text }) {
+  const transport = getMailTransport();
+  if (!transport) {
+    throw new AppError("Email service is not configured", 503);
+  }
+  const from = ENV.MAIL_FROM || `Idea Lab <${ENV.SMTP_USER}>`;
+  const plain =
+    text ||
+    (html ? html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim() : subject);
+  try {
+    await transport.sendMail({
+      from,
+      to,
+      subject,
+      text: plain,
+      html,
+    });
+  } catch (err) {
+    console.error("[mail] Admin team notification failed:", err.message);
+    throw new AppError(err.message || "Failed to send email", 502);
+  }
+}
+
 export function buildTeamApprovedEmailHtml({ leaderName, teamName }) {
   const ln = escapeHtml(leaderName);
   const tn = escapeHtml(teamName);

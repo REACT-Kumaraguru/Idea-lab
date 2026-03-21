@@ -31,6 +31,7 @@ import { protectHackathonRoute, requireHackathonRole, requireHackathonStudentRol
 import { hackathonUpload } from "../../modules/hackathon/lib/hackathonUpload.js";
 import { getDashboard } from "../../controllers/hackathon/hackathonDashboard.controller.js";
 import { adminListTeams, adminSetTeamStatus } from "../../controllers/hackathon/hackathonTeamAdmin.controller.js";
+import { adminSendTeamMail } from "../../controllers/hackathon/hackathonAdminMail.controller.js";
 import {
   adminListMentors,
   adminCreateMentor,
@@ -77,6 +78,7 @@ router.get("/status", protectHackathonRoute, requireHackathonRole("student", "me
 // Admin panel
 router.get("/admin/teams", protectHackathonRoute, requireHackathonAdminRole, adminListTeams);
 router.post("/admin/teams/:id/status", protectHackathonRoute, requireHackathonAdminRole, adminSetTeamStatus);
+router.post("/admin/send-mail", protectHackathonRoute, requireHackathonAdminRole, adminSendTeamMail);
 
 router.get("/admin/problems", protectHackathonRoute, requireHackathonAdminRole, adminGetProblems);
 router.post("/admin/problems", protectHackathonRoute, requireHackathonAdminRole, adminAddProblem);

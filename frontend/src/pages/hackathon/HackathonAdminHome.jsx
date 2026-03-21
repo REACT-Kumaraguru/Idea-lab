@@ -23,6 +23,13 @@ const HackathonAdminHome = () => {
           <div className="font-bold text-gray-900">Submissions</div>
           <div className="text-gray-600 mt-1">Review PoC / Prototype submissions.</div>
         </Link>
+        <Link
+          to="/hackathon/admin/send-mail"
+          className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm hover:shadow-md transition md:col-span-2"
+        >
+          <div className="font-bold text-gray-900">Send Mail</div>
+          <div className="text-gray-600 mt-1">Email team leaders (reminders, payment, approvals).</div>
+        </Link>
       </div>
     </div>
   );
