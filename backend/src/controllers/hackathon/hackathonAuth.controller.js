@@ -2,6 +2,8 @@ import bcrypt from "bcryptjs";
 import HackathonUser from "../../models/hackathon/HackathonUserModel.js";
 import HackathonSession from "../../models/hackathon/HackathonSessionModel.js";
 
+const normalizeEmail = (email) => String(email || "").trim().toLowerCase();
+
 const createSessionRow = async (req, user) => {
   // Best-effort: session cookie/DB row might be created slightly after response.
   const sessionId = req.sessionID || req.session?.id;
@@ -28,6 +30,12 @@ export const register = async (req, res) => {
     role,
   } = req.body || {};
   try {
+    const normalizedEmail = normalizeEmail(email);
+
+    if (req.session.registrationEmailVerified !== normalizedEmail) {
+      return res.status(403).json({ message: "Email is not verified. Complete OTP verification first." });
+    }
+
     // Keep backwards compatibility with older client payloads
     const resolvedName = (name || fullName || "").trim();
     const resolvedPhone = String(phone ?? phoneNumber ?? "").trim();
@@ -35,9 +43,9 @@ export const register = async (req, res) => {
       .trim()
       .toUpperCase();
     const resolvedBranch = branch ?? null;
-    const resolvedGraduationYear = graduation_year ?? null;
+    const resolvedGraduationYear = graduation_year ?? req.body?.graduationYear ?? null;
 
-    if (!resolvedName || !email?.trim() || !password || !resolvedPhone || !resolvedDegree || !resolvedGraduationYear) {
+    if (!resolvedName || !normalizedEmail || !password || !resolvedPhone || !resolvedDegree || !resolvedGraduationYear) {
       return res.status(400).json({ message: "Name, email, phone, degree, graduation year and password are required" });
     }
     if (password.length < 6) {
@@ -65,7 +73,7 @@ export const register = async (req, res) => {
     }
 
     // Uniqueness checks
-    const existingByEmail = await HackathonUser.findOne({ where: { email: email.trim() } });
+    const existingByEmail = await HackathonUser.findOne({ where: { email: normalizedEmail } });
     if (existingByEmail) return res.status(400).json({ message: "Email already exists" });
 
     const existingByPhone = await HackathonUser.findOne({ where: { phoneNumber: resolvedPhone } });
@@ -78,7 +86,7 @@ export const register = async (req, res) => {
       // Populate both the legacy and new columns
       fullName: resolvedName,
       name: resolvedName,
-      email: email.trim(),
+      email: normalizedEmail,
       phoneNumber: resolvedPhone,
       phone: resolvedPhone,
       degree: resolvedDegree,
@@ -96,6 +104,8 @@ export const register = async (req, res) => {
     };
 
     await createSessionRow(req, user);
+
+    delete req.session.registrationEmailVerified;
 
     return res.status(201).json({
       id: user.id,

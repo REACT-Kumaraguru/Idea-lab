@@ -1,11 +1,10 @@
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
-import session from "express-session";
-import connectPgSimple from "connect-pg-simple";
-
 import { ENV } from "./src/lib/env.js";
-import authRoutes from "./src/routes/auth.route.js";
+import { createSessionMiddleware } from "./src/config/session.js";
+import authRoutes from "./src/routes/auth.js";
+import { errorHandler, notFoundHandler } from "./src/middleware/error.middleware.js";
 import adminAuthRoutes from "./src/routes/adminauth.route.js";
 import equipmentRoutes from "./src/routes/equipment.route.js";
 import bookingRoutes from "./src/routes/Booking.routes.js";
@@ -18,7 +17,6 @@ import { ensureDefaultHackathonAdmin } from "./src/scripts/ensureDefaultHackatho
 import { ensureHackathonUserColumns } from "./src/scripts/ensureHackathonUserColumns.js";
 
 const app = express();
-const PgSession = connectPgSimple(session);
 
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ extended: true, limit: "50mb" }));
@@ -42,26 +40,7 @@ if (!ENV.SESSION_SECRET) {
 
 app.set("trust proxy", 1);
 
-app.use(
-  session({
-    store: new PgSession({
-      conObject: {
-        connectionString: ENV.DATABASE_URL,
-      },
-      tableName: "session",
-      createTableIfMissing: true,
-    }),
-    secret: ENV.SESSION_SECRET,
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-      secure:  ENV.NODE_ENV === "production" && !ENV.CLIENT_URL?.includes("localhost"),
-      httpOnly: true,
-      sameSite: "strict",
-    },
-  })
-);
+app.use(createSessionMiddleware());
 
 setupAssociations();
 
@@ -76,6 +55,9 @@ app.use("/hackathon", hackathonRoutes);
 app.use("/api/hackathon", hackathonRoutes);
 
 app.use("/src/uploads", express.static("src/uploads"));
+
+app.use(notFoundHandler);
+app.use(errorHandler);
 
 const startServer = async () => {
   await connectDB();

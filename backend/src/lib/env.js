@@ -19,7 +19,7 @@ export const ENV = {
   CLERK_PUBLISHABLE_KEY: process.env.CLERK_PUBLISHABLE_KEY,
   CLERK_SECRET_KEY: process.env.CLERK_SECRET_KEY,
 
-  MAIL_FROM: process.env.MAIL_FROM || "Idea Lab <reactkumaraguru@gmail.com>",
+  MAIL_FROM: process.env.MAIL_FROM || "Idea Lab <noreply.idealab@kct.ac.in>",
   SMTP_HOST: process.env.SMTP_HOST,
   SMTP_PORT: process.env.SMTP_PORT ? Number(process.env.SMTP_PORT) : 587,
   SMTP_SECURE: process.env.SMTP_SECURE === "true",
