@@ -51,7 +51,16 @@ const HackathonAdminProblems = () => {
         seedMoneyAmount: seedMoneyAmount ? Number(seedMoneyAmount) : null,
       };
       const res = await axiosInstance.post("/hackathon/admin/problems", payload);
-      setProblems((prev) => [res.data.problem, ...prev]);
+      const p = res.data.problem;
+      setProblems((prev) => [
+        {
+          ...p,
+          submissionCount: 0,
+          pocSubmissionCount: 0,
+          prototypeSubmissionCount: 0,
+        },
+        ...prev,
+      ]);
       setTitle("");
       setSector("");
       setDescription("");
@@ -161,7 +170,17 @@ const HackathonAdminProblems = () => {
                   <div className="text-xs font-semibold text-blue-700">{p.sector || "Sector"}</div>
                   <div className="text-lg font-bold text-gray-900 mt-1">{p.title}</div>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex flex-col items-end gap-1 text-right">
+                  <div className="text-xs text-gray-700">
+                    <span className="font-semibold text-gray-900">{p.submissionCount ?? 0}</span> submission
+                    {(p.submissionCount ?? 0) === 1 ? "" : "s"}
+                    {typeof p.pocSubmissionCount === "number" || typeof p.prototypeSubmissionCount === "number" ? (
+                      <span className="text-gray-500">
+                        {" "}
+                        (PoC: {p.pocSubmissionCount ?? 0}, Prototype: {p.prototypeSubmissionCount ?? 0})
+                      </span>
+                    ) : null}
+                  </div>
                   <div className="text-xs text-gray-600">
                     Prize: {p.prizeAmount ? `₹${p.prizeAmount}` : "TBD"}
                   </div>

@@ -18,15 +18,18 @@ const toFileUrl = (file) => {
 const phaseEnum = ["poc", "prototype"];
 
 async function serializeSubmissionForAdmin(submissionInstance) {
-  const row = submissionInstance.toJSON ? submissionInstance.toJSON() : submissionInstance;
+  const row = submissionInstance.toJSON();
   const team = await HackathonTeam.findByPk(row.teamId, {
     attributes: ["id", "teamName", "status"],
   });
   const problem = await HackathonProblem.findByPk(row.problemId, {
     attributes: ["id", "title", "sector"],
   });
+
   return {
     ...row,
+    pocFilePaths: submissionInstance.pocFilePaths ?? [],
+    prototypeFilePaths: submissionInstance.prototypeFilePaths ?? [],
     team: team ? { id: team.id, teamName: team.teamName, status: team.status } : null,
     problem: problem ? { id: problem.id, title: problem.title, sector: problem.sector } : null,
   };
