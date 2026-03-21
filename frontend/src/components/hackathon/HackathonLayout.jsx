@@ -32,9 +32,13 @@ const HackathonLayout = ({ children }) => {
   const activeTabKey = useMemo(() => {
     if (location.pathname !== "/hackathon/dashboard") return null;
     if (!tab) return "dashboard";
+    if (role === "mentor") {
+      if (["team", "status"].includes(tab)) return tab;
+      return "dashboard";
+    }
     if (["team", "problems", "submit", "status"].includes(tab)) return tab;
     return "dashboard";
-  }, [location.pathname, tab]);
+  }, [location.pathname, tab, role]);
 
   const studentNav = useMemo(
     () => [
@@ -47,13 +51,10 @@ const HackathonLayout = ({ children }) => {
     []
   );
 
-  // Mentors also use the same portal sections (some pages redirect internally).
   const mentorNav = useMemo(
     () => [
       { to: "/hackathon/dashboard", label: "Dashboard", tabKey: "dashboard", icon: LayoutDashboard },
       { to: "/hackathon/dashboard?tab=team", label: "Team", tabKey: "team", icon: Users },
-      { to: "/hackathon/dashboard?tab=status", label: "Problems", tabKey: "problems", icon: ClipboardList },
-      { to: "/hackathon/dashboard?tab=status", label: "Submit", tabKey: "submit", icon: UploadCloud },
       { to: "/hackathon/dashboard?tab=status", label: "Status", tabKey: "status", icon: Activity },
     ],
     []
@@ -77,6 +78,24 @@ const HackathonLayout = ({ children }) => {
 
   const [mobileOpen, setMobileOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
+
+  const showMobileDock =
+    Boolean(hackathonUser) && location.pathname === "/hackathon/dashboard" && role !== "admin";
+
+  const mobileDockItems = useMemo(() => {
+    if (role === "mentor") {
+      return [
+        { to: "/hackathon/dashboard?tab=team", label: "Team", tabKey: "team", icon: Users },
+        { to: "/hackathon/dashboard?tab=status", label: "Status", tabKey: "status", icon: Activity },
+      ];
+    }
+    return [
+      { to: "/hackathon/dashboard?tab=team", label: "Team", tabKey: "team", icon: Users },
+      { to: "/hackathon/dashboard?tab=problems", label: "Problems", tabKey: "problems", icon: ClipboardList },
+      { to: "/hackathon/dashboard?tab=submit", label: "Submit", tabKey: "submit", icon: UploadCloud },
+      { to: "/hackathon/dashboard?tab=status", label: "Status", tabKey: "status", icon: Activity },
+    ];
+  }, [role]);
 
   const handleLogout = async () => {
     await logout();
@@ -130,7 +149,7 @@ const HackathonLayout = ({ children }) => {
               const ItemIcon = item.icon;
               return (
                 <Link
-                  key={item.to}
+                  key={role === "admin" ? item.to : item.tabKey}
                   to={item.to}
                   className={`${baseNavItem} ${collapsed ? "justify-center px-2" : ""} ${
                     isActive
@@ -159,7 +178,11 @@ const HackathonLayout = ({ children }) => {
         </div>
       </aside>
 
-      <div className={`px-4 py-5 transition-all duration-300 ${collapsed ? "md:ml-[104px]" : "md:ml-[266px]"}`}>
+      <div
+        className={`px-4 py-5 transition-all duration-300 ${collapsed ? "md:ml-[104px]" : "md:ml-[266px]"} ${
+          showMobileDock ? "pb-[calc(5rem+env(safe-area-inset-bottom,0px))] md:pb-5" : ""
+        }`}
+      >
         <div className="max-w-7xl mx-auto">
           {/* Main */}
           <main className="flex-1">
@@ -238,7 +261,7 @@ const HackathonLayout = ({ children }) => {
                 const ItemIcon = item.icon;
                 return (
                   <Link
-                    key={item.to}
+                    key={role === "admin" ? item.to : item.tabKey}
                     to={item.to}
                     onClick={() => setMobileOpen(false)}
                     className={`${baseNavItem} ${
@@ -263,6 +286,33 @@ const HackathonLayout = ({ children }) => {
             </button>
           </aside>
         </div>
+      ) : null}
+
+      {showMobileDock ? (
+        <nav
+          className="fixed bottom-0 left-0 right-0 z-30 md:hidden border-t border-[#E2E8F0] bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/85 shadow-[0_-4px_16px_rgba(15,23,42,0.08)]"
+          style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
+          aria-label="Dashboard sections"
+        >
+          <div className="flex items-stretch justify-around max-w-7xl mx-auto px-1 pt-1.5 pb-1">
+            {mobileDockItems.map((item) => {
+              const isActive = item.tabKey === activeTabKey;
+              const ItemIcon = item.icon;
+              return (
+                <Link
+                  key={item.tabKey}
+                  to={item.to}
+                  className={`flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-xl py-2 px-1 text-[11px] font-semibold transition ${
+                    isActive ? "text-[#2563EB]" : "text-gray-600 hover:text-gray-900"
+                  }`}
+                >
+                  <ItemIcon className={`h-5 w-5 shrink-0 ${isActive ? "text-[#2563EB]" : "text-gray-500"}`} />
+                  <span className="truncate">{item.label}</span>
+                </Link>
+              );
+            })}
+          </div>
+        </nav>
       ) : null}
     </div>
   );

@@ -21,15 +21,10 @@ const HackathonProblem = sequelize.define(
       type: DataTypes.STRING,
       allowNull: true,
     },
-    prizeAmount: {
-      type: DataTypes.DECIMAL(10, 2),
+    teamRegistrationLimit: {
+      type: DataTypes.INTEGER,
       allowNull: true,
-      field: "prize_amount",
-    },
-    seedMoneyAmount: {
-      type: DataTypes.DECIMAL(10, 2),
-      allowNull: true,
-      field: "seed_money_amount",
+      field: "team_registration_limit",
     },
   },
   {
@@ -41,4 +36,3 @@ const HackathonProblem = sequelize.define(
 );
 
 export default HackathonProblem;
-

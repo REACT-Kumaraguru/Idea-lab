@@ -1,3 +1,5 @@
+import { QueryTypes } from "sequelize";
+import { sequelize } from "../../lib/db.js";
 import HackathonSubmission from "../../models/hackathon/HackathonSubmissionModel.js";
 import HackathonTeamMember from "../../models/hackathon/HackathonTeamMemberModel.js";
 import HackathonTeam from "../../models/hackathon/HackathonTeamModel.js";
@@ -93,6 +95,22 @@ export const submit = async (req, res) => {
         submissionPhase: resolvedPhase,
       },
     });
+
+    if (!existing) {
+      const limit = problem.teamRegistrationLimit;
+      if (limit != null && limit > 0) {
+        const [countRow] = await sequelize.query(
+          `SELECT COUNT(DISTINCT team_id)::int AS c FROM hackathon_submissions WHERE problem_id = :pid`,
+          { replacements: { pid: problem.id }, type: QueryTypes.SELECT }
+        );
+        const distinctTeams = Number(countRow?.c) || 0;
+        if (distinctTeams >= limit) {
+          return res.status(400).json({
+            message: "This problem has reached the maximum number of teams allowed to register.",
+          });
+        }
+      }
+    }
 
     if (existing) {
       const updated = await existing.update({

@@ -3,13 +3,64 @@ import { sequelize } from "../../lib/db.js";
 import HackathonProblem from "../../models/hackathon/HackathonProblemModel.js";
 import HackathonSubmission from "../../models/hackathon/HackathonSubmissionModel.js";
 
+/** @returns {Promise<Record<number, number>>} */
+async function getDistinctTeamCountByProblem() {
+  const rows = await sequelize.query(
+    `SELECT problem_id AS "problemId", COUNT(DISTINCT team_id)::int AS n
+     FROM hackathon_submissions
+     GROUP BY problem_id`,
+    { type: QueryTypes.SELECT }
+  );
+  /** @type {Record<number, number>} */
+  const map = {};
+  for (const r of rows) {
+    map[Number(r.problemId)] = Number(r.n) || 0;
+  }
+  return map;
+}
+
+/** @returns {Promise<Record<number, { pending: number; approved: number; rejected: number }>>} */
+async function getTeamStatusCountsByProblem() {
+  const rows = await sequelize.query(
+    `SELECT s.problem_id AS "problemId", t.status::text AS status, COUNT(DISTINCT s.team_id)::int AS n
+     FROM hackathon_submissions s
+     INNER JOIN hackathon_teams t ON t.id = s.team_id
+     GROUP BY s.problem_id, t.status`,
+    { type: QueryTypes.SELECT }
+  );
+  /** @type {Record<number, { pending: number; approved: number; rejected: number }>} */
+  const map = {};
+  for (const r of rows) {
+    const pid = Number(r.problemId);
+    if (!map[pid]) {
+      map[pid] = { pending: 0, approved: 0, rejected: 0 };
+    }
+    const n = Number(r.n) || 0;
+    if (r.status === "pending") map[pid].pending = n;
+    if (r.status === "approved") map[pid].approved = n;
+    if (r.status === "rejected") map[pid].rejected = n;
+  }
+  return map;
+}
+
 export const getProblems = async (req, res) => {
   try {
     const problems = await HackathonProblem.findAll({
       order: [["created_at", "DESC"]],
     });
 
-    return res.status(200).json({ problems });
+    const teamCountMap = await getDistinctTeamCountByProblem();
+
+    const enriched = problems.map((p) => {
+      const json = p.toJSON();
+      const registeredTeams = teamCountMap[p.id] || 0;
+      return {
+        ...json,
+        registeredTeams,
+      };
+    });
+
+    return res.status(200).json({ problems: enriched });
   } catch (error) {
     console.log("Error in getProblems:", error.message);
     return res.status(500).json({ message: "Internal Server Error" });
@@ -17,18 +68,26 @@ export const getProblems = async (req, res) => {
 };
 
 export const adminAddProblem = async (req, res) => {
-  const { title, description, sector, prizeAmount, seedMoneyAmount } = req.body || {};
+  const { title, description, sector, teamRegistrationLimit } = req.body || {};
   try {
     if (!title?.trim() || !description?.trim()) {
       return res.status(400).json({ message: "title and description are required" });
+    }
+
+    let limitVal = null;
+    if (teamRegistrationLimit !== undefined && teamRegistrationLimit !== null && teamRegistrationLimit !== "") {
+      const n = Number(teamRegistrationLimit);
+      if (!Number.isInteger(n) || n < 1) {
+        return res.status(400).json({ message: "teamRegistrationLimit must be a positive integer" });
+      }
+      limitVal = n;
     }
 
     const problem = await HackathonProblem.create({
       title: title.trim(),
       description: description.trim(),
       sector: sector ? String(sector).trim() : null,
-      prizeAmount: prizeAmount ?? null,
-      seedMoneyAmount: seedMoneyAmount ?? null,
+      teamRegistrationLimit: limitVal,
     });
 
     return res.status(201).json({ problem });
@@ -64,13 +123,22 @@ export const adminGetProblems = async (req, res) => {
       if (r.submissionPhase === "prototype") tally[pid].prototype = n;
     }
 
+    const teamCountMap = await getDistinctTeamCountByProblem();
+    const statusMap = await getTeamStatusCountsByProblem();
+
     const enriched = problems.map((p) => {
       const t = tally[p.id] || { total: 0, poc: 0, prototype: 0 };
+      const st = statusMap[p.id] || { pending: 0, approved: 0, rejected: 0 };
+      const teamsSubmitted = teamCountMap[p.id] || 0;
       return {
         ...p.toJSON(),
         submissionCount: t.total,
         pocSubmissionCount: t.poc,
         prototypeSubmissionCount: t.prototype,
+        teamsSubmitted,
+        teamsPending: st.pending,
+        teamsApproved: st.approved,
+        teamsRejected: st.rejected,
       };
     });
 
@@ -102,4 +170,3 @@ export const adminDeleteProblem = async (req, res) => {
     return res.status(500).json({ message: "Internal Server Error" });
   }
 };
-

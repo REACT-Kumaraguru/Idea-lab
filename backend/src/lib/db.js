@@ -1,5 +1,6 @@
 import { Sequelize } from "sequelize";
 import { ENV } from "./env.js";
+import { ensureHackathonProblemColumns } from "../scripts/ensureHackathonProblemColumns.js";
 
 export const sequelize = new Sequelize(ENV.DATABASE_URL, {
   dialect: "postgres",
@@ -50,6 +51,7 @@ export const connectDB = async () => {
     console.log("PostgreSQL connected");
 
     await migrateLegacyUsers();
+    await ensureHackathonProblemColumns({ sequelize });
     await sequelize.sync();
 
     await sequelize.query(`

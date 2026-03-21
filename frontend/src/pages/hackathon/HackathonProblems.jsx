@@ -58,7 +58,13 @@ const HackathonProblems = () => {
 
               <div className="mt-4 flex items-center justify-between gap-3">
                 <div className="text-xs text-gray-500">
-                  Prize: {p.prizeAmount ? `₹${p.prizeAmount}` : "TBD"}
+                  {p.teamRegistrationLimit != null && p.teamRegistrationLimit > 0 ? (
+                    <>
+                      Teams: {p.registeredTeams ?? 0} / {p.teamRegistrationLimit}
+                    </>
+                  ) : (
+                    <>Teams registered: {p.registeredTeams ?? 0}</>
+                  )}
                 </div>
                 <Link
                   to={`/hackathon/submit?problemId=${p.id}`}

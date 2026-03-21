@@ -1,3 +1,5 @@
+import { QueryTypes } from "sequelize";
+import { sequelize } from "../../lib/db.js";
 import HackathonUser from "../../models/hackathon/HackathonUserModel.js";
 import HackathonTeam from "../../models/hackathon/HackathonTeamModel.js";
 import HackathonTeamMember from "../../models/hackathon/HackathonTeamMemberModel.js";
@@ -81,10 +83,27 @@ export const getDashboard = async (req, res) => {
     const userId = getUserIdFromSession(req);
     const role = req.hackathonUser.role;
 
-    const problems = await HackathonProblem.findAll({
+    const problemsRaw = await HackathonProblem.findAll({
       order: [["created_at", "DESC"]],
-      attributes: ["id", "title", "sector", "prizeAmount", "seedMoneyAmount"],
+      attributes: ["id", "title", "sector", "teamRegistrationLimit"],
     });
+
+    const teamCountRows = await sequelize.query(
+      `SELECT problem_id AS "problemId", COUNT(DISTINCT team_id)::int AS n
+       FROM hackathon_submissions
+       GROUP BY problem_id`,
+      { type: QueryTypes.SELECT }
+    );
+    /** @type {Record<number, number>} */
+    const teamCountMap = {};
+    for (const r of teamCountRows) {
+      teamCountMap[Number(r.problemId)] = Number(r.n) || 0;
+    }
+
+    const problems = problemsRaw.map((p) => ({
+      ...p.toJSON(),
+      registeredTeams: teamCountMap[p.id] || 0,
+    }));
 
     let team = null;
     if (role === "student") team = await getTeamForStudentUserId(userId);

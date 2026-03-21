@@ -138,7 +138,15 @@ const HackathonSubmit = () => {
               {selectedProblem ? (
                 <div className="mt-3 text-sm text-gray-700">
                   <div className="font-semibold">{selectedProblem.sector || "Sector"}</div>
-                  <div className="text-gray-600">{selectedProblem.prizeAmount ? `Prize: ₹${selectedProblem.prizeAmount}` : "Prize: TBD"}</div>
+                  <div className="text-gray-600">
+                    {selectedProblem.teamRegistrationLimit != null && selectedProblem.teamRegistrationLimit > 0 ? (
+                      <>
+                        Team slots: {selectedProblem.registeredTeams ?? 0} / {selectedProblem.teamRegistrationLimit}
+                      </>
+                    ) : (
+                      <>Teams registered: {selectedProblem.registeredTeams ?? 0}</>
+                    )}
+                  </div>
                 </div>
               ) : null}
             </div>

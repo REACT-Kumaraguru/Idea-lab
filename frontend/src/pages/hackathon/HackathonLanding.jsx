@@ -1,6 +1,16 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, BriefcaseBusiness, Building2, Lightbulb, ShieldCheck, Sparkles, Users } from "lucide-react";
+import {
+  ArrowRight,
+  BriefcaseBusiness,
+  Building2,
+  Lightbulb,
+  Menu,
+  ShieldCheck,
+  Sparkles,
+  Users,
+  X,
+} from "lucide-react";
 
 import IdeaLabLogo from "../../assets/idea-lab.png";
 import KctLogo from "../../assets/kctlogo.png";
@@ -11,6 +21,13 @@ const scrollToId = (id) => {
 };
 
 const HackathonLanding = () => {
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+
+  const closeAndScroll = (id) => {
+    setMobileNavOpen(false);
+    setTimeout(() => scrollToId(id), 0);
+  };
+
   return (
     <div className="min-h-screen bg-black text-white relative overflow-hidden">
       {/* Tunnel / futuristic background */}
@@ -52,7 +69,16 @@ const HackathonLanding = () => {
               </a>
             </nav>
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <button
+                type="button"
+                className="md:hidden inline-flex items-center justify-center w-11 h-11 rounded-xl border border-white/15 bg-white/5 hover:bg-white/10 text-white"
+                aria-label="Open menu"
+                aria-expanded={mobileNavOpen}
+                onClick={() => setMobileNavOpen(true)}
+              >
+                <Menu className="w-5 h-5" />
+              </button>
               <Link
                 to="/hackathon/login"
                 className="hidden sm:inline-flex px-4 py-2 rounded-xl border border-white/15 bg-white/5 hover:bg-white/10 text-white font-semibold transition"
@@ -69,6 +95,71 @@ const HackathonLanding = () => {
           </div>
         </div>
       </header>
+
+      {mobileNavOpen ? (
+        <div className="fixed inset-0 z-50 md:hidden">
+          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setMobileNavOpen(false)} />
+          <div className="absolute right-0 top-0 bottom-0 w-[min(100%,320px)] bg-[#0a0f18] border-l border-white/10 shadow-2xl flex flex-col">
+            <div className="flex items-center justify-between p-4 border-b border-white/10">
+              <span className="font-extrabold text-white">Menu</span>
+              <button
+                type="button"
+                className="w-11 h-11 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-white"
+                aria-label="Close menu"
+                onClick={() => setMobileNavOpen(false)}
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <nav className="flex flex-col p-4 gap-1 text-base font-semibold">
+              <button
+                type="button"
+                className="text-left px-4 py-3 rounded-xl text-white/90 hover:bg-white/10"
+                onClick={() => closeAndScroll("about")}
+              >
+                About
+              </button>
+              <button
+                type="button"
+                className="text-left px-4 py-3 rounded-xl text-white/90 hover:bg-white/10"
+                onClick={() => closeAndScroll("flow")}
+              >
+                Flow
+              </button>
+              <button
+                type="button"
+                className="text-left px-4 py-3 rounded-xl text-white/90 hover:bg-white/10"
+                onClick={() => closeAndScroll("guidelines")}
+              >
+                Guidelines
+              </button>
+              <button
+                type="button"
+                className="text-left px-4 py-3 rounded-xl text-white/90 hover:bg-white/10"
+                onClick={() => closeAndScroll("contact")}
+              >
+                Contact
+              </button>
+            </nav>
+            <div className="mt-auto p-4 border-t border-white/10 flex flex-col gap-2">
+              <Link
+                to="/hackathon/login"
+                className="w-full text-center px-4 py-3 rounded-xl border border-white/15 bg-white/5 text-white font-semibold"
+                onClick={() => setMobileNavOpen(false)}
+              >
+                Login
+              </Link>
+              <Link
+                to="/hackathon/register"
+                className="w-full text-center px-4 py-3 rounded-xl bg-cyan-500/95 text-black font-extrabold"
+                onClick={() => setMobileNavOpen(false)}
+              >
+                Register
+              </Link>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {/* Hero */}
       <section className="relative z-10 mt-8 pb-12">

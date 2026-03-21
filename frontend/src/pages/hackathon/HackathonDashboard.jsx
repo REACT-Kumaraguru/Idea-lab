@@ -6,7 +6,7 @@ import { AlertTriangle } from "lucide-react";
 
 const HackathonDashboard = () => {
   const { hackathonUser } = useHackathonAuthStore();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const mapSubmissionStatus = (s) => {
     if (!s) return null;
@@ -16,7 +16,17 @@ const HackathonDashboard = () => {
 
   const role = hackathonUser?.role;
 
-  const [activeTab, setActiveTab] = useState("team");
+  const [activeTab, setActiveTab] = useState(() => {
+    if (typeof window === "undefined") return "team";
+    const t = new URLSearchParams(window.location.search).get("tab");
+    if (t && ["team", "problems", "submit", "status"].includes(t)) return t;
+    return "team";
+  });
+
+  const changeTab = (key) => {
+    setActiveTab(key);
+    setSearchParams({ tab: key });
+  };
   const [guidelinesOpen, setGuidelinesOpen] = useState(false);
 
   const [team, setTeam] = useState(null);
@@ -86,24 +96,24 @@ const HackathonDashboard = () => {
 
   useEffect(() => {
     const tab = searchParams.get("tab");
-    if (!tab) return;
     if (role === "mentor") {
-      if (["team", "status"].includes(tab)) setActiveTab(tab);
-    } else {
-      if (["team", "problems", "submit", "status"].includes(tab)) setActiveTab(tab);
+      if (tab && !["team", "status"].includes(tab)) {
+        setActiveTab("team");
+        setSearchParams({ tab: "team" });
+        return;
+      }
+      if (tab && ["team", "status"].includes(tab)) setActiveTab(tab);
+      return;
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams, role]);
+    if (!tab) return;
+    if (["team", "problems", "submit", "status"].includes(tab)) setActiveTab(tab);
+  }, [searchParams, role, setSearchParams]);
 
   useEffect(() => {
     const sel = loadSelectedProblem();
     setSelectedProblem(sel || null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectionKey, team?.id]);
-
-  useEffect(() => {
-    if (role === "mentor") setActiveTab("team");
-  }, [role]);
 
   const studentTabs = [
     { key: "team", label: "Team" },
@@ -145,17 +155,32 @@ const HackathonDashboard = () => {
   };
 
   useEffect(() => {
-    if (activeTab === "problems" && role === "student") fetchProblems();
+    if (activeTab === "problems" && role === "student") {
+      fetchProblems();
+      refreshStatus();
+    }
     if (activeTab === "status") refreshStatus();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab]);
+
+  const teamHasSubmissionForProblem = (pid) =>
+    (statusData?.submissions || []).some((s) => Number(s.problemId) === Number(pid));
+
+  const problemIsFull = (p) => {
+    const limit = p.teamRegistrationLimit;
+    const reg = p.registeredTeams ?? 0;
+    if (limit == null || limit <= 0) return false;
+    if (reg < limit) return false;
+    return !teamHasSubmissionForProblem(p.id);
+  };
 
   const onSelectProblem = (p) => {
     const payload = {
       problemId: p.id,
       title: p.title,
       sector: p.sector,
-      prizeAmount: p.prizeAmount,
+      teamRegistrationLimit: p.teamRegistrationLimit,
+      registeredTeams: p.registeredTeams,
     };
     try {
       localStorage.setItem(selectionKey, JSON.stringify(payload));
@@ -163,7 +188,7 @@ const HackathonDashboard = () => {
       // ignore
     }
     setSelectedProblem(payload);
-    setActiveTab("submit");
+    changeTab("submit");
   };
 
   const submitAllowed = role === "student" && canSubmit && !!selectedProblemId;
@@ -197,7 +222,7 @@ const HackathonDashboard = () => {
       });
 
       await refreshStatus();
-      setActiveTab("status");
+      changeTab("status");
     } catch (err) {
       setSubmitError(err.response?.data?.message || "Submission failed");
     } finally {
@@ -258,11 +283,11 @@ const HackathonDashboard = () => {
         ) : null}
       </div>
 
-      <div className="mt-5 flex items-center gap-2 overflow-x-auto whitespace-nowrap pb-1">
+      <div className="mt-5 hidden md:flex items-center gap-2 overflow-x-auto whitespace-nowrap pb-1">
         {tabs.map((t) => (
           <button
             key={t.key}
-            onClick={() => setActiveTab(t.key)}
+            onClick={() => changeTab(t.key)}
             className={`px-4 py-2 rounded-full text-xs sm:text-sm font-semibold transition border focus:outline-none focus:ring-2 focus:ring-[#2563EB]/25 ${
               activeTab === t.key
                 ? "bg-[#2563EB] text-white border-[#2563EB]"
@@ -366,13 +391,26 @@ const HackathonDashboard = () => {
                     {p.description?.slice(0, 220)}
                     {p.description?.length > 220 ? "..." : ""}
                   </div>
-                  <div className="mt-4 flex items-center justify-between gap-3">
-                    <div className="text-xs text-gray-500">Prize: {p.prizeAmount ? `₹${p.prizeAmount}` : "TBD"}</div>
+                  <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+                    <div className="text-xs text-gray-500">
+                      {p.teamRegistrationLimit != null && p.teamRegistrationLimit > 0 ? (
+                        <>
+                          Teams: {p.registeredTeams ?? 0} / {p.teamRegistrationLimit}
+                        </>
+                      ) : (
+                        <>Teams registered: {p.registeredTeams ?? 0}</>
+                      )}
+                      {problemIsFull(p) ? (
+                        <span className="block text-amber-700 font-semibold mt-1">Registration full</span>
+                      ) : null}
+                    </div>
                     <button
+                      type="button"
+                      disabled={problemIsFull(p)}
                       onClick={() => onSelectProblem(p)}
-                      className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#2563EB] to-[#1D4ED8] text-white font-semibold hover:from-[#1D4ED8] hover:to-[#2563EB] transition shadow-sm hover:shadow-md"
+                      className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#2563EB] to-[#1D4ED8] text-white font-semibold hover:from-[#1D4ED8] hover:to-[#2563EB] transition shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      Select
+                      {problemIsFull(p) ? "Full" : "Select"}
                     </button>
                   </div>
                 </div>
@@ -590,7 +628,7 @@ const HackathonDashboard = () => {
               <button
                 onClick={() => {
                   setGuidelinesOpen(false);
-                  setActiveTab("problems");
+                  changeTab("problems");
                 }}
                 className="px-5 py-2 rounded-xl bg-gradient-to-r from-[#2563EB] to-[#1D4ED8] text-white font-semibold hover:from-[#1D4ED8] hover:to-[#2563EB] transition shadow-sm hover:shadow-md"
               >
