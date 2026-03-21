@@ -5,6 +5,9 @@ import {
   login,
   logout,
   checkAuth,
+  sendHackathonResetOtp,
+  verifyHackathonResetOtp,
+  resetHackathonPassword,
 } from "../../controllers/hackathon/hackathonAuth.controller.js";
 import {
   createTeam,
@@ -39,6 +42,10 @@ router.post("/register", register);
 router.post("/login", login);
 router.post("/logout", logout);
 router.get("/check", protectHackathonRoute, checkAuth);
+
+router.post("/send-reset-otp", sendHackathonResetOtp);
+router.post("/verify-reset-otp", verifyHackathonResetOtp);
+router.post("/reset-password", resetHackathonPassword);
 
 // Public hackathon pages
 router.get("/problems", getProblems);

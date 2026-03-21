@@ -11,6 +11,7 @@ import NewEquipment from "./components/AdminCom/Equipment/NewEquipment";
 import Equipment from "./components/AdminCom/Equipment/Equipment";
 import Approval from "./components/AdminCom/ApprovalCom/Approval";
 import { Login } from "./components/AuthCom/Login";
+import { ForgotPassword } from "./components/AuthCom/ForgotPassword";
 import { Signup } from "./components/AuthCom/SignUp";
 import { useAuthStore } from "./store/useAuthStore";
 import { useBookingStore } from "./store/useBookingStore";
@@ -29,6 +30,7 @@ import MySubmissions from "./components/ProblemCom/MySubmissions";
 import HackathonProtectedPage from "./components/hackathon/HackathonProtectedPage";
 import HackathonLanding from "./pages/hackathon/HackathonLanding";
 import HackathonLogin from "./pages/hackathon/HackathonLogin";
+import HackathonForgotPassword from "./pages/hackathon/HackathonForgotPassword";
 import HackathonRegister from "./pages/hackathon/HackathonRegister";
 import HackathonProblems from "./pages/hackathon/HackathonProblems";
 import HackathonGuidelines from "./pages/hackathon/HackathonGuidelines";
@@ -131,6 +133,8 @@ function App() {
           element={<LoginOrRedirect authUser={authUser} />}
         />
 
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+
         {/* User Protected Routes */}
         <Route
           path="/products"
@@ -227,6 +231,7 @@ function App() {
         {/* Hackathon module routes */}
         <Route path="/hackathon" element={<HackathonLanding />} />
         <Route path="/hackathon/login" element={<HackathonLogin />} />
+        <Route path="/hackathon/forgot-password" element={<HackathonForgotPassword />} />
         <Route path="/hackathon/register" element={<HackathonRegister />} />
         <Route path="/hackathon/problems" element={<HackathonProblems />} />
         <Route path="/hackathon/guidelines" element={<HackathonGuidelines />} />

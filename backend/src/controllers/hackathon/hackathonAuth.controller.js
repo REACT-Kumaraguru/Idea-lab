@@ -1,8 +1,17 @@
 import bcrypt from "bcryptjs";
 import HackathonUser from "../../models/hackathon/HackathonUserModel.js";
 import HackathonSession from "../../models/hackathon/HackathonSessionModel.js";
+import { generateOtp, OTP_EXPIRY_MS } from "../../utils/otp.js";
+import { sendOtpEmail } from "../../services/mailService.js";
 
 const normalizeEmail = (email) => String(email || "").trim().toLowerCase();
+
+function clearHackathonResetSession(req) {
+  delete req.session.hackathonResetEmail;
+  delete req.session.hackathonResetOtp;
+  delete req.session.hackathonResetOtpExpiresAt;
+  delete req.session.hackathonResetPasswordEmail;
+}
 
 const createSessionRow = async (req, user) => {
   // Best-effort: session cookie/DB row might be created slightly after response.
@@ -179,5 +188,107 @@ export const checkAuth = async (req, res) => {
     phoneNumber: req.hackathonUser.phoneNumber,
     role: req.hackathonUser.role,
   });
+};
+
+export const sendHackathonResetOtp = async (req, res) => {
+  try {
+    const email = normalizeEmail(req.body?.email);
+    if (!email) {
+      return res.status(400).json({ message: "Email is required" });
+    }
+
+    const user = await HackathonUser.findOne({ where: { email } });
+    if (!user) {
+      return res.status(200).json({
+        message: "If an account exists for this email, a reset code has been sent.",
+      });
+    }
+
+    clearHackathonResetSession(req);
+
+    const otp = generateOtp();
+    req.session.hackathonResetEmail = email;
+    req.session.hackathonResetOtp = otp;
+    req.session.hackathonResetOtpExpiresAt = Date.now() + OTP_EXPIRY_MS;
+
+    await sendOtpEmail({ to: email, otp, purpose: "reset" });
+
+    return res.status(200).json({ message: "OTP sent to your email" });
+  } catch (error) {
+    console.log("Error in sendHackathonResetOtp:", error.message);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+export const verifyHackathonResetOtp = async (req, res) => {
+  try {
+    const email = normalizeEmail(req.body?.email);
+    const otp = String(req.body?.otp || "").trim();
+    if (!email || !otp) {
+      return res.status(400).json({ message: "Email and OTP are required" });
+    }
+
+    const user = await HackathonUser.findOne({ where: { email } });
+    if (!user) {
+      return res.status(400).json({ message: "Invalid or expired verification code" });
+    }
+
+    const expiresAt = req.session.hackathonResetOtpExpiresAt;
+    if (
+      req.session.hackathonResetEmail !== email ||
+      req.session.hackathonResetOtp !== otp ||
+      typeof expiresAt !== "number" ||
+      Date.now() > expiresAt
+    ) {
+      return res.status(400).json({ message: "Invalid or expired verification code" });
+    }
+
+    delete req.session.hackathonResetEmail;
+    delete req.session.hackathonResetOtp;
+    delete req.session.hackathonResetOtpExpiresAt;
+
+    req.session.hackathonResetPasswordEmail = email;
+
+    return res.status(200).json({ message: "Code verified. You can set a new password." });
+  } catch (error) {
+    console.log("Error in verifyHackathonResetOtp:", error.message);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+export const resetHackathonPassword = async (req, res) => {
+  try {
+    const email = normalizeEmail(req.body?.email);
+    const { password } = req.body || {};
+
+    if (!email || !password) {
+      return res.status(400).json({ message: "Email and new password are required" });
+    }
+
+    if (req.session.hackathonResetPasswordEmail !== email) {
+      return res.status(403).json({ message: "Reset session is invalid. Verify your code again." });
+    }
+
+    if (password.length < 6) {
+      return res.status(400).json({ message: "Password must be at least 6 characters" });
+    }
+
+    const user = await HackathonUser.findOne({ where: { email } });
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    await user.update({ password: hashedPassword });
+
+    clearHackathonResetSession(req);
+
+    return res.status(200).json({ message: "Password updated successfully" });
+  } catch (error) {
+    console.log("Error in resetHackathonPassword:", error.message);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
 };
 

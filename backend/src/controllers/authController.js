@@ -3,7 +3,7 @@ import User from "../models/UserModel.js";
 import HackathonUser from "../models/hackathon/HackathonUserModel.js";
 import OtpCode from "../models/OtpCodeModel.js";
 import { AppError } from "../utils/AppError.js";
-import { generateOtp, getOtpExpiryDate } from "../utils/otp.js";
+import { generateOtp, getOtpExpiryDate, OTP_EXPIRY_MS } from "../utils/otp.js";
 import { sendOtpEmail } from "../services/mailService.js";
 
 const normalizeEmail = (email) => String(email || "").trim().toLowerCase();
@@ -132,6 +132,13 @@ export const register = async (req, res, next) => {
   }
 };
 
+function clearAuthResetSession(req) {
+  delete req.session.resetEmail;
+  delete req.session.resetOtp;
+  delete req.session.resetOtpExpiresAt;
+  delete req.session.resetPasswordEmail;
+}
+
 export const sendResetOtp = async (req, res, next) => {
   try {
     const email = normalizeEmail(req.body?.email);
@@ -147,22 +154,17 @@ export const sendResetOtp = async (req, res, next) => {
       return;
     }
 
-    await OtpCode.destroy({ where: { email, type: "reset" } });
+    clearAuthResetSession(req);
 
     const otp = generateOtp();
-    const expiresAt = getOtpExpiryDate();
-
-    await OtpCode.create({
-      email,
-      otp,
-      type: "reset",
-      expiresAt,
-    });
+    req.session.resetEmail = email;
+    req.session.resetOtp = otp;
+    req.session.resetOtpExpiresAt = Date.now() + OTP_EXPIRY_MS;
 
     await sendOtpEmail({ to: email, otp, purpose: "reset" });
 
     res.status(200).json({
-      message: "If an account exists for this email, a reset code has been sent.",
+      message: "OTP sent to your email",
     });
   } catch (err) {
     next(err);
@@ -182,15 +184,19 @@ export const verifyResetOtp = async (req, res, next) => {
       throw new AppError("Invalid or expired verification code", 400);
     }
 
-    const row = await OtpCode.findOne({
-      where: { email, type: "reset", otp },
-    });
-
-    if (!row || new Date(row.expiresAt) < new Date()) {
+    const expiresAt = req.session.resetOtpExpiresAt;
+    if (
+      req.session.resetEmail !== email ||
+      req.session.resetOtp !== otp ||
+      typeof expiresAt !== "number" ||
+      Date.now() > expiresAt
+    ) {
       throw new AppError("Invalid or expired verification code", 400);
     }
 
-    await OtpCode.destroy({ where: { id: row.id } });
+    delete req.session.resetEmail;
+    delete req.session.resetOtp;
+    delete req.session.resetOtpExpiresAt;
 
     req.session.resetPasswordEmail = email;
 
@@ -227,14 +233,7 @@ export const resetPassword = async (req, res, next) => {
 
     await user.update({ passwordHash });
 
-    delete req.session.resetPasswordEmail;
-
-    await OtpCode.destroy({
-      where: {
-        email,
-        type: "reset",
-      },
-    });
+    clearAuthResetSession(req);
 
     res.status(200).json({ message: "Password updated successfully" });
   } catch (err) {
