@@ -134,6 +134,7 @@ const HackathonSubmit = () => {
               {selectedProblem ? (
                 <div className="mt-3 text-sm text-gray-700">
                   <div className="font-semibold">{selectedProblem.sector || "Sector"}</div>
+                  <div className="text-gray-600">Mentor: {selectedProblem.mentor?.user?.fullName || "Not assigned"}</div>
                   <div className="text-gray-600">
                     {selectedProblem.teamRegistrationLimit != null && selectedProblem.teamRegistrationLimit > 0 ? (
                       <>

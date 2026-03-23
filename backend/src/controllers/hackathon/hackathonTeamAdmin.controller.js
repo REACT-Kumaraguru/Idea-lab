@@ -66,13 +66,3 @@ export const adminListTeams = async (req, res) => {
   }
 };
 
-export const adminSetTeamStatus = async (req, res) => {
-  try {
-    return res.status(403).json({
-      message: "Manual team approval is disabled. A team becomes active automatically when it reaches 4 members.",
-    });
-  } catch (error) {
-    console.log("Error in adminSetTeamStatus:", error.message);
-    return res.status(500).json({ message: "Internal Server Error" });
-  }
-};

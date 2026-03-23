@@ -51,6 +51,7 @@ const HackathonProblems = () => {
                 {p.sector || "Sector Unspecified"}
               </div>
               <div className="text-lg font-bold text-gray-900 mt-2">{p.title}</div>
+              <div className="mt-1 text-xs text-gray-600">Mentor: {p.mentor?.user?.fullName || "Not assigned"}</div>
               <div className="text-gray-700 mt-3 text-sm whitespace-pre-line">
                 {p.description?.slice(0, 320)}
                 {p.description?.length > 320 ? "..." : ""}

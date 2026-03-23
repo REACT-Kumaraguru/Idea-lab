@@ -8,11 +8,13 @@ const tabs = [
 
 const HackathonAdminProblems = () => {
   const [problems, setProblems] = useState([]);
+  const [mentors, setMentors] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const [title, setTitle] = useState("");
   const [sector, setSector] = useState("");
   const [description, setDescription] = useState("");
+  const [mentorId, setMentorId] = useState("");
   const [teamRegistrationLimit, setTeamRegistrationLimit] = useState("");
 
   const [search, setSearch] = useState("");
@@ -23,8 +25,12 @@ const HackathonAdminProblems = () => {
 
   const loadProblems = async () => {
     try {
-      const res = await axiosInstance.get("/hackathon/admin/problems");
-      setProblems(res.data.problems || []);
+      const [problemsRes, mentorsRes] = await Promise.all([
+        axiosInstance.get("/hackathon/admin/problems"),
+        axiosInstance.get("/hackathon/admin/mentors"),
+      ]);
+      setProblems(problemsRes.data.problems || []);
+      setMentors(mentorsRes.data.mentors || []);
     } catch (e) {
       setError(e.response?.data?.message || "Failed to load problems");
     } finally {
@@ -53,13 +59,16 @@ const HackathonAdminProblems = () => {
         title,
         description,
         sector,
+        mentorId: Number(mentorId),
         teamRegistrationLimit: teamRegistrationLimit.trim() === "" ? null : teamRegistrationLimit,
       };
       const res = await axiosInstance.post("/hackathon/admin/problems", payload);
       const p = res.data.problem;
+      const selectedMentor = mentors.find((m) => Number(m.id) === Number(payload.mentorId)) || null;
       setProblems((prev) => [
         {
           ...p,
+          mentor: selectedMentor,
           submissionCount: 0,
           pocSubmissionCount: 0,
           prototypeSubmissionCount: 0,
@@ -73,6 +82,7 @@ const HackathonAdminProblems = () => {
       setTitle("");
       setSector("");
       setDescription("");
+      setMentorId("");
       setTeamRegistrationLimit("");
       setActiveTab("details");
     } catch (e2) {
@@ -144,6 +154,22 @@ const HackathonAdminProblems = () => {
                 className="mt-2 w-full rounded-xl border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
+            <div>
+              <label className="text-sm font-medium text-gray-800">Mentor</label>
+              <select
+                value={mentorId}
+                onChange={(e) => setMentorId(e.target.value)}
+                required
+                className="mt-2 w-full rounded-xl border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">Select mentor</option>
+                {mentors.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.user?.fullName || "Mentor"}{m.user?.email ? ` (${m.user.email})` : ""}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
           <div className="mt-4">
@@ -197,6 +223,7 @@ const HackathonAdminProblems = () => {
               <thead>
                 <tr className="border-b border-gray-100 bg-gray-50 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
                   <th className="px-4 py-3">Problem</th>
+                  <th className="px-4 py-3 whitespace-nowrap">Mentor</th>
                   <th className="px-4 py-3 whitespace-nowrap">Teams (submitted)</th>
                   <th className="px-4 py-3 whitespace-nowrap">Approved</th>
                   <th className="px-4 py-3 whitespace-nowrap">Pending</th>
@@ -212,6 +239,9 @@ const HackathonAdminProblems = () => {
                     <td className="px-4 py-3">
                       <div className="font-semibold text-gray-900">{p.title}</div>
                       <div className="text-xs text-blue-700 mt-0.5">{p.sector || "—"}</div>
+                    </td>
+                    <td className="px-4 py-3 text-gray-800 whitespace-nowrap">
+                      {p.mentor?.user?.fullName || "—"}
                     </td>
                     <td className="px-4 py-3 font-medium text-gray-900">{p.teamsSubmitted ?? 0}</td>
                     <td className="px-4 py-3 text-gray-800">{p.teamsApproved ?? 0}</td>
@@ -248,6 +278,7 @@ const HackathonAdminProblems = () => {
               <div key={p.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
                 <div className="text-xs font-semibold text-blue-700">{p.sector || "Sector"}</div>
                 <div className="text-base font-bold text-gray-900 mt-1">{p.title}</div>
+                <div className="mt-1 text-xs text-gray-600">Mentor: {p.mentor?.user?.fullName || "—"}</div>
                 <dl className="mt-3 grid grid-cols-2 gap-2 text-xs text-gray-700">
                   <div>
                     <dt className="text-gray-500">Submitted</dt>

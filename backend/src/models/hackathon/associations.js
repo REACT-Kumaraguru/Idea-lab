@@ -79,6 +79,15 @@ export const setupHackathonAssociations = () => {
     foreignKey: { name: "mentorId", field: "mentor_id" },
     as: "mentor",
   });
+
+  HackathonProblem.belongsTo(HackathonMentor, {
+    foreignKey: { name: "mentorId", field: "mentor_id" },
+    as: "mentor",
+  });
+  HackathonMentor.hasMany(HackathonProblem, {
+    foreignKey: { name: "mentorId", field: "mentor_id" },
+    as: "problems",
+  });
 };
 
 export {

@@ -183,6 +183,7 @@ const HackathonDashboard = () => {
       problemId: p.id,
       title: p.title,
       sector: p.sector,
+      mentor: p.mentor || null,
       teamRegistrationLimit: p.teamRegistrationLimit,
       registeredTeams: p.registeredTeams,
     };
@@ -412,6 +413,7 @@ const HackathonDashboard = () => {
                 <div key={p.id} className="bg-white rounded-3xl border border-[#E2E8F0] shadow-sm p-5">
                   <div className="text-xs font-semibold text-[#2563EB]">{p.sector || "Category"}</div>
                   <div className="text-lg font-bold text-gray-900 mt-2">{p.title}</div>
+                  <div className="mt-1 text-xs text-gray-600">Mentor: {p.mentor?.user?.fullName || "Not assigned"}</div>
                   <div className="text-gray-700 mt-3 text-sm whitespace-pre-line">
                     {p.description?.slice(0, 220)}
                     {p.description?.length > 220 ? "..." : ""}

@@ -2,6 +2,8 @@ import { QueryTypes } from "sequelize";
 import { sequelize } from "../../lib/db.js";
 import HackathonProblem from "../../models/hackathon/HackathonProblemModel.js";
 import HackathonSubmission from "../../models/hackathon/HackathonSubmissionModel.js";
+import HackathonMentor from "../../models/hackathon/HackathonMentorModel.js";
+import HackathonUser from "../../models/hackathon/HackathonUserModel.js";
 
 /** @returns {Promise<Record<number, number>>} */
 async function getDistinctTeamCountByProblem() {
@@ -43,10 +45,42 @@ async function getTeamStatusCountsByProblem() {
   return map;
 }
 
+function serializeMentor(mentorInstance) {
+  if (!mentorInstance) return null;
+  const mentor = mentorInstance.toJSON ? mentorInstance.toJSON() : mentorInstance;
+  return {
+    id: mentor.id,
+    userId: mentor.userId,
+    expertise: mentor.expertise || null,
+    user: mentor.user
+      ? {
+          id: mentor.user.id,
+          fullName: mentor.user.fullName,
+          email: mentor.user.email,
+          phoneNumber: mentor.user.phoneNumber,
+        }
+      : null,
+  };
+}
+
 export const getProblems = async (req, res) => {
   try {
     const problems = await HackathonProblem.findAll({
       order: [["created_at", "DESC"]],
+      include: [
+        {
+          model: HackathonMentor,
+          as: "mentor",
+          required: false,
+          include: [
+            {
+              model: HackathonUser,
+              as: "user",
+              attributes: ["id", "fullName", "email", "phoneNumber"],
+            },
+          ],
+        },
+      ],
     });
 
     const teamCountMap = await getDistinctTeamCountByProblem();
@@ -57,6 +91,7 @@ export const getProblems = async (req, res) => {
       return {
         ...json,
         registeredTeams,
+        mentor: serializeMentor(json.mentor),
       };
     });
 
@@ -68,7 +103,7 @@ export const getProblems = async (req, res) => {
 };
 
 export const adminAddProblem = async (req, res) => {
-  const { title, description, sector, teamRegistrationLimit } = req.body || {};
+  const { title, description, sector, mentorId, teamRegistrationLimit } = req.body || {};
   try {
     if (!title?.trim() || !description?.trim()) {
       return res.status(400).json({ message: "title and description are required" });
@@ -83,10 +118,20 @@ export const adminAddProblem = async (req, res) => {
       limitVal = n;
     }
 
+    const resolvedMentorId = Number(mentorId);
+    if (!Number.isInteger(resolvedMentorId)) {
+      return res.status(400).json({ message: "mentorId is required and must be a valid mentor id" });
+    }
+    const mentor = await HackathonMentor.findByPk(resolvedMentorId);
+    if (!mentor) {
+      return res.status(404).json({ message: "Mentor not found" });
+    }
+
     const problem = await HackathonProblem.create({
       title: title.trim(),
       description: description.trim(),
       sector: sector ? String(sector).trim() : null,
+      mentorId: resolvedMentorId,
       teamRegistrationLimit: limitVal,
     });
 
@@ -101,6 +146,20 @@ export const adminGetProblems = async (req, res) => {
   try {
     const problems = await HackathonProblem.findAll({
       order: [["created_at", "DESC"]],
+      include: [
+        {
+          model: HackathonMentor,
+          as: "mentor",
+          required: false,
+          include: [
+            {
+              model: HackathonUser,
+              as: "user",
+              attributes: ["id", "fullName", "email", "phoneNumber"],
+            },
+          ],
+        },
+      ],
     });
 
     const statsRows = await sequelize.query(
@@ -139,6 +198,7 @@ export const adminGetProblems = async (req, res) => {
         teamsPending: st.pending,
         teamsApproved: st.approved,
         teamsRejected: st.rejected,
+        mentor: serializeMentor(p.mentor),
       };
     });
 

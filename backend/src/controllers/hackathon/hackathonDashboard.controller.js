@@ -86,6 +86,20 @@ export const getDashboard = async (req, res) => {
     const problemsRaw = await HackathonProblem.findAll({
       order: [["created_at", "DESC"]],
       attributes: ["id", "title", "sector", "teamRegistrationLimit"],
+      include: [
+        {
+          model: HackathonMentor,
+          as: "mentor",
+          required: false,
+          include: [
+            {
+              model: HackathonUser,
+              as: "user",
+              attributes: ["id", "fullName", "email"],
+            },
+          ],
+        },
+      ],
     });
 
     const teamCountRows = await sequelize.query(
@@ -103,6 +117,20 @@ export const getDashboard = async (req, res) => {
     const problems = problemsRaw.map((p) => ({
       ...p.toJSON(),
       registeredTeams: teamCountMap[p.id] || 0,
+      mentor: p.mentor
+        ? {
+            id: p.mentor.id,
+            userId: p.mentor.userId,
+            expertise: p.mentor.expertise || null,
+            user: p.mentor.user
+              ? {
+                  id: p.mentor.user.id,
+                  fullName: p.mentor.user.fullName,
+                  email: p.mentor.user.email,
+                }
+              : null,
+          }
+        : null,
     }));
 
     let team = null;
