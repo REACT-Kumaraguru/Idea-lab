@@ -51,7 +51,9 @@ const HackathonCreateTeam = () => {
   return (
     <div>
       <h2 className="text-2xl font-bold text-gray-900">Create Team</h2>
-      <p className="text-gray-600 mt-2">Team name is required. Max 4 members per team.</p>
+      <p className="text-gray-600 mt-2">
+        Any participant can create a team. The creator is automatically the team leader. Admin only approves or rejects teams.
+      </p>
 
       <form onSubmit={onCreate} className="mt-6 bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
         <label className="text-sm font-medium text-gray-800">Team Name</label>

@@ -17,7 +17,7 @@ const toFileUrl = (file) => {
   return `/src/uploads/hackathon/${file.filename}`;
 };
 
-const phaseEnum = ["poc", "prototype"];
+const phaseEnum = ["poc", "prototype", "final"];
 
 async function serializeSubmissionForAdmin(submissionInstance) {
   const row = submissionInstance.toJSON();
@@ -79,13 +79,13 @@ export const submit = async (req, res) => {
     const prototypeFiles = Array.isArray(files.prototypeFiles) ? files.prototypeFiles : [];
 
     const pocFilePaths = resolvedPhase === "poc" ? pocFiles.map(toFileUrl) : [];
-    const prototypeFilePaths = resolvedPhase === "prototype" ? prototypeFiles.map(toFileUrl) : [];
+    const prototypeFilePaths = resolvedPhase !== "poc" ? prototypeFiles.map(toFileUrl) : [];
+    const activeFiles = resolvedPhase === "poc" ? pocFilePaths : prototypeFilePaths;
 
-    if (resolvedPhase === "poc" && pocFilePaths.length === 0) {
-      return res.status(400).json({ message: "Upload at least one PoC file" });
-    }
-    if (resolvedPhase === "prototype" && prototypeFilePaths.length === 0) {
-      return res.status(400).json({ message: "Upload at least one Prototype file" });
+    if (activeFiles.length === 0) {
+      if (resolvedPhase === "poc") return res.status(400).json({ message: "Upload at least one PoC file" });
+      if (resolvedPhase === "prototype") return res.status(400).json({ message: "Upload at least one Prototype file" });
+      return res.status(400).json({ message: "Upload at least one file for Final phase" });
     }
 
     const existing = await HackathonSubmission.findOne({
@@ -120,8 +120,7 @@ export const submit = async (req, res) => {
         submittedByUserId: userId,
         // Update only the relevant phase file paths
         pocFilePaths: resolvedPhase === "poc" ? pocFilePaths : existing.pocFilePaths,
-        prototypeFilePaths:
-          resolvedPhase === "prototype" ? prototypeFilePaths : existing.prototypeFilePaths,
+        prototypeFilePaths: resolvedPhase !== "poc" ? prototypeFilePaths : existing.prototypeFilePaths,
       });
       return res.status(200).json({ submission: updated });
     }
@@ -135,7 +134,7 @@ export const submit = async (req, res) => {
       status: "pending",
       submittedByUserId: userId,
       pocFilePaths: resolvedPhase === "poc" ? pocFilePaths : [],
-      prototypeFilePaths: resolvedPhase === "prototype" ? prototypeFilePaths : [],
+      prototypeFilePaths: resolvedPhase !== "poc" ? prototypeFilePaths : [],
     });
 
     return res.status(201).json({ submission: created });

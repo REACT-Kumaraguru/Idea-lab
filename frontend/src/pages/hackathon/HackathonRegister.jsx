@@ -18,6 +18,7 @@ const HackathonRegister = () => {
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [degree, setDegree] = useState("UG");
+  const [college, setCollege] = useState("");
   const [branch, setBranch] = useState("");
   const [graduationYear, setGraduationYear] = useState("2026");
   const [password, setPassword] = useState("");
@@ -60,6 +61,10 @@ const HackathonRegister = () => {
   }, [otpSent]);
 
   const validateForm = useCallback(() => {
+    if (!college.trim()) {
+      setError("College is required");
+      return false;
+    }
     if (!branch.trim()) {
       setError("Branch is required");
       return false;
@@ -74,7 +79,7 @@ const HackathonRegister = () => {
     }
     setError(null);
     return true;
-  }, [branch, password, confirmPassword, phone]);
+  }, [college, branch, password, confirmPassword, phone]);
 
   const sendRegisterOtp = async () => {
     if (!validateForm()) return;
@@ -157,6 +162,7 @@ const HackathonRegister = () => {
         email: email.trim(),
         phone: phone.trim(),
         degree,
+        college: college.trim(),
         branch,
         graduation_year: graduationYear,
         password,
@@ -308,6 +314,17 @@ const HackathonRegister = () => {
                     <option value="2028">2028</option>
                     <option value="2029">2029</option>
                   </select>
+                </div>
+
+                <div className="col-span-2">
+                  <label className={labelClass}>College</label>
+                  <input
+                    value={college}
+                    onChange={(e) => setCollege(e.target.value)}
+                    required
+                    placeholder="Your college name"
+                    className={inputClass}
+                  />
                 </div>
 
                 <div className="col-span-2">

@@ -46,6 +46,12 @@ const HackathonDashboard = () => {
   }, [team?.id, hackathonUser?.id]);
 
   // Submit form state
+  const [submissionStep, setSubmissionStep] = useState(1);
+  const [whyParticipate, setWhyParticipate] = useState("");
+  const [problemToSolve, setProblemToSolve] = useState("");
+  const [plannedTech, setPlannedTech] = useState("");
+  const [workedBefore, setWorkedBefore] = useState("no");
+  const [agreedTerms, setAgreedTerms] = useState(false);
   const [phase, setPhase] = useState("poc");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -188,10 +194,21 @@ const HackathonDashboard = () => {
       // ignore
     }
     setSelectedProblem(payload);
+    resetSubmissionSteps();
+    setSubmitError(null);
     changeTab("submit");
   };
 
   const submitAllowed = role === "student" && canSubmit && !!selectedProblemId;
+
+  const resetSubmissionSteps = () => {
+    setSubmissionStep(1);
+    setWhyParticipate("");
+    setProblemToSolve("");
+    setPlannedTech("");
+    setWorkedBefore("no");
+    setAgreedTerms(false);
+  };
 
   const onSubmit = async (e) => {
     e.preventDefault();
@@ -228,6 +245,15 @@ const HackathonDashboard = () => {
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const goToSubmitStep2 = () => {
+    setSubmitError(null);
+    if (!whyParticipate.trim()) return setSubmitError("Please answer why your team wants to participate.");
+    if (!problemToSolve.trim()) return setSubmitError("Please describe the problem your team is trying to solve.");
+    if (!plannedTech.trim()) return setSubmitError("Please enter technologies your team plans to use.");
+    if (!agreedTerms) return setSubmitError("You must agree to the terms and conditions to continue.");
+    setSubmissionStep(2);
   };
 
   const latestSubmission = (statusData?.submissions || [])[0] || null;
@@ -316,7 +342,8 @@ const HackathonDashboard = () => {
             <AlertCard>
               <div className="font-semibold text-gray-900">You are not part of any team yet.</div>
               <div className="mt-1 text-sm text-gray-600">
-                Create or join a team to enable problem selection and submissions.
+                Participants form teams themselves. Any participant can create a team, and the creator becomes team leader.
+                Admin only approves or rejects the team.
               </div>
             </AlertCard>
           ) : (
@@ -436,11 +463,7 @@ const HackathonDashboard = () => {
             <AlertCard tone="warning">Your team was rejected. Submission is disabled.</AlertCard>
           ) : null}
 
-          <form
-            onSubmit={onSubmit}
-            className="mt-4 bg-white rounded-3xl border border-[#E2E8F0] p-6 shadow-sm"
-            aria-disabled={!submitAllowed}
-          >
+          <div className="mt-4 bg-white rounded-3xl border border-[#E2E8F0] p-4 sm:p-6 shadow-sm" aria-disabled={!submitAllowed}>
             {!submitAllowed ? (
               <div className="mb-4">
                 <AlertCard tone="warning">
@@ -449,63 +472,194 @@ const HackathonDashboard = () => {
               </div>
             ) : null}
 
-            <div className="grid md:grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm font-semibold text-gray-800">Selected Problem</label>
-                <div className="mt-2 text-base text-gray-800">
-                  {selectedProblem ? selectedProblem.title : "Not selected yet"}
+            <div className="mb-5 rounded-2xl border border-[#E2E8F0] bg-[#F8FAFF] p-3 sm:p-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div
+                  className={`rounded-xl border px-3 py-3 text-center transition ${
+                    submissionStep === 1
+                      ? "bg-[#2563EB] text-white border-[#2563EB]"
+                      : "bg-white text-gray-700 border-[#E2E8F0]"
+                  }`}
+                >
+                  <div className="text-xs font-semibold uppercase tracking-wide">Step 1</div>
+                  <div className="text-sm font-bold mt-0.5">Questions</div>
+                </div>
+                <div
+                  className={`rounded-xl border px-3 py-3 text-center transition ${
+                    submissionStep === 2
+                      ? "bg-[#2563EB] text-white border-[#2563EB]"
+                      : "bg-white text-gray-700 border-[#E2E8F0]"
+                  }`}
+                >
+                  <div className="text-xs font-semibold uppercase tracking-wide">Step 2</div>
+                  <div className="text-sm font-bold mt-0.5">Submit</div>
                 </div>
               </div>
-              <div>
-                <label className="text-sm font-semibold text-gray-800">Phase</label>
-                <select
-                  value={phase}
-                  onChange={(e) => {
-                    setPhase(e.target.value);
-                    setFiles([]);
-                  }}
-                  className="mt-2 w-full rounded-2xl border border-[#E2E8F0] px-4 py-3 text-base bg-white focus:outline-none focus:ring-2 focus:ring-[#2563EB]/25"
-                  disabled={!submitAllowed}
+            </div>
+
+            <div className="space-y-4">
+              {submissionStep === 1 ? (
+                <div className="rounded-2xl border border-[#E2E8F0] bg-white p-4 sm:p-5 transition-all duration-300">
+                  <h3 className="text-lg font-bold text-gray-900">Participation Details</h3>
+
+                  <div className="mt-4">
+                    <label className="text-sm font-semibold text-gray-800">
+                      1. Why does your team want to participate in this hackathon?
+                    </label>
+                    <textarea
+                      value={whyParticipate}
+                      onChange={(e) => setWhyParticipate(e.target.value)}
+                      rows={3}
+                      required
+                      disabled={!submitAllowed}
+                      className="mt-2 w-full rounded-2xl border border-[#E2E8F0] px-4 py-3 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#2563EB]/25"
+                    />
+                  </div>
+
+                  <div className="mt-4">
+                    <label className="text-sm font-semibold text-gray-800">
+                      2. What problem are you trying to solve?
+                    </label>
+                    <textarea
+                      value={problemToSolve}
+                      onChange={(e) => setProblemToSolve(e.target.value)}
+                      rows={3}
+                      required
+                      disabled={!submitAllowed}
+                      className="mt-2 w-full rounded-2xl border border-[#E2E8F0] px-4 py-3 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#2563EB]/25"
+                    />
+                  </div>
+
+                  <div className="mt-4">
+                    <label className="text-sm font-semibold text-gray-800">3. What technologies are you planning to use?</label>
+                    <input
+                      value={plannedTech}
+                      onChange={(e) => setPlannedTech(e.target.value)}
+                      required
+                      disabled={!submitAllowed}
+                      className="mt-2 w-full rounded-2xl border border-[#E2E8F0] px-4 py-3 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#2563EB]/25"
+                    />
+                  </div>
+
+                  <div className="mt-4">
+                    <label className="text-sm font-semibold text-gray-800">4. Have you worked on this idea before?</label>
+                    <select
+                      value={workedBefore}
+                      onChange={(e) => setWorkedBefore(e.target.value)}
+                      disabled={!submitAllowed}
+                      className="mt-2 w-full rounded-2xl border border-[#E2E8F0] px-4 py-3 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#2563EB]/25"
+                    >
+                      <option value="yes">Yes</option>
+                      <option value="no">No</option>
+                    </select>
+                  </div>
+
+                  <label className="mt-4 inline-flex items-start gap-2 text-sm text-gray-700">
+                    <input
+                      type="checkbox"
+                      checked={agreedTerms}
+                      onChange={(e) => setAgreedTerms(e.target.checked)}
+                      disabled={!submitAllowed}
+                      className="mt-0.5 h-4 w-4 rounded border-gray-300 text-[#2563EB] focus:ring-[#2563EB]/30"
+                    />
+                    <span>I agree to the terms and conditions of the hackathon</span>
+                  </label>
+
+                  <button
+                    type="button"
+                    disabled={!submitAllowed}
+                    onClick={goToSubmitStep2}
+                    className="mt-5 w-full sm:w-auto px-6 py-3 rounded-2xl bg-gradient-to-r from-[#2563EB] to-[#1D4ED8] text-white font-semibold hover:from-[#1D4ED8] hover:to-[#2563EB] disabled:opacity-60 transition shadow-sm hover:shadow-md"
+                  >
+                    Next
+                  </button>
+                </div>
+              ) : (
+                <form
+                  onSubmit={onSubmit}
+                  className="rounded-2xl border border-[#E2E8F0] bg-white p-4 sm:p-5 transition-all duration-300"
                 >
-                  <option value="poc">PoC</option>
-                  <option value="prototype">Prototype</option>
-                </select>
-              </div>
-            </div>
+                  <h3 className="text-lg font-bold text-gray-900">Submission Form</h3>
+                  <div className="mt-4 grid md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-sm font-semibold text-gray-800">Selected Problem</label>
+                      <input
+                        readOnly
+                        value={selectedProblem ? selectedProblem.title : "Not selected yet"}
+                        className="mt-2 w-full rounded-2xl border border-[#E2E8F0] px-4 py-3 text-sm bg-gray-50 text-gray-700"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-semibold text-gray-800">Phase</label>
+                      <select
+                        value={phase}
+                        onChange={(e) => {
+                          setPhase(e.target.value);
+                          setFiles([]);
+                        }}
+                        className="mt-2 w-full rounded-2xl border border-[#E2E8F0] px-4 py-3 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#2563EB]/25"
+                        disabled={!submitAllowed}
+                      >
+                        <option value="poc">PoC</option>
+                        <option value="prototype">Prototype</option>
+                        <option value="final">Final</option>
+                      </select>
+                    </div>
+                  </div>
 
-            <div className="mt-4">
-              <label className="text-sm font-semibold text-gray-800">Title</label>
-              <input
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                required
-                disabled={!submitAllowed}
-                className="mt-2 w-full rounded-2xl border border-[#E2E8F0] px-4 py-3 text-base bg-white focus:outline-none focus:ring-2 focus:ring-[#2563EB]/25"
-                placeholder="e.g., AI-enabled predictive maintenance for motors"
-              />
-            </div>
+                  <div className="mt-4">
+                    <label className="text-sm font-semibold text-gray-800">Title</label>
+                    <input
+                      value={title}
+                      onChange={(e) => setTitle(e.target.value)}
+                      required
+                      disabled={!submitAllowed}
+                      className="mt-2 w-full rounded-2xl border border-[#E2E8F0] px-4 py-3 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#2563EB]/25"
+                      placeholder="e.g., AI-enabled predictive maintenance for motors"
+                    />
+                  </div>
 
-            <div className="mt-4">
-              <label className="text-sm font-semibold text-gray-800">Description (optional)</label>
-              <textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                rows={4}
-                disabled={!submitAllowed}
-                className="mt-2 w-full rounded-2xl border border-[#E2E8F0] px-4 py-3 text-base bg-white focus:outline-none focus:ring-2 focus:ring-[#2563EB]/25"
-                placeholder="Summarize your approach."
-              />
-            </div>
+                  <div className="mt-4">
+                    <label className="text-sm font-semibold text-gray-800">Description</label>
+                    <textarea
+                      value={description}
+                      onChange={(e) => setDescription(e.target.value)}
+                      rows={4}
+                      disabled={!submitAllowed}
+                      className="mt-2 w-full rounded-2xl border border-[#E2E8F0] px-4 py-3 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#2563EB]/25"
+                      placeholder="Summarize your approach."
+                    />
+                  </div>
 
-            <div className="mt-4">
-              <label className="text-sm font-semibold text-gray-800">Upload {phase === "poc" ? "PoC" : "Prototype"} files</label>
-              <input
-                type="file"
-                multiple
-                disabled={!submitAllowed}
-                onChange={(e) => setFiles(Array.from(e.target.files || []))}
-                className="mt-2 block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-2xl file:border-0 file:text-sm file:font-semibold file:bg-gradient-to-r file:from-[#2563EB] file:to-[#1D4ED8] file:text-white file:hover:shadow-md"
-              />
+                  <div className="mt-4">
+                    <label className="text-sm font-semibold text-gray-800">Upload PoC files</label>
+                    <input
+                      type="file"
+                      multiple
+                      disabled={!submitAllowed}
+                      onChange={(e) => setFiles(Array.from(e.target.files || []))}
+                      className="mt-2 block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-2xl file:border-0 file:text-sm file:font-semibold file:bg-gradient-to-r file:from-[#2563EB] file:to-[#1D4ED8] file:text-white file:hover:shadow-md"
+                    />
+                  </div>
+
+                  <div className="mt-5 flex flex-col sm:flex-row gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setSubmissionStep(1)}
+                      className="w-full sm:w-auto px-6 py-3 rounded-2xl border border-[#E2E8F0] bg-white text-gray-700 font-semibold hover:bg-[#F5F7FB] transition"
+                    >
+                      Back
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={submitting || !submitAllowed}
+                      className="w-full sm:flex-1 px-6 py-3 rounded-2xl bg-gradient-to-r from-[#2563EB] to-[#1D4ED8] text-white font-semibold hover:from-[#1D4ED8] hover:to-[#2563EB] disabled:opacity-60 transition shadow-sm hover:shadow-md"
+                    >
+                      {submitting ? "Submitting..." : "Submit"}
+                    </button>
+                  </div>
+                </form>
+              )}
             </div>
 
             {submitError ? (
@@ -513,15 +667,7 @@ const HackathonDashboard = () => {
                 <AlertCard tone="warning">{submitError}</AlertCard>
               </div>
             ) : null}
-
-            <button
-              type="submit"
-              disabled={submitting || !submitAllowed}
-              className="mt-5 w-full px-6 py-3 rounded-2xl bg-gradient-to-r from-[#2563EB] to-[#1D4ED8] text-white font-semibold hover:from-[#1D4ED8] hover:to-[#2563EB] disabled:opacity-60 transition shadow-sm hover:shadow-md"
-            >
-              {submitting ? "Submitting..." : "Submit"}
-            </button>
-          </form>
+          </div>
         </div>
       ) : null}
 

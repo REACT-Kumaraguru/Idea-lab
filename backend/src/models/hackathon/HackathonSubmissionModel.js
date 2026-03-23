@@ -20,7 +20,7 @@ const HackathonSubmission = sequelize.define(
       field: "problem_id",
     },
     submissionPhase: {
-      type: DataTypes.ENUM("poc", "prototype"),
+      type: DataTypes.ENUM("poc", "prototype", "final"),
       allowNull: false,
       field: "submission_phase",
     },

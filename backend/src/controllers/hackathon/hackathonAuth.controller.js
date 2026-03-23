@@ -34,6 +34,7 @@ export const register = async (req, res) => {
     phone,
     phoneNumber,
     degree,
+    college,
     branch,
     graduation_year,
     role,
@@ -51,11 +52,12 @@ export const register = async (req, res) => {
     const resolvedDegree = String(degree ?? "")
       .trim()
       .toUpperCase();
+    const resolvedCollege = String(college ?? "").trim();
     const resolvedBranch = branch ?? null;
     const resolvedGraduationYear = graduation_year ?? req.body?.graduationYear ?? null;
 
-    if (!resolvedName || !normalizedEmail || !password || !resolvedPhone || !resolvedDegree || !resolvedGraduationYear) {
-      return res.status(400).json({ message: "Name, email, phone, degree, graduation year and password are required" });
+    if (!resolvedName || !normalizedEmail || !password || !resolvedPhone || !resolvedDegree || !resolvedCollege || !resolvedGraduationYear) {
+      return res.status(400).json({ message: "Name, email, phone, degree, college, graduation year and password are required" });
     }
     if (password.length < 6) {
       return res.status(400).json({ message: "Password must be at least 6 characters" });
@@ -99,6 +101,7 @@ export const register = async (req, res) => {
       phoneNumber: resolvedPhone,
       phone: resolvedPhone,
       degree: resolvedDegree,
+      college: resolvedCollege,
       branch: resolvedBranch ? String(resolvedBranch).trim() : null,
       graduationYear: yearNum,
       password: hashedPassword,

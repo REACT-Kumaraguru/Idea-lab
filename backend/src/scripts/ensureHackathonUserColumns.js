@@ -5,6 +5,7 @@ export async function ensureHackathonUserColumns({ sequelize }) {
     `ALTER TABLE "hackathon_users" ADD COLUMN IF NOT EXISTS "name" VARCHAR(255);`,
     `ALTER TABLE "hackathon_users" ADD COLUMN IF NOT EXISTS "phone" VARCHAR(32);`,
     `ALTER TABLE "hackathon_users" ADD COLUMN IF NOT EXISTS "degree" VARCHAR(32);`,
+    `ALTER TABLE "hackathon_users" ADD COLUMN IF NOT EXISTS "college" VARCHAR(255);`,
     `ALTER TABLE "hackathon_users" ADD COLUMN IF NOT EXISTS "branch" VARCHAR(255);`,
     `ALTER TABLE "hackathon_users" ADD COLUMN IF NOT EXISTS "graduation_year" INTEGER;`,
   ];

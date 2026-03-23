@@ -38,6 +38,10 @@ const HackathonUser = sequelize.define(
       type: DataTypes.STRING,
       allowNull: true,
     },
+    college: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
     branch: {
       type: DataTypes.STRING,
       allowNull: true,

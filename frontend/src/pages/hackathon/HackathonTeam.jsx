@@ -27,7 +27,9 @@ const HackathonTeam = () => {
       <div>
         <h2 className="text-2xl font-bold text-gray-900">Your Team</h2>
         <div className="mt-3 bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
-          <div className="text-gray-700">You are not part of any team yet.</div>
+          <div className="text-gray-700">
+            You are not part of any team yet. Any participant can create a team and becomes the team leader. Admin only approves or rejects teams.
+          </div>
           <div className="mt-4 flex gap-3 flex-wrap">
             <Link to="/hackathon/create-team" className="px-4 py-2 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 transition">
               Create Team
