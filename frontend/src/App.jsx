@@ -45,6 +45,7 @@ import HackathonAdminTeams from "./pages/hackathon/HackathonAdminTeams";
 import HackathonAdminProblems from "./pages/hackathon/HackathonAdminProblems";
 import HackathonAdminSubmissions from "./pages/hackathon/HackathonAdminSubmissions";
 import HackathonAdminSendMail from "./pages/hackathon/HackathonAdminSendMail";
+import HackathonAdminMentors from "./pages/hackathon/HackathonAdminMentors";
 
 function Home() {
   return (
@@ -313,6 +314,14 @@ function App() {
           element={
             <HackathonProtectedPage allowedRoles={["admin"]}>
               <HackathonAdminSubmissions />
+            </HackathonProtectedPage>
+          }
+        />
+        <Route
+          path="/hackathon/admin/mentors"
+          element={
+            <HackathonProtectedPage allowedRoles={["admin"]}>
+              <HackathonAdminMentors />
             </HackathonProtectedPage>
           }
         />

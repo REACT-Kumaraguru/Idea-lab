@@ -16,16 +16,20 @@ const HackathonAdminHome = () => {
           <div className="font-bold text-gray-900">Problems</div>
           <div className="text-gray-600 mt-1">Add, search, and remove industry problems.</div>
         </Link>
+        <Link to="/hackathon/admin/mentors" className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm hover:shadow-md transition">
+          <div className="font-bold text-gray-900">Mentors</div>
+          <div className="text-gray-600 mt-1">Manually create mentor accounts.</div>
+        </Link>
         <Link
           to="/hackathon/admin/submissions"
-          className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm hover:shadow-md transition md:col-span-2"
+          className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm hover:shadow-md transition"
         >
           <div className="font-bold text-gray-900">Submissions</div>
           <div className="text-gray-600 mt-1">Review PoC / Prototype submissions.</div>
         </Link>
         <Link
           to="/hackathon/admin/send-mail"
-          className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm hover:shadow-md transition md:col-span-2"
+          className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm hover:shadow-md transition"
         >
           <div className="font-bold text-gray-900">Send Mail</div>
           <div className="text-gray-600 mt-1">Email team leaders (reminders, payment, approvals).</div>
