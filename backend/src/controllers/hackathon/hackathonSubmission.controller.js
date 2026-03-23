@@ -63,12 +63,11 @@ export const submit = async (req, res) => {
 
     if (team.status !== "approved") {
       if (team.status === "pending") {
-        return res.status(400).json({ message: "Your team is pending admin approval" });
+        return res.status(400).json({
+          message: "Your team is not active yet. Team becomes active automatically when it has 4 members.",
+        });
       }
-      if (team.status === "rejected") {
-        return res.status(403).json({ message: "Your team was rejected. Submission is not allowed." });
-      }
-      return res.status(400).json({ message: "Submission is not allowed for this team status" });
+      return res.status(400).json({ message: "Only active teams can submit." });
     }
 
     const problem = await HackathonProblem.findByPk(problemId);

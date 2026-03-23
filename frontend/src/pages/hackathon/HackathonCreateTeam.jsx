@@ -52,7 +52,8 @@ const HackathonCreateTeam = () => {
     <div>
       <h2 className="text-2xl font-bold text-gray-900">Create Team</h2>
       <p className="text-gray-600 mt-2">
-        Any participant can create a team. The creator is automatically the team leader. Admin only approves or rejects teams.
+        Participants form teams themselves. Any participant can create a team, and the creator automatically becomes Team Leader.
+        Team becomes active automatically when it has 4 members.
       </p>
 
       <form onSubmit={onCreate} className="mt-6 bg-white rounded-2xl border border-gray-100 shadow-sm p-6">

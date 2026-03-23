@@ -151,11 +151,16 @@ export const joinTeam = async (req, res) => {
     const memberCount = await HackathonTeamMember.count({ where: { teamId: team.id } });
     if (memberCount >= 4) return res.status(400).json({ message: "Team is full (max 4 members)" });
 
-    const membership = await HackathonTeamMember.create({
+    await HackathonTeamMember.create({
       teamId: team.id,
       userId,
       isLeader: false,
     });
+
+    const finalMemberCount = await HackathonTeamMember.count({ where: { teamId: team.id } });
+    if (finalMemberCount >= 4 && team.status !== "approved") {
+      await team.update({ status: "approved" });
+    }
 
     const teamSummary = await buildTeamSummary({ team, currentUserId: userId });
     return res.status(201).json(teamSummary);

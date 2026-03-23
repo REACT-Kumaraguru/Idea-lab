@@ -59,9 +59,10 @@ const HackathonSubmit = () => {
     e.preventDefault();
     setError(null);
     if (team?.status !== "approved") {
-      if (team?.status === "pending") return setError("Your team is pending admin approval.");
-      if (team?.status === "rejected") return setError("Your team was rejected. Submission is not allowed.");
-      return setError("Submission is not allowed for this team status.");
+      if (team?.status === "pending") {
+        return setError("Your team is not active yet. Team becomes active automatically when it has 4 members.");
+      }
+      return setError("Only active teams can submit.");
     }
     setSubmitting(true);
     try {
@@ -109,12 +110,7 @@ const HackathonSubmit = () => {
           ) : null}
           {team?.status === "pending" ? (
             <div className="mb-4 bg-yellow-50 border border-yellow-100 text-gray-700 rounded-xl p-4 text-sm">
-              Your team is pending admin approval. Submission will be enabled after approval.
-            </div>
-          ) : null}
-          {team?.status === "rejected" ? (
-            <div className="mb-4 bg-red-50 border border-red-100 text-gray-700 rounded-xl p-4 text-sm">
-              Your team was rejected. Submission is disabled.
+              Team is not active yet. It becomes active automatically when it has 4 members.
             </div>
           ) : null}
           <div className="grid md:grid-cols-2 gap-4">

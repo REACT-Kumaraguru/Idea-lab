@@ -50,7 +50,9 @@ const HackathonJoinTeam = () => {
   return (
     <div>
       <h2 className="text-2xl font-bold text-gray-900">Join Team</h2>
-      <p className="text-gray-600 mt-2">Use your team leader invite code to join.</p>
+      <p className="text-gray-600 mt-2">
+        Participants form teams themselves. Use a Team Leader invite code to join. Team becomes active automatically when it has 4 members.
+      </p>
 
       <form onSubmit={onJoin} className="mt-6 bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
         <label className="text-sm font-medium text-gray-800">Invite Code</label>

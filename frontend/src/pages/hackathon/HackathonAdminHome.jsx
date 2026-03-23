@@ -10,7 +10,7 @@ const HackathonAdminHome = () => {
       <div className="mt-6 grid md:grid-cols-2 gap-5">
         <Link to="/hackathon/admin/teams" className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm hover:shadow-md transition">
           <div className="font-bold text-gray-900">Teams</div>
-          <div className="text-gray-600 mt-1">Approve teams and review membership.</div>
+          <div className="text-gray-600 mt-1">Monitor participant-created teams and membership.</div>
         </Link>
         <Link to="/hackathon/admin/problems" className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm hover:shadow-md transition">
           <div className="font-bold text-gray-900">Problems</div>

@@ -20,20 +20,14 @@ const HackathonAdminTeams = () => {
     load();
   }, []);
 
-  const setTeamStatus = async (teamId, status) => {
-    try {
-      const res = await axiosInstance.post(`/hackathon/admin/teams/${teamId}/status`, { status });
-      setTeams((prev) => prev.map((t) => (t.id === teamId ? res.data.team : t)));
-    } catch (e) {
-      setError(e.response?.data?.message || "Failed to update status");
-    }
-  };
-
   if (loading) return <div className="text-gray-600">Loading...</div>;
 
   return (
     <div>
       <h2 className="text-xl font-bold text-gray-900">Teams</h2>
+      <p className="text-sm text-gray-600 mt-1">
+        Teams are participant-created. A team becomes active automatically when it reaches 4 members.
+      </p>
       {error ? <div className="mt-3 text-sm text-red-600 font-medium">{error}</div> : null}
 
       <div className="mt-4 overflow-x-auto">
@@ -46,7 +40,7 @@ const HackathonAdminTeams = () => {
               <th className="p-3">Members</th>
               <th className="p-3">Status</th>
               <th className="p-3 min-w-[140px]">Details</th>
-              <th className="p-3">Actions</th>
+              <th className="p-3">Activation</th>
             </tr>
           </thead>
           <tbody>
@@ -61,7 +55,7 @@ const HackathonAdminTeams = () => {
                 <td className="p-3">{t.members?.length || 0} / 4</td>
                 <td className="p-3">
                   <span className="px-2 py-1 rounded-full bg-gray-100 text-gray-700 text-xs font-semibold">
-                    {t.status}
+                    {t.status === "approved" ? "active" : t.status}
                   </span>
                 </td>
                 <td className="p-3 align-top">
@@ -99,26 +93,10 @@ const HackathonAdminTeams = () => {
                   </details>
                 </td>
                 <td className="p-3 align-top">
-                  {t.status === "pending" ? (
-                    <div className="flex gap-2 flex-wrap">
-                      <button
-                        type="button"
-                        className="px-3 py-1 rounded-lg bg-blue-600 text-white text-xs font-semibold hover:bg-blue-700 transition"
-                        onClick={() => setTeamStatus(t.id, "approved")}
-                      >
-                        Approve
-                      </button>
-                      <button
-                        type="button"
-                        className="px-3 py-1 rounded-lg border border-gray-300 text-gray-700 text-xs font-semibold hover:bg-gray-50 transition"
-                        onClick={() => setTeamStatus(t.id, "rejected")}
-                      >
-                        Reject
-                      </button>
-                    </div>
-                  ) : (
-                    <span className="text-xs text-gray-500">—</span>
-                  )}
+                  <span className="text-xs text-gray-600">
+                    {t.members?.length || 0} / 4 members{" "}
+                    {(t.members?.length || 0) >= 4 ? "(active)" : "(waiting)"}
+                  </span>
                 </td>
               </tr>
             ))}

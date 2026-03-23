@@ -142,9 +142,7 @@ const HackathonDashboard = () => {
     !team
       ? "You are not part of any team yet."
       : team.status === "pending"
-      ? "Your team is pending admin approval. Submission will be enabled after approval."
-      : team.status === "rejected"
-      ? "Your team was rejected. Submission is disabled."
+      ? "Your team is not active yet. Team becomes active automatically when it has 4 members."
       : null;
 
   const fetchProblems = async () => {
@@ -342,8 +340,8 @@ const HackathonDashboard = () => {
             <AlertCard>
               <div className="font-semibold text-gray-900">You are not part of any team yet.</div>
               <div className="mt-1 text-sm text-gray-600">
-                Participants form teams themselves. Any participant can create a team, and the creator becomes team leader.
-                Admin only approves or rejects the team.
+                Participants form teams themselves. Any participant can create a team, and the creator automatically becomes Team Leader.
+                Team becomes active automatically when it has 4 members.
               </div>
             </AlertCard>
           ) : (
@@ -458,16 +456,14 @@ const HackathonDashboard = () => {
           {!team ? (
             <AlertCard tone="warning">You are not part of any team yet. Create or join a team first.</AlertCard>
           ) : team.status === "pending" ? (
-            <AlertCard tone="warning">Your team is pending admin approval. Submission will be enabled after approval.</AlertCard>
-          ) : team.status === "rejected" ? (
-            <AlertCard tone="warning">Your team was rejected. Submission is disabled.</AlertCard>
+            <AlertCard tone="warning">Your team is not active yet. Team becomes active automatically when it has 4 members.</AlertCard>
           ) : null}
 
           <div className="mt-4 bg-white rounded-3xl border border-[#E2E8F0] p-4 sm:p-6 shadow-sm" aria-disabled={!submitAllowed}>
             {!submitAllowed ? (
               <div className="mb-4">
                 <AlertCard tone="warning">
-                  {submissionBlockedReason || "Select a problem and ensure your team is approved."}
+                  {submissionBlockedReason || "Select a problem and ensure your team is active."}
                 </AlertCard>
               </div>
             ) : null}
@@ -757,7 +753,7 @@ const HackathonDashboard = () => {
                 <div className="font-semibold text-gray-900">Team Rules</div>
                 <ul className="mt-2 space-y-1 text-sm">
                   <li>Max 4 members per team</li>
-                  <li>Only approved teams can submit</li>
+                  <li>Only active teams can submit</li>
                   <li>Submit PoC / Prototype only once</li>
                 </ul>
               </div>
