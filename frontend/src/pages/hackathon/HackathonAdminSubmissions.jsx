@@ -14,6 +14,13 @@ const isDecisionLocked = (status) =>
 function fileHref(path) {
   if (!path) return "#";
   if (path.startsWith("http")) return path;
+
+  // Backward compatibility: old submissions stored `/src/uploads/hackathon/...`.
+  if (path.startsWith("/src/uploads/hackathon/")) {
+    const filename = path.split("/").pop();
+    path = `/api/ich2026/uploads/hackathon/${filename}`;
+  }
+
   const origin = API_BASE?.replace(/\/$/, "") || "";
   return path.startsWith("/") ? `${origin}${path}` : `${origin}/${path}`;
 }

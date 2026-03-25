@@ -1,5 +1,20 @@
 import React, { useEffect, useState } from "react";
 import { axiosInstance } from "../../lib/axios.js";
+import { API_BASE } from "../../lib/config.js";
+
+function fileHref(path) {
+  if (!path) return "#";
+  if (path.startsWith("http")) return path;
+
+  // Backward compatibility: old submissions stored `/src/uploads/hackathon/...`.
+  if (path.startsWith("/src/uploads/hackathon/")) {
+    const filename = path.split("/").pop();
+    path = `/api/ich2026/uploads/hackathon/${filename}`;
+  }
+
+  const origin = API_BASE?.replace(/\/$/, "") || "";
+  return path.startsWith("/") ? `${origin}${path}` : `${origin}/${path}`;
+}
 
 const HackathonStatus = () => {
   const [data, setData] = useState(null);
@@ -78,7 +93,13 @@ const HackathonStatus = () => {
                     <div className="text-xs text-gray-500">({Array.isArray(s.pocFilePaths) ? s.pocFilePaths.length : 0} files)</div>
                     <div className="mt-2 space-y-2">
                       {(s.pocFilePaths || []).map((f, idx) => (
-                        <a key={idx} href={f} target="_blank" rel="noreferrer" className="block text-blue-700 hover:underline text-sm break-all">
+                        <a
+                          key={idx}
+                          href={fileHref(f)}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="block text-blue-700 hover:underline text-sm break-all"
+                        >
                           {f.split("/").pop()}
                         </a>
                       ))}
@@ -90,7 +111,13 @@ const HackathonStatus = () => {
                     <div className="text-xs text-gray-500">({Array.isArray(s.prototypeFilePaths) ? s.prototypeFilePaths.length : 0} files)</div>
                     <div className="mt-2 space-y-2">
                       {(s.prototypeFilePaths || []).map((f, idx) => (
-                        <a key={idx} href={f} target="_blank" rel="noreferrer" className="block text-blue-700 hover:underline text-sm break-all">
+                        <a
+                          key={idx}
+                          href={fileHref(f)}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="block text-blue-700 hover:underline text-sm break-all"
+                        >
                           {f.split("/").pop()}
                         </a>
                       ))}

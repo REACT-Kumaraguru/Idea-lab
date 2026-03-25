@@ -13,8 +13,8 @@ import HackathonMentor from "../../models/hackathon/HackathonMentorModel.js";
 import HackathonTeamMentor from "../../models/hackathon/HackathonTeamMentorModel.js";
 
 const toFileUrl = (file) => {
-  // multer "destination" is ./src/uploads/hackathon, but we store API URL paths
-  return `/src/uploads/hackathon/${file.filename}`;
+  // Store an API-served URL so Nginx can proxy it.
+  return `/api/ich2026/uploads/hackathon/${file.filename}`;
 };
 
 const phaseEnum = ["poc", "prototype", "final"];

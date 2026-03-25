@@ -1,4 +1,6 @@
 import express from "express";
+import fs from "fs";
+import path from "path";
 
 import {
   register,
@@ -43,6 +45,21 @@ import { setupHackathonAssociations } from "../../models/hackathon/associations.
 setupHackathonAssociations();
 
 const router = express.Router();
+
+// Serve uploaded files via API path (so reverse proxies can forward).
+router.get("/uploads/hackathon/:filename", async (req, res) => {
+  const { filename } = req.params || {};
+  if (!filename) return res.status(400).send("filename is required");
+
+  const uploadDir = path.join(process.cwd(), "src/uploads/hackathon");
+  const filePath = path.join(uploadDir, String(filename));
+
+  if (!fs.existsSync(filePath)) {
+    return res.status(404).send("File not found");
+  }
+
+  return res.sendFile(filePath);
+});
 
 // Hackathon auth (module-scoped)
 router.post("/register", register);
