@@ -34,6 +34,13 @@ const HackathonAdminHome = () => {
           <div className="font-bold text-gray-900">Send Mail</div>
           <div className="text-gray-600 mt-1">Email team leaders (reminders, payment, approvals).</div>
         </Link>
+        <Link
+          to="/ich2026/admin/users"
+          className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm hover:shadow-md transition"
+        >
+          <div className="font-bold text-gray-900">Admins</div>
+          <div className="text-gray-600 mt-1">Create, update, and delete admin accounts.</div>
+        </Link>
       </div>
     </div>
   );

@@ -69,6 +69,7 @@ const HackathonLayout = ({ children }) => {
       { to: "/ich2026/admin/problems", label: "Problems", icon: ClipboardList },
       { to: "/ich2026/admin/submissions", label: "Submissions", icon: Activity },
       { to: "/ich2026/admin/send-mail", label: "Send Mail", icon: Mail },
+      { to: "/ich2026/admin/users", label: "Admins", icon: Users },
     ],
     []
   );
