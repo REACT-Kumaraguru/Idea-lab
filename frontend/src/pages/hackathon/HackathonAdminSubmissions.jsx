@@ -53,6 +53,14 @@ function SubmissionCard({ s, adminNotes, setAdminNotes, updateStatus }) {
             <span className="px-2 py-1 rounded-full bg-white border border-gray-200 text-gray-700 text-xs font-semibold">
               {formatStatus(s.status)}
             </span>
+            <span
+              className={[
+                "ml-2 px-2 py-1 rounded-full text-xs font-semibold",
+                s.mentorApproved ? "bg-green-50 border border-green-100 text-green-700" : "bg-gray-100 text-gray-700",
+              ].join(" ")}
+            >
+              Mentor: {s.mentorApproved ? "Approved" : "Not approved"}
+            </span>
           </div>
         </div>
 

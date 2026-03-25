@@ -53,7 +53,6 @@ const HackathonDashboard = () => {
   const [workedBefore, setWorkedBefore] = useState("no");
   const [agreedTerms, setAgreedTerms] = useState(false);
   const [phase, setPhase] = useState("poc");
-  const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [files, setFiles] = useState([]);
   const [submitting, setSubmitting] = useState(false);
@@ -212,7 +211,6 @@ const HackathonDashboard = () => {
     if (!team) return setSubmitError("You are not part of any team yet.");
     if (!selectedProblemId) return setSubmitError("Please select a problem first.");
 
-    if (!title?.trim()) return setSubmitError("Title is required.");
     if (!files || files.length === 0) return setSubmitError("Upload at least one file.");
 
     setSubmitting(true);
@@ -220,8 +218,12 @@ const HackathonDashboard = () => {
       const fd = new FormData();
       fd.append("problemId", String(selectedProblemId));
       fd.append("phase", phase);
-      fd.append("title", title);
       fd.append("description", description || "");
+      fd.append("whyParticipate", whyParticipate || "");
+      fd.append("problemToSolve", problemToSolve || "");
+      fd.append("plannedTech", plannedTech || "");
+      fd.append("workedBefore", workedBefore || "");
+      fd.append("agreedTerms", String(Boolean(agreedTerms)));
 
       for (const f of files) {
         if (phase === "poc") fd.append("pocFiles", f);
@@ -275,6 +277,37 @@ const HackathonDashboard = () => {
         <div className="text-sm font-medium text-gray-800">{children}</div>
       </div>
     );
+  };
+
+  const getSubmissionFiles = (s) => {
+    if (!s) return [];
+    if (s.submissionPhase === "poc") return Array.isArray(s.pocFilePaths) ? s.pocFilePaths : [];
+    return Array.isArray(s.prototypeFilePaths) ? s.prototypeFilePaths : [];
+  };
+
+  const fileNameFromUrl = (u) => {
+    try {
+      const last = String(u || "").split("/").pop();
+      return decodeURIComponent(last || "");
+    } catch {
+      return String(u || "");
+    }
+  };
+
+  const mentorApproveSubmission = async (submissionId) => {
+    try {
+      const res = await axiosInstance.post(`/ich2026/mentor/submissions/${submissionId}/approval`, {
+        approved: true,
+      });
+      const updated = res.data?.submission;
+      if (!updated?.id) return;
+      setStatusData((prev) => ({
+        ...(prev || {}),
+        submissions: (prev?.submissions || []).map((s) => (Number(s.id) === Number(updated.id) ? { ...s, ...updated } : s)),
+      }));
+    } catch (e) {
+      setSubmitError(e.response?.data?.message || "Failed to approve submission");
+    }
   };
 
   return (
@@ -601,18 +634,6 @@ const HackathonDashboard = () => {
                   </div>
 
                   <div className="mt-4">
-                    <label className="text-sm font-semibold text-gray-800">Title</label>
-                    <input
-                      value={title}
-                      onChange={(e) => setTitle(e.target.value)}
-                      required
-                      disabled={!submitAllowed}
-                      className="mt-2 w-full rounded-2xl border border-[#E2E8F0] px-4 py-3 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#2563EB]/25"
-                      placeholder="e.g., AI-enabled predictive maintenance for motors"
-                    />
-                  </div>
-
-                  <div className="mt-4">
                     <label className="text-sm font-semibold text-gray-800">Description</label>
                     <textarea
                       value={description}
@@ -669,7 +690,130 @@ const HackathonDashboard = () => {
         <div className="mt-5">
           {statusLoading ? <div className="text-gray-600">Loading status...</div> : null}
           <div className="max-w-4xl mx-auto space-y-4">
-          {!statusData?.team ? (
+          {role === "mentor" ? (
+            <div className="bg-white rounded-3xl border border-[#E2E8F0] p-6 shadow-sm">
+              <div className="text-lg font-bold text-gray-900">Assigned Submissions</div>
+              <p className="text-sm text-gray-600 mt-1">
+                Submissions for the problems assigned to you.
+              </p>
+
+              {statusData.submissions?.length ? (
+                <div className="mt-4 space-y-4">
+                  {statusData.submissions.map((s) => (
+                    <div key={s.id} className="p-5 rounded-2xl border border-[#E2E8F0] bg-white">
+                      <div className="flex items-start justify-between gap-3 flex-wrap">
+                        <div>
+                          <div className="font-semibold text-gray-900">
+                            {s.problem?.title || "Problem"} ({s.submissionPhase})
+                          </div>
+                          <div className="text-sm text-gray-600 mt-1">
+                            Team: <span className="font-semibold text-gray-900">{s.team?.teamName || "—"}</span>
+                          </div>
+                        </div>
+                        <div>
+                          {(() => {
+                            const statusLabel = mapSubmissionStatus(s.status) || s.status;
+                            const tone =
+                              statusLabel === "pending"
+                                ? "bg-[#FFFBEB] border border-[#F59E0B]/20 text-[#92400E]"
+                                : statusLabel === "winner"
+                                  ? "bg-[#ECFDF3] border border-[#22C55E]/20 text-[#15803D]"
+                                  : "bg-[#F5F7FB] border border-[#E2E8F0] text-gray-800";
+                            return (
+                              <span className={`px-3 py-1 rounded-full text-xs font-semibold ${tone}`}>
+                                {statusLabel}
+                              </span>
+                            );
+                          })()}
+                        </div>
+                      </div>
+
+                      <div className="mt-4 space-y-4">
+                        <div className="rounded-2xl border border-[#E2E8F0] bg-[#F8FAFC] p-4">
+                          <div className="text-sm font-bold text-gray-900">Team members</div>
+                          <div className="text-sm text-gray-700 mt-1">
+                            {(s.team?.members || [])
+                              .map((m) => (m?.user?.fullName ? `${m.user.fullName}${m.isLeader ? " (Leader)" : ""}` : null))
+                              .filter(Boolean)
+                              .join(", ") || "—"}
+                          </div>
+                        </div>
+
+                        <div className="rounded-2xl border border-[#E2E8F0] bg-white p-4">
+                          <div className="text-sm font-bold text-gray-900">Participation details</div>
+                          <div className="mt-3 space-y-3 text-sm text-gray-800">
+                            <div>
+                              <div className="font-semibold text-gray-900">
+                                1. Why does your team want to participate in this hackathon?
+                              </div>
+                              <div className="text-gray-700 whitespace-pre-wrap">{s.whyParticipate || "—"}</div>
+                            </div>
+                            <div>
+                              <div className="font-semibold text-gray-900">2. What problem are you trying to solve?</div>
+                              <div className="text-gray-700 whitespace-pre-wrap">{s.problemToSolve || "—"}</div>
+                            </div>
+                            <div>
+                              <div className="font-semibold text-gray-900">3. What technologies are you planning to use?</div>
+                              <div className="text-gray-700 whitespace-pre-wrap">{s.plannedTech || "—"}</div>
+                            </div>
+                            <div>
+                              <div className="font-semibold text-gray-900">4. Have you worked on this idea before?</div>
+                              <div className="text-gray-700">{s.workedBefore ? String(s.workedBefore) : "—"}</div>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="rounded-2xl border border-[#E2E8F0] bg-white p-4">
+                          <div className="text-sm font-bold text-gray-900">Description</div>
+                          <div className="text-sm text-gray-700 mt-2 whitespace-pre-wrap">{s.description || "—"}</div>
+                        </div>
+
+                        <div className="rounded-2xl border border-[#E2E8F0] bg-white p-4">
+                          <div className="text-sm font-bold text-gray-900">Uploaded files</div>
+                          {getSubmissionFiles(s).length ? (
+                            <div className="mt-2 space-y-2">
+                              {getSubmissionFiles(s).map((u, idx) => (
+                                <a
+                                  key={`${u}-${idx}`}
+                                  href={u}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="block text-sm text-[#2563EB] hover:underline break-all"
+                                >
+                                  {fileNameFromUrl(u)}
+                                </a>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="text-sm text-gray-600 mt-2">—</div>
+                          )}
+                        </div>
+
+                        <div className="flex items-center justify-between gap-3 flex-wrap">
+                          <div className="text-sm text-gray-700">
+                            Mentor approval:{" "}
+                            <span className={`font-semibold ${s.mentorApproved ? "text-[#15803D]" : "text-gray-800"}`}>
+                              {s.mentorApproved ? "Approved" : "Not approved"}
+                            </span>
+                          </div>
+                          <button
+                            type="button"
+                            disabled={Boolean(s.mentorApproved)}
+                            onClick={() => mentorApproveSubmission(s.id)}
+                            className="px-5 py-2 rounded-2xl bg-gradient-to-r from-[#2563EB] to-[#1D4ED8] text-white font-semibold hover:from-[#1D4ED8] hover:to-[#2563EB] disabled:opacity-60 transition shadow-sm hover:shadow-md"
+                          >
+                            {s.mentorApproved ? "Mentor Approved" : "Mentor Approve"}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="mt-3 text-gray-700">No submissions found for your assigned problems yet.</div>
+              )}
+            </div>
+          ) : !statusData?.team ? (
             <AlertCard tone="warning">No team found. Create/join a team to track submissions.</AlertCard>
           ) : (
             <div className="bg-white rounded-3xl border border-[#E2E8F0] p-6 shadow-sm">

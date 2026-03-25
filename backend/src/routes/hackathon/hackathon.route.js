@@ -29,6 +29,7 @@ import {
   adminListSubmissions,
   adminSetSubmissionStatus,
   adminSelectWinner,
+  mentorSetSubmissionApproval,
 } from "../../controllers/hackathon/hackathonSubmission.controller.js";
 import { protectHackathonRoute, requireHackathonRole, requireHackathonStudentRole, requireHackathonMentorRole, requireHackathonAdminRole } from "../../middleware/hackathonAuth.middleware.js";
 import { hackathonUpload } from "../../modules/hackathon/lib/hackathonUpload.js";
@@ -111,6 +112,12 @@ router.post(
   submit
 );
 router.get("/status", protectHackathonRoute, requireHackathonRole("student", "mentor"), getStatus);
+router.post(
+  "/mentor/submissions/:id/approval",
+  protectHackathonRoute,
+  requireHackathonMentorRole,
+  mentorSetSubmissionApproval
+);
 
 // Admin panel
 router.get("/admin/teams", protectHackathonRoute, requireHackathonAdminRole, adminListTeams);

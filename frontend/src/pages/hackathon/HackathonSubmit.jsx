@@ -15,7 +15,6 @@ const HackathonSubmit = () => {
 
   const [problemId, setProblemId] = useState(initialProblemId);
   const [phase, setPhase] = useState("poc");
-  const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [files, setFiles] = useState([]);
 
@@ -64,7 +63,6 @@ const HackathonSubmit = () => {
       const fd = new FormData();
       fd.append("problemId", String(problemId));
       fd.append("phase", phase);
-      fd.append("title", title);
       fd.append("description", description || "");
 
       if (Array.isArray(files) && files.length > 0) {
@@ -156,22 +154,12 @@ const HackathonSubmit = () => {
               >
                 <option value="poc">PoC</option>
                 <option value="prototype">Prototype</option>
+                <option value="final">Final</option>
               </select>
               <div className="mt-2 text-xs text-gray-500">
                 Upload at least one file for the chosen phase.
               </div>
             </div>
-          </div>
-
-          <div className="mt-4">
-            <label className="text-sm font-medium text-gray-800">Title</label>
-            <input
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              required
-              className="mt-2 w-full rounded-xl border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="e.g., AI-enabled predictive maintenance for motors"
-            />
           </div>
 
           <div className="mt-4">

@@ -32,6 +32,47 @@ const HackathonSubmission = sequelize.define(
       type: DataTypes.TEXT,
       allowNull: true,
     },
+    whyParticipate: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+      field: "why_participate",
+    },
+    problemToSolve: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+      field: "problem_to_solve",
+    },
+    plannedTech: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+      field: "planned_tech",
+    },
+    workedBefore: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      field: "worked_before",
+    },
+    agreedTerms: {
+      type: DataTypes.BOOLEAN,
+      allowNull: true,
+      field: "agreed_terms",
+    },
+    mentorApproved: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+      field: "mentor_approved",
+    },
+    mentorApprovedByUserId: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      field: "mentor_approved_by_user_id",
+    },
+    mentorApprovedAt: {
+      type: DataTypes.DATE,
+      allowNull: true,
+      field: "mentor_approved_at",
+    },
     // Stored as JSON string arrays (we keep DB type simple)
     pocFilePaths: {
       type: DataTypes.TEXT,

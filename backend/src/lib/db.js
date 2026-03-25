@@ -2,6 +2,7 @@ import { Sequelize } from "sequelize";
 import { ENV } from "./env.js";
 import { ensureHackathonProblemColumns } from "../scripts/ensureHackathonProblemColumns.js";
 import { ensureHackathonSubmissionPhaseColumns } from "../scripts/ensureHackathonSubmissionPhaseColumns.js";
+import { ensureHackathonSubmissionColumns } from "../scripts/ensureHackathonSubmissionColumns.js";
 
 export const sequelize = new Sequelize(ENV.DATABASE_URL, {
   dialect: "postgres",
@@ -54,6 +55,7 @@ export const connectDB = async () => {
     await migrateLegacyUsers();
     await ensureHackathonProblemColumns({ sequelize });
     await ensureHackathonSubmissionPhaseColumns({ sequelize });
+    await ensureHackathonSubmissionColumns({ sequelize });
     await sequelize.sync();
 
     await sequelize.query(`

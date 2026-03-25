@@ -20,6 +20,44 @@ const toFileUrl = (file) => {
 
 const phaseEnum = ["poc", "prototype", "final"];
 
+async function buildTeamDetails(team) {
+  if (!team) return null;
+  const membersRows = await HackathonTeamMember.findAll({
+    where: { teamId: team.id },
+    order: [["created_at", "ASC"]],
+  });
+
+  const members = await Promise.all(
+    membersRows.map(async (m) => {
+      const u = await HackathonUser.findByPk(m.userId, {
+        attributes: { exclude: ["password"] },
+      });
+      return {
+        userId: m.userId,
+        isLeader: m.isLeader === true,
+        user: u
+          ? {
+              id: u.id,
+              fullName: u.fullName,
+              email: u.email,
+              phoneNumber: u.phoneNumber,
+              role: u.role,
+            }
+          : null,
+      };
+    })
+  );
+
+  return {
+    id: team.id,
+    teamName: team.teamName,
+    inviteCode: team.inviteCode,
+    status: team.status,
+    leaderUserId: team.leaderUserId,
+    members,
+  };
+}
+
 async function serializeSubmissionForAdmin(submissionInstance) {
   const row = submissionInstance.toJSON();
   const team = await HackathonTeam.findByPk(row.teamId, {
@@ -39,14 +77,23 @@ async function serializeSubmissionForAdmin(submissionInstance) {
 }
 
 export const submit = async (req, res) => {
-  const { problemId, phase, title, description } = req.body || {};
+  const {
+    problemId,
+    phase,
+    title,
+    description,
+    whyParticipate,
+    problemToSolve,
+    plannedTech,
+    workedBefore,
+    agreedTerms,
+  } = req.body || {};
   try {
     const userId = Number(req.hackathonUser.id);
     const resolvedPhase = phaseEnum.includes(phase) ? phase : null;
     if (!problemId || !resolvedPhase) {
       return res.status(400).json({ message: "problemId and phase are required" });
     }
-    if (!title?.trim()) return res.status(400).json({ message: "title is required" });
 
     const teamMember = await HackathonTeamMember.findOne({ where: { userId } });
 
@@ -73,6 +120,8 @@ export const submit = async (req, res) => {
 
     const problem = await HackathonProblem.findByPk(problemId);
     if (!problem) return res.status(404).json({ message: "Problem not found" });
+
+    const finalTitle = String(title || "").trim() || String(problem.title || "Submission").trim();
 
     const files = req.files || {};
     const pocFiles = Array.isArray(files.pocFiles) ? files.pocFiles : [];
@@ -114,10 +163,15 @@ export const submit = async (req, res) => {
 
     if (existing) {
       const updated = await existing.update({
-        title: title.trim(),
+        title: finalTitle,
         description: description?.trim() || null,
         status: "pending",
         submittedByUserId: userId,
+        whyParticipate: whyParticipate?.trim() || existing.whyParticipate || null,
+        problemToSolve: problemToSolve?.trim() || existing.problemToSolve || null,
+        plannedTech: plannedTech?.trim() || existing.plannedTech || null,
+        workedBefore: workedBefore ? String(workedBefore) : existing.workedBefore || null,
+        agreedTerms: agreedTerms != null ? Boolean(agreedTerms) : existing.agreedTerms ?? null,
         // Update only the relevant phase file paths
         pocFilePaths: resolvedPhase === "poc" ? pocFilePaths : existing.pocFilePaths,
         prototypeFilePaths: resolvedPhase !== "poc" ? prototypeFilePaths : existing.prototypeFilePaths,
@@ -129,10 +183,15 @@ export const submit = async (req, res) => {
       teamId: team.id,
       problemId: problem.id,
       submissionPhase: resolvedPhase,
-      title: title.trim(),
+      title: finalTitle,
       description: description?.trim() || null,
       status: "pending",
       submittedByUserId: userId,
+      whyParticipate: whyParticipate?.trim() || null,
+      problemToSolve: problemToSolve?.trim() || null,
+      plannedTech: plannedTech?.trim() || null,
+      workedBefore: workedBefore ? String(workedBefore) : null,
+      agreedTerms: agreedTerms != null ? Boolean(agreedTerms) : null,
       pocFilePaths: resolvedPhase === "poc" ? pocFilePaths : [],
       prototypeFilePaths: resolvedPhase !== "poc" ? prototypeFilePaths : [],
     });
@@ -149,6 +208,55 @@ export const getStatus = async (req, res) => {
     const userId = Number(req.hackathonUser?.id ?? req.session?.user?.id);
     const role = req.hackathonUser.role;
 
+    if (role === "mentor") {
+      // Mentor view: show submissions for problems assigned to this mentor (problem-level mentor assignment).
+      const mentor = await HackathonMentor.findOne({ where: { userId } });
+      if (!mentor) return res.status(200).json({ team: null, submissions: [] });
+
+      const problems = await HackathonProblem.findAll({
+        where: { mentorId: mentor.id },
+        attributes: ["id", "title", "sector"],
+        order: [["created_at", "DESC"]],
+      });
+
+      const problemIds = problems.map((p) => p.id);
+      if (!problemIds.length) return res.status(200).json({ team: null, submissions: [] });
+
+      const submissionsRows = await HackathonSubmission.findAll({
+        where: { problemId: problemIds },
+        order: [["created_at", "DESC"]],
+      });
+
+      const submissions = await Promise.all(
+        submissionsRows.map(async (s) => {
+          const team = await HackathonTeam.findByPk(s.teamId, {
+            attributes: ["id", "teamName", "inviteCode", "status", "leaderUserId"],
+          });
+          const teamDetails = team ? await buildTeamDetails(team) : null;
+          const problem = problems.find((p) => Number(p.id) === Number(s.problemId)) || null;
+          const submittedBy = await HackathonUser.findByPk(s.submittedByUserId, {
+            attributes: { exclude: ["password"] },
+          });
+
+          return {
+            ...(s.toJSON ? s.toJSON() : s),
+            team: teamDetails,
+            problem: problem ? { id: problem.id, title: problem.title, sector: problem.sector } : null,
+            submittedBy: submittedBy
+              ? {
+                  id: submittedBy.id,
+                  fullName: submittedBy.fullName,
+                  email: submittedBy.email,
+                  role: submittedBy.role,
+                }
+              : null,
+          };
+        })
+      );
+
+      return res.status(200).json({ team: null, submissions });
+    }
+
     let teamId = null;
     if (role === "student") {
       const member = await HackathonTeamMember.findOne({ where: { userId } });
@@ -157,11 +265,6 @@ export const getStatus = async (req, res) => {
         const leaderTeam = await HackathonTeam.findOne({ where: { leaderUserId: userId }, attributes: ["id"] });
         teamId = leaderTeam?.id || null;
       }
-    } else if (role === "mentor") {
-      const mentor = await HackathonMentor.findOne({ where: { userId } });
-      if (!mentor) return res.status(200).json({ team: null, submissions: [] });
-      const assignment = await HackathonTeamMentor.findOne({ where: { mentorId: mentor.id } });
-      teamId = assignment?.teamId || null;
     } else {
       return res.status(403).json({ message: "Forbidden" });
     }
@@ -205,6 +308,53 @@ export const getStatus = async (req, res) => {
     return res.status(200).json({ team, submissions });
   } catch (error) {
     console.log("Error in getStatus:", error.message);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+export const mentorSetSubmissionApproval = async (req, res) => {
+  try {
+    const userId = Number(req.hackathonUser?.id ?? req.session?.hackathonUser?.id);
+    const submissionId = Number(req.params.id);
+    const approved = req.body?.approved;
+
+    if (!submissionId) return res.status(400).json({ message: "Invalid submission id" });
+    if (approved == null) return res.status(400).json({ message: "approved is required" });
+
+    const mentor = await HackathonMentor.findOne({ where: { userId } });
+    if (!mentor) return res.status(403).json({ message: "Mentor profile not found" });
+
+    const submission = await HackathonSubmission.findByPk(submissionId);
+    if (!submission) return res.status(404).json({ message: "Submission not found" });
+
+    const problem = await HackathonProblem.findByPk(submission.problemId, {
+      attributes: ["id", "title", "sector", "mentorId"],
+    });
+    if (!problem) return res.status(404).json({ message: "Problem not found" });
+    if (Number(problem.mentorId) !== Number(mentor.id)) {
+      return res.status(403).json({ message: "You are not assigned to this problem" });
+    }
+
+    await submission.update({
+      mentorApproved: Boolean(approved),
+      mentorApprovedByUserId: userId,
+      mentorApprovedAt: new Date(),
+    });
+
+    const team = await HackathonTeam.findByPk(submission.teamId, {
+      attributes: ["id", "teamName", "inviteCode", "status", "leaderUserId"],
+    });
+    const teamDetails = team ? await buildTeamDetails(team) : null;
+
+    return res.status(200).json({
+      submission: {
+        ...(submission.toJSON ? submission.toJSON() : submission),
+        team: teamDetails,
+        problem: { id: problem.id, title: problem.title, sector: problem.sector },
+      },
+    });
+  } catch (error) {
+    console.log("Error in mentorSetSubmissionApproval:", error.message);
     return res.status(500).json({ message: "Internal Server Error" });
   }
 };
