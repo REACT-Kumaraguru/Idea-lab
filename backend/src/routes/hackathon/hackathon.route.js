@@ -32,6 +32,7 @@ import { hackathonUpload } from "../../modules/hackathon/lib/hackathonUpload.js"
 import { getDashboard } from "../../controllers/hackathon/hackathonDashboard.controller.js";
 import { adminListTeams } from "../../controllers/hackathon/hackathonTeamAdmin.controller.js";
 import { adminSendTeamMail } from "../../controllers/hackathon/hackathonAdminMail.controller.js";
+import { listHackathonAdmins, createHackathonAdmin, updateHackathonAdmin, deleteHackathonAdmin } from "../../controllers/hackathon/hackathonAdminUsers.controller.js";
 import {
   adminListMentors,
   adminCreateMentor,
@@ -85,6 +86,12 @@ router.delete("/admin/problems/:id", protectHackathonRoute, requireHackathonAdmi
 
 router.get("/admin/submissions", protectHackathonRoute, requireHackathonAdminRole, adminListSubmissions);
 router.post("/admin/submissions/:id/status", protectHackathonRoute, requireHackathonAdminRole, adminSetSubmissionStatus);
+
+// Hackathon admin account management (default admin only)
+router.get("/admin/users", protectHackathonRoute, requireHackathonAdminRole, listHackathonAdmins);
+router.post("/admin/users", protectHackathonRoute, requireHackathonAdminRole, createHackathonAdmin);
+router.put("/admin/users/:id", protectHackathonRoute, requireHackathonAdminRole, updateHackathonAdmin);
+router.delete("/admin/users/:id", protectHackathonRoute, requireHackathonAdminRole, deleteHackathonAdmin);
 
 router.get("/admin/mentors", protectHackathonRoute, requireHackathonAdminRole, adminListMentors);
 router.post("/admin/mentors", protectHackathonRoute, requireHackathonAdminRole, adminCreateMentor);
