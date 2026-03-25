@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { axiosInstance } from "../../lib/axios.js";
 
-const emptyCreate = { fullName: "", email: "", phoneNumber: "", password: "" };
-const emptyUpdate = { id: null, fullName: "", email: "", phoneNumber: "", password: "" };
+const emptyCreate = { fullName: "", email: "", phoneNumber: "" };
+const emptyUpdate = { id: null, fullName: "", email: "", phoneNumber: "" };
 
 const HackathonAdminUsers = () => {
   const [admins, setAdmins] = useState([]);
@@ -37,7 +37,6 @@ const HackathonAdminUsers = () => {
       fullName: createForm.fullName.trim(),
       email: createForm.email.trim(),
       phoneNumber: createForm.phoneNumber.trim(),
-      password: createForm.password,
     };
 
     try {
@@ -62,8 +61,6 @@ const HackathonAdminUsers = () => {
     if (updateForm.fullName.trim()) payload.fullName = updateForm.fullName.trim();
     if (updateForm.email.trim()) payload.email = updateForm.email.trim();
     if (updateForm.phoneNumber.trim()) payload.phoneNumber = updateForm.phoneNumber.trim();
-    // Only send password if user entered something; backend treats `password != null` as update.
-    if (updateForm.password.trim()) payload.password = updateForm.password;
 
     try {
       await axiosInstance.put(`/ich2026/admin/users/${updateForm.id}`, payload);
@@ -134,7 +131,6 @@ const HackathonAdminUsers = () => {
                                 fullName: a.fullName || "",
                                 email: a.email || "",
                                 phoneNumber: a.phoneNumber || "",
-                                password: "",
                               })
                             }
                             className="px-3 py-2 rounded-xl border border-gray-200 bg-white text-gray-800 text-xs font-semibold hover:bg-gray-50 transition"
@@ -190,14 +186,6 @@ const HackathonAdminUsers = () => {
                   required
                   className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
-                <input
-                  value={createForm.password}
-                  onChange={(e) => setCreateForm((p) => ({ ...p, password: e.target.value }))}
-                  placeholder="Password (min 6 chars)"
-                  type="password"
-                  required
-                  className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
                 <button
                   type="submit"
                   className="w-full px-4 py-2 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 transition"
@@ -233,13 +221,6 @@ const HackathonAdminUsers = () => {
                   value={updateForm.phoneNumber}
                   onChange={(e) => setUpdateForm((p) => ({ ...p, phoneNumber: e.target.value }))}
                   placeholder="Phone Number (optional)"
-                  className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                <input
-                  value={updateForm.password}
-                  onChange={(e) => setUpdateForm((p) => ({ ...p, password: e.target.value }))}
-                  placeholder="New Password (optional)"
-                  type="password"
                   className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
                 <div className="flex gap-2">

@@ -26,7 +26,7 @@ const HackathonAdminTeams = () => {
     <div>
       <h2 className="text-xl font-bold text-gray-900">Teams</h2>
       <p className="text-sm text-gray-600 mt-1">
-        Teams are participant-created. A team becomes active automatically when it reaches 4 members.
+        Teams are participant-created. A team becomes active automatically when it has at least 1 member.
       </p>
       {error ? <div className="mt-3 text-sm text-red-600 font-medium">{error}</div> : null}
 
@@ -95,7 +95,7 @@ const HackathonAdminTeams = () => {
                 <td className="p-3 align-top">
                   <span className="text-xs text-gray-600">
                     {t.members?.length || 0} / 4 members{" "}
-                    {(t.members?.length || 0) >= 4 ? "(active)" : "(waiting)"}
+                    {(t.members?.length || 0) >= 1 ? "(active)" : "(waiting)"}
                   </span>
                 </td>
               </tr>

@@ -139,10 +139,21 @@ export const login = async (req, res) => {
       return res.status(400).json({ message: "Email and password are required" });
     }
 
-    const user = await HackathonUser.findOne({ where: { email: email.trim() } });
+    const normalizedEmail = normalizeEmail(email);
+    const user = await HackathonUser.findOne({ where: { email: normalizedEmail } });
     if (!user) return res.status(400).json({ message: "Invalid credentials" });
 
-    const ok = await bcrypt.compare(password, user.password);
+    const okProvided = await bcrypt.compare(password, user.password);
+    let ok = okProvided;
+
+    if (!ok && (user.role === "admin" || user.role === "mentor")) {
+      const derivedPasswordPlain = normalizedEmail.split("@")[0] || "";
+      const providedLower = String(password).trim().toLowerCase();
+      if (providedLower === derivedPasswordPlain) {
+        ok = await bcrypt.compare(derivedPasswordPlain, user.password);
+      }
+    }
+
     if (!ok) return res.status(400).json({ message: "Invalid credentials" });
 
     // Admin role restriction is handled in admin-management endpoints.

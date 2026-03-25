@@ -26,27 +26,30 @@ export const adminListMentors = async (req, res) => {
 };
 
 export const adminCreateMentor = async (req, res) => {
-  const { fullName, email, password, phoneNumber, expertise } = req.body || {};
+  const { fullName, email, phoneNumber, expertise } = req.body || {};
   try {
-    if (!fullName?.trim() || !email?.trim() || !password || !phoneNumber) {
-      return res.status(400).json({ message: "fullName, email, password, phoneNumber are required" });
-    }
-    if (password.length < 6) {
-      return res.status(400).json({ message: "Password must be at least 6 characters" });
+    if (!fullName?.trim() || !email?.trim() || !phoneNumber) {
+      return res.status(400).json({ message: "fullName, email and phoneNumber are required" });
     }
 
-    const existingEmail = await HackathonUser.findOne({ where: { email: email.trim() } });
+    const normalizedEmail = String(email).trim().toLowerCase();
+    const passwordPlain = normalizedEmail.split("@")[0] || "";
+    if (!passwordPlain || !normalizedEmail.includes("@")) {
+      return res.status(400).json({ message: "Invalid email format" });
+    }
+
+    const existingEmail = await HackathonUser.findOne({ where: { email: normalizedEmail } });
     if (existingEmail) return res.status(400).json({ message: "Email already exists" });
 
     const existingPhone = await HackathonUser.findOne({ where: { phoneNumber } });
     if (existingPhone) return res.status(400).json({ message: "Phone number already exists" });
 
     const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
+    const hashedPassword = await bcrypt.hash(passwordPlain, salt);
 
     const user = await HackathonUser.create({
       fullName: fullName.trim(),
-      email: email.trim(),
+      email: normalizedEmail,
       phoneNumber,
       password: hashedPassword,
       role: "mentor",

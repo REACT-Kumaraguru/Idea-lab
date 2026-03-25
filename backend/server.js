@@ -15,6 +15,7 @@ import { connectDB, sequelize } from "./src/lib/db.js";
 import { ensureDefaultAdmin } from "./src/scripts/ensureDefaultAdmin.js";
 import { ensureDefaultHackathonAdmin } from "./src/scripts/ensureDefaultHackathonAdmin.js";
 import { ensureHackathonUserColumns } from "./src/scripts/ensureHackathonUserColumns.js";
+import { ensureHackathonAdminMentorPasswords } from "./src/scripts/ensureHackathonAdminMentorPasswords.js";
 
 const app = express();
 
@@ -65,6 +66,7 @@ const startServer = async () => {
   await ensureHackathonUserColumns({ sequelize });
   await ensureDefaultAdmin();
   await ensureDefaultHackathonAdmin();
+  await ensureHackathonAdminMentorPasswords();
   const HOST = process.env.HOST || "0.0.0.0";
   app.listen(ENV.PORT, HOST, () => {
     console.log(`Server is running on http://${HOST}:${ENV.PORT}`);

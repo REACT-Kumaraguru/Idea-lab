@@ -60,7 +60,7 @@ const HackathonSubmit = () => {
     setError(null);
     if (team?.status !== "approved") {
       if (team?.status === "pending") {
-        return setError("Your team is not active yet. Team becomes active automatically when it has 4 members.");
+        return setError("Your team is not active yet. Team becomes active automatically as soon as you are in a team.");
       }
       return setError("Only active teams can submit.");
     }
@@ -110,7 +110,7 @@ const HackathonSubmit = () => {
           ) : null}
           {team?.status === "pending" ? (
             <div className="mb-4 bg-yellow-50 border border-yellow-100 text-gray-700 rounded-xl p-4 text-sm">
-              Team is not active yet. It becomes active automatically when it has 4 members.
+              Team is not active yet. It becomes active automatically as soon as you are in a team.
             </div>
           ) : null}
           <div className="grid md:grid-cols-2 gap-4">

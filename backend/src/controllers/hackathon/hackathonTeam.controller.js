@@ -116,7 +116,7 @@ export const createTeam = async (req, res) => {
       teamName: teamName.trim(),
       inviteCode,
       leaderUserId: userId,
-      status: "pending",
+      status: "approved",
     });
 
     await HackathonTeamMember.create({
@@ -146,7 +146,9 @@ export const joinTeam = async (req, res) => {
     const team = await HackathonTeam.findOne({ where: { inviteCode: inviteCode.trim() } });
     if (!team) return res.status(404).json({ message: "Invalid invite code" });
 
-    if (team.status !== "pending") return res.status(400).json({ message: "This team is not open for joining" });
+    if (!["pending", "approved"].includes(team.status)) {
+      return res.status(400).json({ message: "This team is not open for joining" });
+    }
 
     const memberCount = await HackathonTeamMember.count({ where: { teamId: team.id } });
     if (memberCount >= 4) return res.status(400).json({ message: "Team is full (max 4 members)" });
@@ -158,7 +160,7 @@ export const joinTeam = async (req, res) => {
     });
 
     const finalMemberCount = await HackathonTeamMember.count({ where: { teamId: team.id } });
-    if (finalMemberCount >= 4 && team.status !== "approved") {
+    if (finalMemberCount >= 1 && team.status !== "approved") {
       await team.update({ status: "approved" });
     }
 

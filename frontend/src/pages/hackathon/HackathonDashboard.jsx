@@ -142,7 +142,7 @@ const HackathonDashboard = () => {
     !team
       ? "You are not part of any team yet."
       : team.status === "pending"
-      ? "Your team is not active yet. Team becomes active automatically when it has 4 members."
+      ? "Your team is not active yet. Team becomes active automatically as soon as you are in a team."
       : null;
 
   const fetchProblems = async () => {
@@ -342,7 +342,7 @@ const HackathonDashboard = () => {
               <div className="font-semibold text-gray-900">You are not part of any team yet.</div>
               <div className="mt-1 text-sm text-gray-600">
                 Participants form teams themselves. Any participant can create a team, and the creator automatically becomes Team Leader.
-                Team becomes active automatically when it has 4 members.
+                Team becomes active automatically as soon as you are in a team.
               </div>
             </AlertCard>
           ) : (
@@ -458,7 +458,7 @@ const HackathonDashboard = () => {
           {!team ? (
             <AlertCard tone="warning">You are not part of any team yet. Create or join a team first.</AlertCard>
           ) : team.status === "pending" ? (
-            <AlertCard tone="warning">Your team is not active yet. Team becomes active automatically when it has 4 members.</AlertCard>
+            <AlertCard tone="warning">Your team is not active yet. Team becomes active automatically as soon as you are in a team.</AlertCard>
           ) : null}
 
           <div className="mt-4 bg-white rounded-3xl border border-[#E2E8F0] p-4 sm:p-6 shadow-sm" aria-disabled={!submitAllowed}>

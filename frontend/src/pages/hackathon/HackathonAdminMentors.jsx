@@ -9,7 +9,6 @@ const HackathonAdminMentors = () => {
   const [createMentor, setCreateMentor] = useState({
     fullName: "",
     email: "",
-    password: "",
     phoneNumber: "",
     expertise: "",
   });
@@ -39,7 +38,7 @@ const HackathonAdminMentors = () => {
       });
       const res = await axiosInstance.get("/ich2026/admin/mentors");
       setMentors(res.data.mentors || []);
-      setCreateMentor({ fullName: "", email: "", password: "", phoneNumber: "", expertise: "" });
+      setCreateMentor({ fullName: "", email: "", phoneNumber: "", expertise: "" });
     } catch (e2) {
       setError(e2.response?.data?.message || "Failed to create mentor");
     }
@@ -75,14 +74,6 @@ const HackathonAdminMentors = () => {
               value={createMentor.phoneNumber}
               onChange={(e) => setCreateMentor((p) => ({ ...p, phoneNumber: e.target.value }))}
               placeholder="Phone Number"
-              required
-              className="w-full rounded-xl border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-            <input
-              value={createMentor.password}
-              onChange={(e) => setCreateMentor((p) => ({ ...p, password: e.target.value }))}
-              placeholder="Password"
-              type="password"
               required
               className="w-full rounded-xl border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
