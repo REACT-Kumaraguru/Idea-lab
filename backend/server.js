@@ -11,6 +11,7 @@ import equipmentRoutes from "./src/routes/equipment.route.js";
 import bookingRoutes from "./src/routes/Booking.routes.js";
 import problemStatementRoutes from "./src/routes/problemStatement.route.js";
 import hackathonRoutes from "./src/routes/hackathon/hackathon.route.js";
+import filesRoutes from "./src/routes/files.route.js";
 import { setupAssociations } from "./src/models/associations.js";
 import { connectDB, sequelize } from "./src/lib/db.js";
 import { ensureDefaultAdmin } from "./src/scripts/ensureDefaultAdmin.js";
@@ -52,6 +53,7 @@ app.use("/api/admin", adminAuthRoutes);
 app.use("/api/equipment", equipmentRoutes);
 app.use("/api/bookings", bookingRoutes);
 app.use("/api/problems", problemStatementRoutes);
+app.use("/api/files", filesRoutes);
 
 // Hackathon module (isolated, additive)
 // Hackathon 2026 routes live under `/ich2026/*` (and `/api/ich2026/*` for API calls).

@@ -66,19 +66,26 @@ router.get("/download/hackathon/:filename", async (req, res) => {
 });
 
 // Download Templatehackthon.pdf via API (avoid Nginx static-file misconfig).
+// Resolve in order: backend/assets (Docker), repo frontend/public (local monorepo).
 router.get("/templatehackthon.pdf", (req, res) => {
   try {
     const __filename = fileURLToPath(import.meta.url);
-    const __dirname = path.dirname(__filename);
-    const pdfPath = path.resolve(__dirname, "../../../../frontend/public/Templatehackthon.pdf");
-
-    if (!fs.existsSync(pdfPath)) {
+    const __dirnameRoute = path.dirname(__filename);
+    const candidates = [
+      path.join(process.cwd(), "assets", "Templatehackthon.pdf"),
+      path.resolve(__dirnameRoute, "../../../assets/Templatehackthon.pdf"),
+      path.resolve(__dirnameRoute, "../../../../frontend/public/Templatehackthon.pdf"),
+    ];
+    const pdfPath = candidates.find((p) => fs.existsSync(p));
+    if (!pdfPath) {
       return res.status(404).send("Templatehackthon.pdf not found");
     }
-
+    const absolute = path.resolve(pdfPath);
+    res.setHeader("Content-Type", "application/pdf");
     res.setHeader("Content-Disposition", 'attachment; filename="Templatehackthon.pdf"');
-    return res.sendFile(pdfPath);
+    return res.sendFile(absolute);
   } catch (e) {
+    console.error("templatehackthon.pdf:", e);
     return res.status(500).send("Failed to download Templatehackthon.pdf");
   }
 });
