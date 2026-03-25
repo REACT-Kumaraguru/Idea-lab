@@ -76,6 +76,24 @@ router.get("/uploads/hackathon/:filename", async (req, res) => {
   return res.sendFile(foundPath);
 });
 
+// Download Templatehackthon.pdf via API (avoid Nginx static-file misconfig).
+router.get("/templatehackthon.pdf", (req, res) => {
+  try {
+    const __filename = fileURLToPath(import.meta.url);
+    const __dirname = path.dirname(__filename);
+    const pdfPath = path.resolve(__dirname, "../../../../frontend/public/Templatehackthon.pdf");
+
+    if (!fs.existsSync(pdfPath)) {
+      return res.status(404).send("Templatehackthon.pdf not found");
+    }
+
+    res.setHeader("Content-Disposition", 'attachment; filename="Templatehackthon.pdf"');
+    return res.sendFile(pdfPath);
+  } catch (e) {
+    return res.status(500).send("Failed to download Templatehackthon.pdf");
+  }
+});
+
 // Hackathon auth (module-scoped)
 router.post("/register", register);
 router.post("/login", login);
