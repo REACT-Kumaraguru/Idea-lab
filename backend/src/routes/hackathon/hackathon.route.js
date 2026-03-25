@@ -40,6 +40,8 @@ import { listHackathonAdmins, createHackathonAdmin, updateHackathonAdmin, delete
 import {
   adminListMentors,
   adminCreateMentor,
+  adminUpdateMentor,
+  adminDeleteMentor,
   adminAssignMentor,
 } from "../../controllers/hackathon/hackathonMentor.controller.js";
 import { setupHackathonAssociations } from "../../models/hackathon/associations.js";
@@ -138,6 +140,8 @@ router.delete("/admin/users/:id", protectHackathonRoute, requireHackathonAdminRo
 
 router.get("/admin/mentors", protectHackathonRoute, requireHackathonAdminRole, adminListMentors);
 router.post("/admin/mentors", protectHackathonRoute, requireHackathonAdminRole, adminCreateMentor);
+router.put("/admin/mentors/:id", protectHackathonRoute, requireHackathonAdminRole, adminUpdateMentor);
+router.delete("/admin/mentors/:id", protectHackathonRoute, requireHackathonAdminRole, adminDeleteMentor);
 router.post("/admin/mentors/assign", protectHackathonRoute, requireHackathonAdminRole, adminAssignMentor);
 
 router.post("/admin/winners/select", protectHackathonRoute, requireHackathonAdminRole, adminSelectWinner);

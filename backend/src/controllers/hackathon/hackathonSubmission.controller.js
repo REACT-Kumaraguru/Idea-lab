@@ -121,6 +121,13 @@ export const submit = async (req, res) => {
     const problem = await HackathonProblem.findByPk(problemId);
     if (!problem) return res.status(404).json({ message: "Problem not found" });
 
+    const alreadySubmitted = await HackathonSubmission.findOne({ where: { teamId: team.id } });
+    if (alreadySubmitted) {
+      return res.status(400).json({
+        message: "Your team has already submitted. Only one submission is allowed per team.",
+      });
+    }
+
     const finalTitle = String(title || "").trim() || String(problem.title || "Submission").trim();
 
     const files = req.files || {};
@@ -137,46 +144,18 @@ export const submit = async (req, res) => {
       return res.status(400).json({ message: "Upload at least one file for Final phase" });
     }
 
-    const existing = await HackathonSubmission.findOne({
-      where: {
-        teamId: team.id,
-        problemId: problem.id,
-        submissionPhase: resolvedPhase,
-      },
-    });
-
-    if (!existing) {
-      const limit = problem.teamRegistrationLimit;
-      if (limit != null && limit > 0) {
-        const [countRow] = await sequelize.query(
-          `SELECT COUNT(DISTINCT team_id)::int AS c FROM hackathon_submissions WHERE problem_id = :pid`,
-          { replacements: { pid: problem.id }, type: QueryTypes.SELECT }
-        );
-        const distinctTeams = Number(countRow?.c) || 0;
-        if (distinctTeams >= limit) {
-          return res.status(400).json({
-            message: "This problem has reached the maximum number of teams allowed to register.",
-          });
-        }
+    const limit = problem.teamRegistrationLimit;
+    if (limit != null && limit > 0) {
+      const [countRow] = await sequelize.query(
+        `SELECT COUNT(DISTINCT team_id)::int AS c FROM hackathon_submissions WHERE problem_id = :pid`,
+        { replacements: { pid: problem.id }, type: QueryTypes.SELECT }
+      );
+      const distinctTeams = Number(countRow?.c) || 0;
+      if (distinctTeams >= limit) {
+        return res.status(400).json({
+          message: "This problem has reached the maximum number of teams allowed to register.",
+        });
       }
-    }
-
-    if (existing) {
-      const updated = await existing.update({
-        title: finalTitle,
-        description: description?.trim() || null,
-        status: "pending",
-        submittedByUserId: userId,
-        whyParticipate: whyParticipate?.trim() || existing.whyParticipate || null,
-        problemToSolve: problemToSolve?.trim() || existing.problemToSolve || null,
-        plannedTech: plannedTech?.trim() || existing.plannedTech || null,
-        workedBefore: workedBefore ? String(workedBefore) : existing.workedBefore || null,
-        agreedTerms: agreedTerms != null ? Boolean(agreedTerms) : existing.agreedTerms ?? null,
-        // Update only the relevant phase file paths
-        pocFilePaths: resolvedPhase === "poc" ? pocFilePaths : existing.pocFilePaths,
-        prototypeFilePaths: resolvedPhase !== "poc" ? prototypeFilePaths : existing.prototypeFilePaths,
-      });
-      return res.status(200).json({ submission: updated });
     }
 
     const created = await HackathonSubmission.create({

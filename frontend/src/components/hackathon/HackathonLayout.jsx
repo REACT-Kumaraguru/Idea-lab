@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   Activity,
@@ -14,6 +14,7 @@ import {
   Users,
 } from "lucide-react";
 import { useHackathonAuthStore } from "../../store/useHackathonAuthStore";
+import { axiosInstance } from "../../lib/axios.js";
 
 const baseNavItem =
   "w-full flex items-center gap-3 px-4 py-2 rounded-xl text-sm font-semibold transition";
@@ -24,6 +25,27 @@ const HackathonLayout = ({ children }) => {
   const navigate = useNavigate();
 
   const role = hackathonUser?.role;
+
+  const [teamHasSubmitted, setTeamHasSubmitted] = useState(false);
+
+  useEffect(() => {
+    if (role !== "student") {
+      setTeamHasSubmitted(false);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await axiosInstance.get("/ich2026/status");
+        if (!cancelled) setTeamHasSubmitted((res.data?.submissions || []).length > 0);
+      } catch {
+        if (!cancelled) setTeamHasSubmitted(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [role, hackathonUser?.id, location.pathname, location.search]);
 
   const tab = useMemo(() => {
     const params = new URLSearchParams(location.search);
@@ -41,16 +63,16 @@ const HackathonLayout = ({ children }) => {
     return "dashboard";
   }, [location.pathname, tab, role]);
 
-  const studentNav = useMemo(
-    () => [
+  const studentNav = useMemo(() => {
+    const base = [
       { to: "/ich2026/dashboard", label: "Dashboard", tabKey: "dashboard", icon: LayoutDashboard },
       { to: "/ich2026/dashboard?tab=team", label: "Team", tabKey: "team", icon: Users },
       { to: "/ich2026/dashboard?tab=problems", label: "Problems", tabKey: "problems", icon: ClipboardList },
-      { to: "/ich2026/dashboard?tab=submit", label: "Submit", tabKey: "submit", icon: UploadCloud },
-      { to: "/ich2026/dashboard?tab=status", label: "Status", tabKey: "status", icon: Activity },
-    ],
-    []
-  );
+    ];
+    const submitItem = { to: "/ich2026/dashboard?tab=submit", label: "Submit", tabKey: "submit", icon: UploadCloud };
+    const statusItem = { to: "/ich2026/dashboard?tab=status", label: "Status", tabKey: "status", icon: Activity };
+    return teamHasSubmitted ? [...base, statusItem] : [...base, submitItem, statusItem];
+  }, [teamHasSubmitted]);
 
   const mentorNav = useMemo(
     () => [
@@ -93,13 +115,14 @@ const HackathonLayout = ({ children }) => {
         { to: "/ich2026/dashboard?tab=status", label: "Status", tabKey: "status", icon: Activity },
       ];
     }
-    return [
+    const base = [
       { to: "/ich2026/dashboard?tab=team", label: "Team", tabKey: "team", icon: Users },
       { to: "/ich2026/dashboard?tab=problems", label: "Problems", tabKey: "problems", icon: ClipboardList },
-      { to: "/ich2026/dashboard?tab=submit", label: "Submit", tabKey: "submit", icon: UploadCloud },
-      { to: "/ich2026/dashboard?tab=status", label: "Status", tabKey: "status", icon: Activity },
     ];
-  }, [role]);
+    const submit = { to: "/ich2026/dashboard?tab=submit", label: "Submit", tabKey: "submit", icon: UploadCloud };
+    const status = { to: "/ich2026/dashboard?tab=status", label: "Status", tabKey: "status", icon: Activity };
+    return teamHasSubmitted ? [...base, status] : [...base, submit, status];
+  }, [role, teamHasSubmitted]);
 
   const handleLogout = async () => {
     await logout();

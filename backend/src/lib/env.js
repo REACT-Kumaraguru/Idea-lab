@@ -25,4 +25,9 @@ export const ENV = {
   SMTP_SECURE: process.env.SMTP_SECURE === "true",
   SMTP_USER: process.env.SMTP_USER,
   SMTP_PASS: process.env.SMTP_PASS,
+
+  /** When set, OTP emails are enqueued (BullMQ) instead of blocking the API. */
+  REDIS_HOST: process.env.REDIS_HOST,
+  REDIS_PORT: process.env.REDIS_PORT ? Number(process.env.REDIS_PORT) : 6379,
+  REDIS_PASSWORD: process.env.REDIS_PASSWORD,
 };

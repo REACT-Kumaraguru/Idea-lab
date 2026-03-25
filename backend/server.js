@@ -17,6 +17,7 @@ import { ensureDefaultAdmin } from "./src/scripts/ensureDefaultAdmin.js";
 import { ensureDefaultHackathonAdmin } from "./src/scripts/ensureDefaultHackathonAdmin.js";
 import { ensureHackathonUserColumns } from "./src/scripts/ensureHackathonUserColumns.js";
 import { ensureHackathonAdminMentorPasswords } from "./src/scripts/ensureHackathonAdminMentorPasswords.js";
+import { closeOtpEmailQueue } from "./src/queue/queue.js";
 
 const app = express();
 
@@ -86,5 +87,18 @@ const startServer = async () => {
     console.log(`Client URL: ${ENV.CLIENT_URL}`);
   });
 };
+
+const shutdown = async (signal) => {
+  console.log(`Received ${signal}, closing...`);
+  try {
+    await closeOtpEmailQueue();
+  } catch (e) {
+    console.error("Queue close:", e.message);
+  }
+  process.exit(0);
+};
+
+process.on("SIGTERM", () => shutdown("SIGTERM"));
+process.on("SIGINT", () => shutdown("SIGINT"));
 
 startServer();

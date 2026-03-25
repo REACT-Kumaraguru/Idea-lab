@@ -30,7 +30,7 @@ const HackathonUser = sequelize.define(
     },
     phoneNumber: {
       type: DataTypes.STRING,
-      allowNull: false,
+      allowNull: true,
       unique: true,
       field: "phone_number",
     },

@@ -1,12 +1,14 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { axiosInstance } from "../../lib/axios.js";
+import { getHackathonTemplatePdfHref } from "../../lib/config.js";
 import { useHackathonAuthStore } from "../../store/useHackathonAuthStore";
 import { AlertTriangle } from "lucide-react";
 
 const HackathonDashboard = () => {
   const { hackathonUser } = useHackathonAuthStore();
   const [searchParams, setSearchParams] = useSearchParams();
+  const templatePdfHref = getHackathonTemplatePdfHref();
 
   const mapSubmissionStatus = (s) => {
     if (!s) return null;
@@ -99,6 +101,8 @@ const HackathonDashboard = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hackathonUser?.id]);
 
+  const teamHasSubmitted = (statusData?.submissions || []).length > 0;
+
   useEffect(() => {
     const tab = searchParams.get("tab");
     if (role === "mentor") {
@@ -110,9 +114,14 @@ const HackathonDashboard = () => {
       if (tab && ["team", "status"].includes(tab)) setActiveTab(tab);
       return;
     }
+    if (role === "student" && teamHasSubmitted && tab === "submit") {
+      setActiveTab("status");
+      setSearchParams({ tab: "status" });
+      return;
+    }
     if (!tab) return;
     if (["team", "problems", "submit", "status"].includes(tab)) setActiveTab(tab);
-  }, [searchParams, role, setSearchParams]);
+  }, [searchParams, role, setSearchParams, teamHasSubmitted]);
 
   useEffect(() => {
     const sel = loadSelectedProblem();
@@ -120,12 +129,21 @@ const HackathonDashboard = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectionKey, team?.id]);
 
-  const studentTabs = [
-    { key: "team", label: "Team" },
-    { key: "problems", label: "Problems" },
-    { key: "submit", label: "Submit" },
-    { key: "status", label: "Status" },
-  ];
+  const studentTabs = useMemo(() => {
+    if (teamHasSubmitted) {
+      return [
+        { key: "team", label: "Team" },
+        { key: "problems", label: "Problems" },
+        { key: "status", label: "Status" },
+      ];
+    }
+    return [
+      { key: "team", label: "Team" },
+      { key: "problems", label: "Problems" },
+      { key: "submit", label: "Submit" },
+      { key: "status", label: "Status" },
+    ];
+  }, [teamHasSubmitted]);
 
   const mentorTabs = [
     { key: "team", label: "Team" },
@@ -138,7 +156,11 @@ const HackathonDashboard = () => {
 
   // Backend auto-activates team status on submission when needed.
   const canSubmit = Boolean(team);
-  const submissionBlockedReason = !team ? "You are not part of any team yet." : null;
+  const submissionBlockedReason = !team
+    ? "You are not part of any team yet."
+    : teamHasSubmitted
+      ? "Your team has already submitted. Only one submission is allowed per team."
+      : null;
 
   const fetchProblems = async () => {
     if (problemsLoading) return;
@@ -159,6 +181,7 @@ const HackathonDashboard = () => {
       refreshStatus();
     }
     if (activeTab === "status") refreshStatus();
+    if (activeTab === "submit" && role === "student") refreshStatus();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab]);
 
@@ -174,6 +197,7 @@ const HackathonDashboard = () => {
   };
 
   const onSelectProblem = (p) => {
+    if (teamHasSubmitted) return;
     const payload = {
       problemId: p.id,
       title: p.title,
@@ -193,7 +217,7 @@ const HackathonDashboard = () => {
     changeTab("submit");
   };
 
-  const submitAllowed = role === "student" && canSubmit && !!selectedProblemId;
+  const submitAllowed = role === "student" && canSubmit && !!selectedProblemId && !teamHasSubmitted;
 
   const resetSubmissionSteps = () => {
     setSubmissionStep(1);
@@ -433,6 +457,11 @@ const HackathonDashboard = () => {
       {/* PROBLEMS TAB */}
       {activeTab === "problems" && role === "student" ? (
         <div className="mt-5">
+          {teamHasSubmitted ? (
+            <div className="mb-4 rounded-2xl border border-[#22C55E]/25 bg-[#ECFDF3] px-4 py-3 text-sm text-gray-800">
+              Your team has already submitted. You can review your entry under the <strong>Status</strong> tab.
+            </div>
+          ) : null}
           {problemsLoading ? (
             <div className="text-gray-600">Loading problems...</div>
           ) : problems.length ? (
@@ -461,11 +490,11 @@ const HackathonDashboard = () => {
                     </div>
                     <button
                       type="button"
-                      disabled={problemIsFull(p)}
+                      disabled={problemIsFull(p) || teamHasSubmitted}
                       onClick={() => onSelectProblem(p)}
                       className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#2563EB] to-[#1D4ED8] text-white font-semibold hover:from-[#1D4ED8] hover:to-[#2563EB] transition shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      {problemIsFull(p) ? "Full" : "Select"}
+                      {teamHasSubmitted ? "Submitted" : problemIsFull(p) ? "Full" : "Select"}
                     </button>
                   </div>
                 </div>
@@ -633,6 +662,23 @@ const HackathonDashboard = () => {
                     </div>
                   </div>
 
+                  {phase === "poc" ? (
+                    <div className="mt-4 rounded-2xl border border-[#BFDBFE] bg-[#EFF6FF] px-4 py-3 text-sm text-gray-800">
+                      <div className="font-semibold text-gray-900">PoC submission template</div>
+                      <p className="mt-1 text-gray-700">
+                        Follow the official PDF structure for your PoC upload.{" "}
+                        <a
+                          href={templatePdfHref}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="font-semibold text-[#2563EB] underline underline-offset-2"
+                        >
+                          Download Templatehackthon.pdf
+                        </a>
+                      </p>
+                    </div>
+                  ) : null}
+
                   <div className="mt-4">
                     <label className="text-sm font-semibold text-gray-800">Description</label>
                     <textarea
@@ -646,7 +692,9 @@ const HackathonDashboard = () => {
                   </div>
 
                   <div className="mt-4">
-                    <label className="text-sm font-semibold text-gray-800">Upload PoC files</label>
+                    <label className="text-sm font-semibold text-gray-800">
+                      Upload {phase === "poc" ? "PoC" : phase === "prototype" ? "Prototype" : "Final"} files
+                    </label>
                     <input
                       type="file"
                       multiple

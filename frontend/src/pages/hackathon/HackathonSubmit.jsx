@@ -1,9 +1,13 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { axiosInstance } from "../../lib/axios.js";
+import { getHackathonTemplatePdfHref } from "../../lib/config.js";
 
 const HackathonSubmit = () => {
   const navigate = useNavigate();
+  const templatePdfHref = getHackathonTemplatePdfHref();
+  const [submissionGateLoading, setSubmissionGateLoading] = useState(true);
+  const [teamAlreadySubmitted, setTeamAlreadySubmitted] = useState(false);
   const [searchParams] = useSearchParams();
 
   const initialProblemId = useMemo(() => searchParams.get("problemId") || "", [searchParams]);
@@ -33,6 +37,22 @@ const HackathonSubmit = () => {
       }
     };
     loadTeam();
+  }, []);
+
+  useEffect(() => {
+    const gate = async () => {
+      setSubmissionGateLoading(true);
+      try {
+        const res = await axiosInstance.get("/ich2026/status");
+        const has = (res.data?.submissions || []).length > 0;
+        setTeamAlreadySubmitted(has);
+      } catch {
+        setTeamAlreadySubmitted(false);
+      } finally {
+        setSubmissionGateLoading(false);
+      }
+    };
+    gate();
   }, []);
 
   useEffect(() => {
@@ -85,7 +105,34 @@ const HackathonSubmit = () => {
   };
 
   const selectedProblem = problems.find((p) => String(p.id) === String(problemId));
-  const canSubmit = Boolean(team);
+  const canSubmit = Boolean(team) && !teamAlreadySubmitted;
+
+  if (submissionGateLoading) {
+    return (
+      <div>
+        <h2 className="text-2xl font-bold text-gray-900">Submit PoC / Prototype</h2>
+        <div className="mt-6 text-gray-600">Loading...</div>
+      </div>
+    );
+  }
+
+  if (teamAlreadySubmitted) {
+    return (
+      <div>
+        <h2 className="text-2xl font-bold text-gray-900">Submit PoC / Prototype</h2>
+        <div className="mt-6 rounded-2xl border border-[#E2E8F0] bg-white p-6 shadow-sm max-w-lg">
+          <p className="text-gray-800 font-medium">Your team has already submitted.</p>
+          <p className="text-gray-600 text-sm mt-2">Only one submission is allowed per team. You can review your entry on the status page.</p>
+          <Link
+            to="/ich2026/dashboard?tab=status"
+            className="mt-5 inline-flex px-5 py-2.5 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 transition"
+          >
+            Go to status
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -162,6 +209,23 @@ const HackathonSubmit = () => {
             </div>
           </div>
 
+          {phase === "poc" ? (
+            <div className="mt-4 rounded-xl border border-blue-100 bg-blue-50/90 px-4 py-3 text-sm text-gray-800">
+              <div className="font-semibold text-gray-900">PoC submission template</div>
+              <p className="mt-1 text-gray-700">
+                Use this PDF as the reference format for your PoC.{" "}
+                <a
+                  href={templatePdfHref}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-semibold text-blue-700 underline underline-offset-2"
+                >
+                  Download Templatehackthon.pdf
+                </a>
+              </p>
+            </div>
+          ) : null}
+
           <div className="mt-4">
             <label className="text-sm font-medium text-gray-800">Description (optional)</label>
             <textarea
@@ -174,7 +238,9 @@ const HackathonSubmit = () => {
           </div>
 
           <div className="mt-4">
-            <label className="text-sm font-medium text-gray-800">Upload {phase === "poc" ? "PoC" : "Prototype"} files</label>
+            <label className="text-sm font-medium text-gray-800">
+              Upload {phase === "poc" ? "PoC" : phase === "prototype" ? "Prototype" : "Final"} files
+            </label>
             <input
               type="file"
               multiple

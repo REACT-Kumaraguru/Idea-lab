@@ -13,5 +13,11 @@ export async function ensureHackathonUserColumns({ sequelize }) {
   for (const q of queries) {
     await sequelize.query(q);
   }
+
+  // Mentors no longer collect phone; allow NULL while keeping uniqueness for non-null phones.
+  await sequelize.query(`
+    ALTER TABLE "hackathon_users"
+      ALTER COLUMN "phone_number" DROP NOT NULL;
+  `);
 }
 
