@@ -51,8 +51,9 @@ app.use("/api/bookings", bookingRoutes);
 app.use("/api/problems", problemStatementRoutes);
 
 // Hackathon module (isolated, additive)
-app.use("/hackathon", hackathonRoutes);
-app.use("/api/hackathon", hackathonRoutes);
+// Hackathon 2026 routes live under `/ich2026/*` (and `/api/ich2026/*` for API calls).
+app.use("/ich2026", hackathonRoutes);
+app.use("/api/ich2026", hackathonRoutes);
 
 app.use("/src/uploads", express.static("src/uploads"));
 

@@ -157,7 +157,7 @@ const HackathonRegister = () => {
         otp,
       });
 
-      await axiosInstance.post("/hackathon/register", {
+      await axiosInstance.post("/ich2026/register", {
         name,
         email: email.trim(),
         phone: phone.trim(),
@@ -170,7 +170,7 @@ const HackathonRegister = () => {
 
       await logout();
       toast.success("Registration successful. Please sign in.");
-      navigate("/hackathon/login");
+      navigate("/ich2026/login");
     } catch (err) {
       const msg = err.response?.data?.message || "Verification failed";
       setOtpError(msg);
@@ -219,13 +219,13 @@ const HackathonRegister = () => {
           </div>
           <div className="inline-flex items-center gap-2 rounded-2xl border border-[#E2E8F0] bg-white/90 p-1 shadow-sm">
             <Link
-              to="/hackathon/login"
+              to="/ich2026/login"
               className="px-4 py-2 rounded-xl text-sm font-semibold text-gray-700 hover:bg-[#F5F7FB] transition"
             >
               Login
             </Link>
             <Link
-              to="/hackathon/register"
+              to="/ich2026/register"
               className="px-4 py-2 rounded-xl text-sm font-semibold bg-[#2563EB] text-white"
             >
               Register
@@ -239,7 +239,7 @@ const HackathonRegister = () => {
             <h1 className="text-3xl font-bold text-gray-900">Register</h1>
             <p className="text-sm text-gray-500 mt-1.5">
               Already have an account?{" "}
-              <Link to="/hackathon/login" className="text-blue-600 font-medium hover:underline">
+              <Link to="/ich2026/login" className="text-blue-600 font-medium hover:underline">
                 Login.
               </Link>
             </p>

@@ -9,7 +9,7 @@ const HackathonTeam = () => {
   useEffect(() => {
     const load = async () => {
       try {
-        const res = await axiosInstance.get("/hackathon/team");
+        const res = await axiosInstance.get("/ich2026/team");
         setTeam(res.data.team);
       } catch {
         setTeam(null);
@@ -32,10 +32,10 @@ const HackathonTeam = () => {
             Team becomes active automatically when it has 4 members.
           </div>
           <div className="mt-4 flex gap-3 flex-wrap">
-            <Link to="/hackathon/create-team" className="px-4 py-2 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 transition">
+            <Link to="/ich2026/create-team" className="px-4 py-2 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 transition">
               Create Team
             </Link>
-            <Link to="/hackathon/join-team" className="px-4 py-2 rounded-xl border border-gray-300 bg-white text-gray-800 font-semibold hover:bg-gray-50 transition">
+            <Link to="/ich2026/join-team" className="px-4 py-2 rounded-xl border border-gray-300 bg-white text-gray-800 font-semibold hover:bg-gray-50 transition">
               Join Team
             </Link>
           </div>

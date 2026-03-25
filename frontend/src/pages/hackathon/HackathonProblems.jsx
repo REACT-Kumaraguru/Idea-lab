@@ -9,13 +9,13 @@ const HackathonProblems = () => {
   const { hackathonUser } = useHackathonAuthStore();
 
   // Mentors should not browse problems/guidelines; they only view assigned progress.
-  if (hackathonUser?.role === "mentor") return <Navigate to="/hackathon/dashboard?tab=status" replace />;
-  if (hackathonUser?.role === "student") return <Navigate to="/hackathon/dashboard?tab=problems" replace />;
+  if (hackathonUser?.role === "mentor") return <Navigate to="/ich2026/dashboard?tab=status" replace />;
+  if (hackathonUser?.role === "student") return <Navigate to="/ich2026/dashboard?tab=problems" replace />;
 
   useEffect(() => {
     const load = async () => {
       try {
-        const res = await axiosInstance.get("/hackathon/problems");
+        const res = await axiosInstance.get("/ich2026/problems");
         setProblems(res.data.problems || []);
       } catch (e) {
         setProblems([]);
@@ -34,7 +34,7 @@ const HackathonProblems = () => {
           <p className="text-gray-600 mt-1">Pick a problem and submit your PoC / Prototype.</p>
         </div>
         <Link
-          to="/hackathon/guidelines"
+          to="/ich2026/guidelines"
           className="px-4 py-2 rounded-xl bg-white border border-gray-300 text-gray-800 font-semibold hover:bg-gray-50 transition"
         >
           Guidelines
@@ -68,7 +68,7 @@ const HackathonProblems = () => {
                   )}
                 </div>
                 <Link
-                  to={`/hackathon/submit?problemId=${p.id}`}
+                  to={`/ich2026/submit?problemId=${p.id}`}
                   className="px-4 py-2 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 transition"
                 >
                   Select & Submit

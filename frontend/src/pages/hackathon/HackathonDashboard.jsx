@@ -72,7 +72,7 @@ const HackathonDashboard = () => {
   const refreshTeam = async () => {
     setTeamLoading(true);
     try {
-      const res = await axiosInstance.get("/hackathon/team");
+      const res = await axiosInstance.get("/ich2026/team");
       setTeam(res.data.team || null);
     } catch {
       setTeam(null);
@@ -84,7 +84,7 @@ const HackathonDashboard = () => {
   const refreshStatus = async () => {
     setStatusLoading(true);
     try {
-      const res = await axiosInstance.get("/hackathon/status");
+      const res = await axiosInstance.get("/ich2026/status");
       setStatusData(res.data || { team: null, submissions: [] });
     } catch {
       setStatusData({ team: null, submissions: [] });
@@ -149,7 +149,7 @@ const HackathonDashboard = () => {
     if (problemsLoading) return;
     setProblemsLoading(true);
     try {
-      const res = await axiosInstance.get("/hackathon/problems");
+      const res = await axiosInstance.get("/ich2026/problems");
       setProblems(res.data.problems || []);
     } catch {
       setProblems([]);
@@ -233,7 +233,7 @@ const HackathonDashboard = () => {
         else fd.append("prototypeFiles", f);
       }
 
-      await axiosInstance.post("/hackathon/submit", fd, {
+      await axiosInstance.post("/ich2026/submit", fd, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
@@ -293,13 +293,13 @@ const HackathonDashboard = () => {
         {!team && role === "student" ? (
           <div className="flex gap-3">
             <Link
-              to="/hackathon/create-team"
+              to="/ich2026/create-team"
               className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#2563EB] to-[#1D4ED8] text-white font-semibold hover:from-[#1D4ED8] hover:to-[#2563EB] transition shadow-sm hover:shadow-md"
             >
               Create Team
             </Link>
             <Link
-              to="/hackathon/join-team"
+              to="/ich2026/join-team"
               className="px-4 py-2 rounded-xl border border-[#E2E8F0] bg-white text-gray-800 font-semibold hover:bg-[#F5F7FB] transition shadow-sm hover:shadow-md"
             >
               Join Team

@@ -5,8 +5,8 @@ import { useHackathonAuthStore } from "../../store/useHackathonAuthStore";
 const HackathonGuidelines = () => {
   const { hackathonUser } = useHackathonAuthStore();
   // Students/Mentors: guidelines are shown as a modal inside the dashboard.
-  if (hackathonUser?.role === "mentor") return <Navigate to="/hackathon/dashboard?tab=status" replace />;
-  if (hackathonUser?.role === "student") return <Navigate to="/hackathon/dashboard?tab=team" replace />;
+  if (hackathonUser?.role === "mentor") return <Navigate to="/ich2026/dashboard?tab=status" replace />;
+  if (hackathonUser?.role === "student") return <Navigate to="/ich2026/dashboard?tab=team" replace />;
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -42,10 +42,10 @@ const HackathonGuidelines = () => {
           Start by selecting a problem, then create or join a team, and submit your PoC / prototype.
         </div>
         <div className="mt-4 flex gap-3 flex-wrap">
-          <Link to="/hackathon/problems" className="px-4 py-2 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 transition">
+          <Link to="/ich2026/problems" className="px-4 py-2 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 transition">
             Problems
           </Link>
-          <Link to="/hackathon/dashboard" className="px-4 py-2 rounded-xl border border-gray-300 bg-white font-semibold text-gray-800 hover:bg-gray-50 transition">
+          <Link to="/ich2026/dashboard" className="px-4 py-2 rounded-xl border border-gray-300 bg-white font-semibold text-gray-800 hover:bg-gray-50 transition">
             Dashboard
           </Link>
         </div>

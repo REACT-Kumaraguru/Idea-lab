@@ -10,7 +10,7 @@ export const useHackathonAuthStore = create((set, get) => ({
 
   checkAuth: async () => {
     try {
-      const res = await axiosInstance.get("/hackathon/check");
+      const res = await axiosInstance.get("/ich2026/check");
       set({ hackathonUser: res.data });
     } catch (error) {
       set({ hackathonUser: null });
@@ -22,7 +22,7 @@ export const useHackathonAuthStore = create((set, get) => ({
   register: async (data) => {
     set({ isSigningUp: true });
     try {
-      const res = await axiosInstance.post("/hackathon/register", data);
+      const res = await axiosInstance.post("/ich2026/register", data);
       set({ hackathonUser: res.data });
       toast.success("Hackathon account created");
       return res.data;
@@ -37,7 +37,7 @@ export const useHackathonAuthStore = create((set, get) => ({
   login: async (data) => {
     set({ isLoggingIn: true });
     try {
-      const res = await axiosInstance.post("/hackathon/login", data);
+      const res = await axiosInstance.post("/ich2026/login", data);
       set({ hackathonUser: res.data });
       toast.success("Logged in successfully");
       return res.data;
@@ -51,7 +51,7 @@ export const useHackathonAuthStore = create((set, get) => ({
 
   logout: async () => {
     try {
-      await axiosInstance.post("/hackathon/logout");
+      await axiosInstance.post("/ich2026/logout");
     } finally {
       set({ hackathonUser: null, isCheckingAuth: false });
     }

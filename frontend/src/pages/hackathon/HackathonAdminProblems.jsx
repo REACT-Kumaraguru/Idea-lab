@@ -26,8 +26,8 @@ const HackathonAdminProblems = () => {
   const loadProblems = async () => {
     try {
       const [problemsRes, mentorsRes] = await Promise.all([
-        axiosInstance.get("/hackathon/admin/problems"),
-        axiosInstance.get("/hackathon/admin/mentors"),
+        axiosInstance.get("/ich2026/admin/problems"),
+        axiosInstance.get("/ich2026/admin/mentors"),
       ]);
       setProblems(problemsRes.data.problems || []);
       setMentors(mentorsRes.data.mentors || []);
@@ -62,7 +62,7 @@ const HackathonAdminProblems = () => {
         mentorId: Number(mentorId),
         teamRegistrationLimit: teamRegistrationLimit.trim() === "" ? null : teamRegistrationLimit,
       };
-      const res = await axiosInstance.post("/hackathon/admin/problems", payload);
+      const res = await axiosInstance.post("/ich2026/admin/problems", payload);
       const p = res.data.problem;
       const selectedMentor = mentors.find((m) => Number(m.id) === Number(payload.mentorId)) || null;
       setProblems((prev) => [
@@ -95,7 +95,7 @@ const HackathonAdminProblems = () => {
     setDeletingId(id);
     setError(null);
     try {
-      await axiosInstance.delete(`/hackathon/admin/problems/${id}`);
+      await axiosInstance.delete(`/ich2026/admin/problems/${id}`);
       setProblems((prev) => prev.filter((p) => p.id !== id));
     } catch (e2) {
       setError(e2.response?.data?.message || "Failed to delete problem");

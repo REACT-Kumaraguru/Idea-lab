@@ -14,7 +14,12 @@ function escapeHtml(s) {
 export function getPortalUrl() {
   const raw = ENV.CLIENT_URL || "";
   const first = raw.split(",")[0].trim();
-  return first || "https://idealab.kct.ac.in";
+  const base = first || "https://idealab.kct.ac.in";
+  // Hackathon routes live under `/ich2026/*`.
+  const normalizedBase = base
+    .replace(/\/+$/, "")
+    .replace(/\/ich2026\/?$/i, "");
+  return normalizedBase + "/ich2026/login";
 }
 
 /** Safe URL for email href (http/https only). */

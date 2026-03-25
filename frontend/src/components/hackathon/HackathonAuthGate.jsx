@@ -19,10 +19,10 @@ const HackathonAuthGate = ({ allowedRoles, children }) => {
     );
   }
 
-  if (!hackathonUser) return <Navigate to="/hackathon/login" replace />;
+  if (!hackathonUser) return <Navigate to="/ich2026/login" replace />;
 
   if (allowedRoles && allowedRoles.length > 0 && !allowedRoles.includes(hackathonUser.role)) {
-    return <Navigate to="/hackathon" replace />;
+    return <Navigate to="/ich2026" replace />;
   }
 
   return children;

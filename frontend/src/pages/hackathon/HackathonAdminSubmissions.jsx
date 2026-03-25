@@ -113,7 +113,7 @@ const HackathonAdminSubmissions = () => {
   useEffect(() => {
     const load = async () => {
       try {
-        const res = await axiosInstance.get("/hackathon/admin/submissions");
+        const res = await axiosInstance.get("/ich2026/admin/submissions");
         setSubmissions(res.data.submissions || []);
       } catch (e) {
         setError(e.response?.data?.message || "Failed to load submissions");
@@ -146,7 +146,7 @@ const HackathonAdminSubmissions = () => {
   const updateStatus = async (id, status) => {
     try {
       const notes = adminNotes[id] || "";
-      const res = await axiosInstance.post(`/hackathon/admin/submissions/${id}/status`, {
+      const res = await axiosInstance.post(`/ich2026/admin/submissions/${id}/status`, {
         status,
         adminNotes: notes,
       });

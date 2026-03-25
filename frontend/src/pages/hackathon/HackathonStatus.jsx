@@ -8,7 +8,7 @@ const HackathonStatus = () => {
   useEffect(() => {
     const load = async () => {
       try {
-        const res = await axiosInstance.get("/hackathon/status");
+        const res = await axiosInstance.get("/ich2026/status");
         setData(res.data);
       } catch {
         setData({ team: null, submissions: [] });

@@ -31,7 +31,7 @@ const HackathonLayout = ({ children }) => {
   }, [location.search]);
 
   const activeTabKey = useMemo(() => {
-    if (location.pathname !== "/hackathon/dashboard") return null;
+    if (location.pathname !== "/ich2026/dashboard") return null;
     if (!tab) return "dashboard";
     if (role === "mentor") {
       if (["team", "status"].includes(tab)) return tab;
@@ -43,32 +43,32 @@ const HackathonLayout = ({ children }) => {
 
   const studentNav = useMemo(
     () => [
-      { to: "/hackathon/dashboard", label: "Dashboard", tabKey: "dashboard", icon: LayoutDashboard },
-      { to: "/hackathon/dashboard?tab=team", label: "Team", tabKey: "team", icon: Users },
-      { to: "/hackathon/dashboard?tab=problems", label: "Problems", tabKey: "problems", icon: ClipboardList },
-      { to: "/hackathon/dashboard?tab=submit", label: "Submit", tabKey: "submit", icon: UploadCloud },
-      { to: "/hackathon/dashboard?tab=status", label: "Status", tabKey: "status", icon: Activity },
+      { to: "/ich2026/dashboard", label: "Dashboard", tabKey: "dashboard", icon: LayoutDashboard },
+      { to: "/ich2026/dashboard?tab=team", label: "Team", tabKey: "team", icon: Users },
+      { to: "/ich2026/dashboard?tab=problems", label: "Problems", tabKey: "problems", icon: ClipboardList },
+      { to: "/ich2026/dashboard?tab=submit", label: "Submit", tabKey: "submit", icon: UploadCloud },
+      { to: "/ich2026/dashboard?tab=status", label: "Status", tabKey: "status", icon: Activity },
     ],
     []
   );
 
   const mentorNav = useMemo(
     () => [
-      { to: "/hackathon/dashboard", label: "Dashboard", tabKey: "dashboard", icon: LayoutDashboard },
-      { to: "/hackathon/dashboard?tab=team", label: "Team", tabKey: "team", icon: Users },
-      { to: "/hackathon/dashboard?tab=status", label: "Status", tabKey: "status", icon: Activity },
+      { to: "/ich2026/dashboard", label: "Dashboard", tabKey: "dashboard", icon: LayoutDashboard },
+      { to: "/ich2026/dashboard?tab=team", label: "Team", tabKey: "team", icon: Users },
+      { to: "/ich2026/dashboard?tab=status", label: "Status", tabKey: "status", icon: Activity },
     ],
     []
   );
 
   const adminNav = useMemo(
     () => [
-      { to: "/hackathon/admin", label: "Admin Home", icon: Shield },
-      { to: "/hackathon/admin/teams", label: "Teams", icon: Users },
-      { to: "/hackathon/admin/mentors", label: "Mentors", icon: Users },
-      { to: "/hackathon/admin/problems", label: "Problems", icon: ClipboardList },
-      { to: "/hackathon/admin/submissions", label: "Submissions", icon: Activity },
-      { to: "/hackathon/admin/send-mail", label: "Send Mail", icon: Mail },
+      { to: "/ich2026/admin", label: "Admin Home", icon: Shield },
+      { to: "/ich2026/admin/teams", label: "Teams", icon: Users },
+      { to: "/ich2026/admin/mentors", label: "Mentors", icon: Users },
+      { to: "/ich2026/admin/problems", label: "Problems", icon: ClipboardList },
+      { to: "/ich2026/admin/submissions", label: "Submissions", icon: Activity },
+      { to: "/ich2026/admin/send-mail", label: "Send Mail", icon: Mail },
     ],
     []
   );
@@ -83,26 +83,26 @@ const HackathonLayout = ({ children }) => {
   const [collapsed, setCollapsed] = useState(false);
 
   const showMobileDock =
-    Boolean(hackathonUser) && location.pathname === "/hackathon/dashboard" && role !== "admin";
+    Boolean(hackathonUser) && location.pathname === "/ich2026/dashboard" && role !== "admin";
 
   const mobileDockItems = useMemo(() => {
     if (role === "mentor") {
       return [
-        { to: "/hackathon/dashboard?tab=team", label: "Team", tabKey: "team", icon: Users },
-        { to: "/hackathon/dashboard?tab=status", label: "Status", tabKey: "status", icon: Activity },
+        { to: "/ich2026/dashboard?tab=team", label: "Team", tabKey: "team", icon: Users },
+        { to: "/ich2026/dashboard?tab=status", label: "Status", tabKey: "status", icon: Activity },
       ];
     }
     return [
-      { to: "/hackathon/dashboard?tab=team", label: "Team", tabKey: "team", icon: Users },
-      { to: "/hackathon/dashboard?tab=problems", label: "Problems", tabKey: "problems", icon: ClipboardList },
-      { to: "/hackathon/dashboard?tab=submit", label: "Submit", tabKey: "submit", icon: UploadCloud },
-      { to: "/hackathon/dashboard?tab=status", label: "Status", tabKey: "status", icon: Activity },
+      { to: "/ich2026/dashboard?tab=team", label: "Team", tabKey: "team", icon: Users },
+      { to: "/ich2026/dashboard?tab=problems", label: "Problems", tabKey: "problems", icon: ClipboardList },
+      { to: "/ich2026/dashboard?tab=submit", label: "Submit", tabKey: "submit", icon: UploadCloud },
+      { to: "/ich2026/dashboard?tab=status", label: "Status", tabKey: "status", icon: Activity },
     ];
   }, [role]);
 
   const handleLogout = async () => {
     await logout();
-    navigate("/hackathon/login");
+    navigate("/ich2026/login");
     setMobileOpen(false);
   };
 

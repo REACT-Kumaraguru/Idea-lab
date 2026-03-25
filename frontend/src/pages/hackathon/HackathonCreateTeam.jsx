@@ -12,7 +12,7 @@ const HackathonCreateTeam = () => {
   useEffect(() => {
     const load = async () => {
       try {
-        const res = await axiosInstance.get("/hackathon/team");
+        const res = await axiosInstance.get("/ich2026/team");
         setTeam(res.data.team);
       } catch {
         setTeam(null);
@@ -27,9 +27,9 @@ const HackathonCreateTeam = () => {
     e.preventDefault();
     setError(null);
     try {
-      const res = await axiosInstance.post("/hackathon/team/create", { teamName });
+      const res = await axiosInstance.post("/ich2026/team/create", { teamName });
       setTeam(res.data);
-      navigate("/hackathon/dashboard");
+      navigate("/ich2026/dashboard");
     } catch (err) {
       setError(err.response?.data?.message || "Failed to create team");
     }

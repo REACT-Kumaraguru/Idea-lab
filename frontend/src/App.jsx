@@ -228,16 +228,16 @@ function App() {
       <Route path="users" element={<AdminAccess />} />
     </Route>
 
-        {/* Hackathon module routes */}
-        <Route path="/hackathon" element={<HackathonLanding />} />
-        <Route path="/hackathon/login" element={<HackathonLogin />} />
-        <Route path="/hackathon/forgot-password" element={<HackathonForgotPassword />} />
-        <Route path="/hackathon/register" element={<HackathonRegister />} />
-        <Route path="/hackathon/problems" element={<HackathonProblems />} />
-        <Route path="/hackathon/guidelines" element={<HackathonGuidelines />} />
+        {/* Hackathon module routes (ICH 2026) */}
+        <Route path="/ich2026" element={<HackathonLanding />} />
+        <Route path="/ich2026/login" element={<HackathonLogin />} />
+        <Route path="/ich2026/forgot-password" element={<HackathonForgotPassword />} />
+        <Route path="/ich2026/register" element={<HackathonRegister />} />
+        <Route path="/ich2026/problems" element={<HackathonProblems />} />
+        <Route path="/ich2026/guidelines" element={<HackathonGuidelines />} />
 
         <Route
-          path="/hackathon/dashboard"
+          path="/ich2026/dashboard"
           element={
             <HackathonProtectedPage allowedRoles={["student", "mentor"]}>
               <HackathonDashboard />
@@ -245,7 +245,7 @@ function App() {
           }
         />
         <Route
-          path="/hackathon/team"
+          path="/ich2026/team"
           element={
             <HackathonProtectedPage allowedRoles={["student", "mentor"]}>
               <HackathonTeam />
@@ -253,7 +253,7 @@ function App() {
           }
         />
         <Route
-          path="/hackathon/create-team"
+          path="/ich2026/create-team"
           element={
             <HackathonProtectedPage allowedRoles={["student"]}>
               <HackathonCreateTeam />
@@ -261,7 +261,7 @@ function App() {
           }
         />
         <Route
-          path="/hackathon/join-team"
+          path="/ich2026/join-team"
           element={
             <HackathonProtectedPage allowedRoles={["student"]}>
               <HackathonJoinTeam />
@@ -269,7 +269,7 @@ function App() {
           }
         />
         <Route
-          path="/hackathon/submit"
+          path="/ich2026/submit"
           element={
             <HackathonProtectedPage allowedRoles={["student"]}>
               <HackathonSubmit />
@@ -277,7 +277,7 @@ function App() {
           }
         />
         <Route
-          path="/hackathon/status"
+          path="/ich2026/status"
           element={
             <HackathonProtectedPage allowedRoles={["student", "mentor"]}>
               <HackathonStatus />
@@ -286,7 +286,7 @@ function App() {
         />
 
         <Route
-          path="/hackathon/admin"
+          path="/ich2026/admin"
           element={
             <HackathonProtectedPage allowedRoles={["admin"]}>
               <HackathonAdminHome />
@@ -294,7 +294,7 @@ function App() {
           }
         />
         <Route
-          path="/hackathon/admin/teams"
+          path="/ich2026/admin/teams"
           element={
             <HackathonProtectedPage allowedRoles={["admin"]}>
               <HackathonAdminTeams />
@@ -302,7 +302,7 @@ function App() {
           }
         />
         <Route
-          path="/hackathon/admin/problems"
+          path="/ich2026/admin/problems"
           element={
             <HackathonProtectedPage allowedRoles={["admin"]}>
               <HackathonAdminProblems />
@@ -310,7 +310,7 @@ function App() {
           }
         />
         <Route
-          path="/hackathon/admin/submissions"
+          path="/ich2026/admin/submissions"
           element={
             <HackathonProtectedPage allowedRoles={["admin"]}>
               <HackathonAdminSubmissions />
@@ -318,7 +318,7 @@ function App() {
           }
         />
         <Route
-          path="/hackathon/admin/mentors"
+          path="/ich2026/admin/mentors"
           element={
             <HackathonProtectedPage allowedRoles={["admin"]}>
               <HackathonAdminMentors />
@@ -326,7 +326,7 @@ function App() {
           }
         />
         <Route
-          path="/hackathon/admin/send-mail"
+          path="/ich2026/admin/send-mail"
           element={
             <HackathonProtectedPage allowedRoles={["admin"]}>
               <HackathonAdminSendMail />

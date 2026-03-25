@@ -17,8 +17,8 @@ const HackathonLogin = () => {
     e.preventDefault();
     try {
       const user = await login({ email, password });
-      if (user.role === "admin") navigate("/hackathon/admin");
-      else navigate("/hackathon/dashboard");
+      if (user.role === "admin") navigate("/ich2026/admin");
+      else navigate("/ich2026/dashboard");
     } catch {
       // toast handled in store
     }
@@ -75,7 +75,7 @@ const HackathonLogin = () => {
 
             <div className="flex justify-end mb-6">
               <Link
-                to="/hackathon/forgot-password"
+                to="/ich2026/forgot-password"
                 className="text-xs text-blue-600 hover:underline"
               >
                 Forgot password?
@@ -100,7 +100,7 @@ const HackathonLogin = () => {
             <p className="mt-5 text-center text-sm text-gray-400">
               Are you new?{" "}
               <Link
-                to="/hackathon/register"
+                to="/ich2026/register"
                 className="text-gray-900 font-semibold hover:underline"
               >
                 Create an Account

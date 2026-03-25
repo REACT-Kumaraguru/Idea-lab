@@ -18,7 +18,7 @@ const HackathonAdminMentors = () => {
     const load = async () => {
       setLoading(true);
       try {
-        const mRes = await axiosInstance.get("/hackathon/admin/mentors");
+        const mRes = await axiosInstance.get("/ich2026/admin/mentors");
         setMentors(mRes.data.mentors || []);
       } catch (e) {
         setError(e.response?.data?.message || "Failed to load mentors");
@@ -33,11 +33,11 @@ const HackathonAdminMentors = () => {
     e.preventDefault();
     setError(null);
     try {
-      await axiosInstance.post("/hackathon/admin/mentors", {
+      await axiosInstance.post("/ich2026/admin/mentors", {
         ...createMentor,
         expertise: createMentor.expertise || null,
       });
-      const res = await axiosInstance.get("/hackathon/admin/mentors");
+      const res = await axiosInstance.get("/ich2026/admin/mentors");
       setMentors(res.data.mentors || []);
       setCreateMentor({ fullName: "", email: "", password: "", phoneNumber: "", expertise: "" });
     } catch (e2) {

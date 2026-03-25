@@ -3,6 +3,25 @@ import HackathonUser from "../models/hackathon/HackathonUserModel.js";
 const unauthorized = (res) => res.status(401).json({ error: "Not authenticated" });
 const forbidden = (res) => res.status(403).json({ error: "Forbidden" });
 
+const ADMIN_ALLOWED_HOST = "react.kct.ac.in";
+function isAllowedAdminOrigin(req) {
+  // Allow all in non-production to avoid blocking local dev.
+  if (process.env.NODE_ENV !== "production") return true;
+
+  const origin = req.headers.origin || "";
+  const referer = req.headers.referer || "";
+  const candidates = [origin, referer].filter(Boolean);
+  for (const c of candidates) {
+    try {
+      const u = new URL(c);
+      if (u.hostname === ADMIN_ALLOWED_HOST) return true;
+    } catch {
+      // ignore invalid URL strings
+    }
+  }
+  return false;
+}
+
 const hydrateHackathonUserFromSession = async (req, res) => {
   const sessionUser = req.session?.hackathonUser;
   if (!sessionUser?.id || !sessionUser?.role) {
@@ -39,6 +58,11 @@ export const requireHackathonRole = (...allowedRoles) => {
     const sessionUser = req.session?.hackathonUser;
     if (!sessionUser?.role) return unauthorized(res);
     if (!allowedRoles.includes(sessionUser.role)) return forbidden(res);
+
+    if (allowedRoles.includes("admin") && sessionUser.role === "admin" && !isAllowedAdminOrigin(req)) {
+      return forbidden(res);
+    }
+
     next();
   };
 };

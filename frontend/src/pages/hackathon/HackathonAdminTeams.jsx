@@ -9,7 +9,7 @@ const HackathonAdminTeams = () => {
   useEffect(() => {
     const load = async () => {
       try {
-        const res = await axiosInstance.get("/hackathon/admin/teams");
+        const res = await axiosInstance.get("/ich2026/admin/teams");
         setTeams(res.data.teams || []);
       } catch (e) {
         setError(e.response?.data?.message || "Failed to load teams");

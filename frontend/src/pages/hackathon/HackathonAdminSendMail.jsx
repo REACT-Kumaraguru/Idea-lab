@@ -19,7 +19,7 @@ const HackathonAdminSendMail = () => {
   useEffect(() => {
     const load = async () => {
       try {
-        const res = await axiosInstance.get("/hackathon/admin/teams");
+        const res = await axiosInstance.get("/ich2026/admin/teams");
         setTeams(res.data.teams || []);
       } catch (e) {
         setError(e.response?.data?.message || "Failed to load teams");
@@ -66,7 +66,7 @@ const HackathonAdminSendMail = () => {
 
     setSending(true);
     try {
-      const res = await axiosInstance.post("/hackathon/admin/send-mail", body);
+      const res = await axiosInstance.post("/ich2026/admin/send-mail", body);
       setResult(res.data);
     } catch (err) {
       setError(err.response?.data?.message || "Failed to send email");

@@ -8,7 +8,7 @@ import KctLogo from "../../assets/kctlogo.png";
 import CampusLoginImg from "../../assets/Campus-login.jpg";
 
 const OTP_LEN = 6;
-const API = "/hackathon";
+const API = "/ich2026";
 
 const HackathonForgotPassword = () => {
   const navigate = useNavigate();
@@ -148,7 +148,7 @@ const HackathonForgotPassword = () => {
         password: newPassword,
       });
       toast.success(res.data?.message || "Password updated successfully");
-      navigate("/hackathon/login");
+      navigate("/ich2026/login");
     } catch (err) {
       toast.error(err.response?.data?.message || "Could not reset password");
     } finally {
@@ -172,7 +172,7 @@ const HackathonForgotPassword = () => {
             Forgot password
           </h2>
           <p className="text-sm text-gray-400 mb-7">
-            <Link to="/hackathon/login" className="text-blue-600 hover:underline">
+            <Link to="/ich2026/login" className="text-blue-600 hover:underline">
               Back to login
             </Link>
           </p>

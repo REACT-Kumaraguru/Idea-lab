@@ -12,7 +12,7 @@ const HackathonAdminWinners = () => {
   useEffect(() => {
     const load = async () => {
       try {
-        const res = await axiosInstance.get("/hackathon/admin/submissions");
+        const res = await axiosInstance.get("/ich2026/admin/submissions");
         setSubmissions(res.data.submissions || []);
       } catch (e) {
         setError(e.response?.data?.message || "Failed to load submissions");
@@ -26,7 +26,7 @@ const HackathonAdminWinners = () => {
   const selectWinner = async (s) => {
     setError(null);
     try {
-      const res = await axiosInstance.post("/hackathon/admin/winners/select", {
+      const res = await axiosInstance.post("/ich2026/admin/winners/select", {
         submissionId: s.id,
         winnerAmount: winnerAmount[s.id] ? Number(winnerAmount[s.id]) : null,
         seedMoneyAmount: seedMoneyAmount[s.id] ? Number(seedMoneyAmount[s.id]) : null,

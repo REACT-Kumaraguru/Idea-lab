@@ -25,7 +25,7 @@ const HackathonSubmit = () => {
   useEffect(() => {
     const loadTeam = async () => {
       try {
-        const res = await axiosInstance.get("/hackathon/team");
+        const res = await axiosInstance.get("/ich2026/team");
         setTeam(res.data.team);
       } catch {
         setTeam(null);
@@ -39,7 +39,7 @@ const HackathonSubmit = () => {
   useEffect(() => {
     const load = async () => {
       try {
-        const res = await axiosInstance.get("/hackathon/problems");
+        const res = await axiosInstance.get("/ich2026/problems");
         setProblems(res.data.problems || []);
       } catch {
         setProblems([]);
@@ -79,11 +79,11 @@ const HackathonSubmit = () => {
         }
       }
 
-      await axiosInstance.post("/hackathon/submit", fd, {
+      await axiosInstance.post("/ich2026/submit", fd, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
-      navigate("/hackathon/status");
+      navigate("/ich2026/status");
     } catch (err) {
       setError(err.response?.data?.message || "Submission failed");
     } finally {
