@@ -6,28 +6,6 @@ import { sendOtpEmail } from "../../services/mailService.js";
 
 const normalizeEmail = (email) => String(email || "").trim().toLowerCase();
 
-const ADMIN_ALLOWED_HOST = "react.kct.ac.in";
-const ADMIN_ALLOWED_EMAIL = "react@kct.ac.in";
-function isAllowedAdminOrigin(req) {
-  // Allow all in non-production to avoid breaking local/dev usage.
-  if (process.env.NODE_ENV !== "production") return true;
-
-  const origin = req.headers.origin || "";
-  const referer = req.headers.referer || "";
-  const candidates = [origin, referer].filter(Boolean);
-
-  for (const c of candidates) {
-    try {
-      const u = new URL(c);
-      if (u.hostname === ADMIN_ALLOWED_HOST) return true;
-    } catch {
-      // ignore invalid URL strings
-    }
-  }
-
-  return false;
-}
-
 function clearHackathonResetSession(req) {
   delete req.session.hackathonResetEmail;
   delete req.session.hackathonResetOtp;
@@ -167,16 +145,7 @@ export const login = async (req, res) => {
     const ok = await bcrypt.compare(password, user.password);
     if (!ok) return res.status(400).json({ message: "Invalid credentials" });
 
-    if (user.role === "admin") {
-      const normalizedUserEmail = normalizeEmail(user.email);
-      if (normalizedUserEmail !== ADMIN_ALLOWED_EMAIL) {
-        return res.status(403).json({ message: "Admin access is restricted" });
-      }
-
-      if (!isAllowedAdminOrigin(req)) {
-        return res.status(403).json({ message: "Admin access is restricted to react.kct.ac.in" });
-      }
-    }
+    // Admin role restriction is handled in admin-management endpoints.
 
     req.session.hackathonUser = {
       id: user.id,
