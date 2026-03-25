@@ -47,62 +47,19 @@ setupHackathonAssociations();
 
 const router = express.Router();
 
-// Serve uploaded files via API path (so reverse proxies can forward).
-router.get("/uploads/hackathon/:filename", async (req, res) => {
-  const { filename } = req.params || {};
-  if (!filename) return res.status(400).send("filename is required");
-
-  const safeName = path.basename(String(filename));
-  const cwdUploadDir = path.join(process.cwd(), "src/uploads/hackathon");
-
-  const __filename = fileURLToPath(import.meta.url);
-  const __dirname = path.dirname(__filename);
-  const codeUploadDir = path.resolve(__dirname, "../../uploads/hackathon");
-
-  const candidates = [cwdUploadDir, codeUploadDir];
-  let foundPath = null;
-  for (const dir of candidates) {
-    const candidatePath = path.join(dir, safeName);
-    if (fs.existsSync(candidatePath)) {
-      foundPath = candidatePath;
-      break;
-    }
-  }
-
-  if (!foundPath) return res.status(404).send("File not found");
-
-  // Force download to match admin UX.
-  res.setHeader("Content-Disposition", `attachment; filename="${safeName}"`);
-  return res.sendFile(foundPath);
-});
-
-// Alternative download path to bypass potential Nginx rules for `/uploads/...`.
+// Download API (explicit route): GET /api/ich2026/download/hackathon/:filename
 router.get("/download/hackathon/:filename", async (req, res) => {
   const { filename } = req.params || {};
   if (!filename) return res.status(400).send("filename is required");
 
   const safeName = path.basename(String(filename));
-  const cwdUploadDir = path.join(process.cwd(), "src/uploads/hackathon");
+  const uploadDir = path.join(process.cwd(), "uploads", "hackathon");
 
-  const __filename = fileURLToPath(import.meta.url);
-  const __dirname = path.dirname(__filename);
-  const codeUploadDir = path.resolve(__dirname, "../../uploads/hackathon");
-
-  const candidates = [cwdUploadDir, codeUploadDir];
-  let foundPath = null;
-
-  for (const dir of candidates) {
-    const candidatePath = path.join(dir, safeName);
-    if (fs.existsSync(candidatePath)) {
-      foundPath = candidatePath;
-      break;
-    }
-  }
-
-  if (!foundPath) return res.status(404).send("File not found");
+  const filePath = path.join(uploadDir, safeName);
+  if (!fs.existsSync(filePath)) return res.status(404).send("File not found");
 
   res.setHeader("Content-Disposition", `attachment; filename="${safeName}"`);
-  return res.sendFile(foundPath);
+  return res.sendFile(filePath);
 });
 
 // Download Templatehackthon.pdf via API (avoid Nginx static-file misconfig).

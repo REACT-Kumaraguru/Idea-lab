@@ -1,7 +1,9 @@
 import fs from "fs";
+import path from "path";
 import multer from "multer";
 
-const destination = "./src/uploads/hackathon";
+// Store uploads outside source tree for production deployments.
+const destination = path.join(process.cwd(), "uploads", "hackathon");
 
 const ensureDir = () => {
   if (!fs.existsSync(destination)) {

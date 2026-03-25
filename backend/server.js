@@ -1,6 +1,7 @@
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
+import path from "path";
 import { ENV } from "./src/lib/env.js";
 import { createSessionMiddleware } from "./src/config/session.js";
 import authRoutes from "./src/routes/auth.js";
@@ -56,7 +57,19 @@ app.use("/api/problems", problemStatementRoutes);
 app.use("/ich2026", hackathonRoutes);
 app.use("/api/ich2026", hackathonRoutes);
 
-app.use("/src/uploads", express.static("src/uploads"));
+// Hackathon downloads (static mapping) — required for Nginx reverse proxy setups.
+// Files are stored in: uploads/hackathon/
+const hackathonUploadsDir = path.join(process.cwd(), "uploads", "hackathon");
+app.use(
+  "/api/ich2026/download/hackathon",
+  express.static(hackathonUploadsDir, {
+    fallthrough: false, // return 404 when not found (instead of continuing middleware chain)
+    setHeaders: (res) => {
+      // Force download in browsers.
+      res.setHeader("Content-Disposition", "attachment");
+    },
+  })
+);
 
 app.use(notFoundHandler);
 app.use(errorHandler);
