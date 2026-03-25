@@ -20,6 +20,7 @@ import {
 import {
   getProblems,
   adminAddProblem,
+  adminUpdateProblem,
   adminGetProblems,
   adminDeleteProblem,
 } from "../../controllers/hackathon/hackathonProblem.controller.js";
@@ -134,6 +135,7 @@ router.post("/admin/send-mail", protectHackathonRoute, requireHackathonAdminRole
 
 router.get("/admin/problems", protectHackathonRoute, requireHackathonAdminRole, adminGetProblems);
 router.post("/admin/problems", protectHackathonRoute, requireHackathonAdminRole, adminAddProblem);
+router.put("/admin/problems/:id", protectHackathonRoute, requireHackathonAdminRole, adminUpdateProblem);
 router.delete("/admin/problems/:id", protectHackathonRoute, requireHackathonAdminRole, adminDeleteProblem);
 
 router.get("/admin/submissions", protectHackathonRoute, requireHackathonAdminRole, adminListSubmissions);

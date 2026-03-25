@@ -25,9 +25,31 @@ const HackathonAdminProblems = () => {
 
   const [search, setSearch] = useState("");
   const [deletingId, setDeletingId] = useState(null);
+  const [editingId, setEditingId] = useState(null);
 
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState("create");
+
+  const resetForm = () => {
+    setTitle("");
+    setSector("");
+    setDescription("");
+    setSelectedMentorIds(new Set());
+    setTeamRegistrationLimit("");
+    setEditingId(null);
+  };
+
+  const startEdit = (p) => {
+    setError(null);
+    setEditingId(p.id);
+    setTitle(p.title || "");
+    setSector(p.sector || "");
+    setDescription(p.description || "");
+    setTeamRegistrationLimit(p.teamRegistrationLimit != null ? String(p.teamRegistrationLimit) : "");
+    const ids = new Set((p.mentors || []).map((m) => Number(m.id)).filter((n) => Number.isInteger(n)));
+    setSelectedMentorIds(ids);
+    setActiveTab("create");
+  };
 
   const loadProblems = async () => {
     try {
@@ -57,7 +79,7 @@ const HackathonAdminProblems = () => {
     });
   }, [problems, search]);
 
-  const addProblem = async (e) => {
+  const saveProblem = async (e) => {
     e.preventDefault();
     setError(null);
     try {
@@ -73,29 +95,34 @@ const HackathonAdminProblems = () => {
         mentorIds,
         teamRegistrationLimit: teamRegistrationLimit.trim() === "" ? null : teamRegistrationLimit,
       };
-      const res = await axiosInstance.post("/ich2026/admin/problems", payload);
-      const p = res.data.problem;
-      setProblems((prev) => [
-        {
-          ...p,
-          submissionCount: 0,
-          pocSubmissionCount: 0,
-          prototypeSubmissionCount: 0,
-          teamsSubmitted: 0,
-          teamsPending: 0,
-          teamsApproved: 0,
-          teamsRejected: 0,
-        },
-        ...prev,
-      ]);
-      setTitle("");
-      setSector("");
-      setDescription("");
-      setSelectedMentorIds(new Set());
-      setTeamRegistrationLimit("");
-      setActiveTab("details");
+
+      if (editingId != null) {
+        const res = await axiosInstance.put(`/ich2026/admin/problems/${editingId}`, payload);
+        const p = res.data.problem;
+        setProblems((prev) => prev.map((x) => (Number(x.id) === Number(editingId) ? { ...p } : x)));
+        resetForm();
+        setActiveTab("details");
+      } else {
+        const res = await axiosInstance.post("/ich2026/admin/problems", payload);
+        const p = res.data.problem;
+        setProblems((prev) => [
+          {
+            ...p,
+            submissionCount: 0,
+            pocSubmissionCount: 0,
+            prototypeSubmissionCount: 0,
+            teamsSubmitted: 0,
+            teamsPending: 0,
+            teamsApproved: 0,
+            teamsRejected: 0,
+          },
+          ...prev,
+        ]);
+        resetForm();
+        setActiveTab("details");
+      }
     } catch (e2) {
-      setError(e2.response?.data?.message || "Failed to add problem");
+      setError(e2.response?.data?.message || (editingId != null ? "Failed to update problem" : "Failed to add problem"));
     }
   };
 
@@ -143,7 +170,22 @@ const HackathonAdminProblems = () => {
       </div>
 
       {activeTab === "create" ? (
-        <form onSubmit={addProblem} className="mt-6 bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+        <form onSubmit={saveProblem} className="mt-6 bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+          {editingId != null ? (
+            <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-900">
+              Editing problem #{editingId}.{" "}
+              <button
+                type="button"
+                onClick={() => {
+                  resetForm();
+                  setError(null);
+                }}
+                className="font-semibold text-amber-800 underline underline-offset-2"
+              >
+                Cancel edit
+              </button>
+            </div>
+          ) : null}
           <div className="grid md:grid-cols-2 gap-4">
             <div>
               <label className="text-sm font-medium text-gray-800">Title</label>
@@ -228,7 +270,7 @@ const HackathonAdminProblems = () => {
           </div>
 
           <button type="submit" className="mt-5 w-full px-4 py-2 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700">
-            Add Problem
+            {editingId != null ? "Save changes" : "Add Problem"}
           </button>
         </form>
       ) : null}
@@ -258,7 +300,7 @@ const HackathonAdminProblems = () => {
                   <th className="px-4 py-3 whitespace-nowrap">Rejected</th>
                   <th className="px-4 py-3 whitespace-nowrap">Limit</th>
                   <th className="px-4 py-3 whitespace-nowrap">PoC / Proto</th>
-                  <th className="px-4 py-3 text-right">Actions</th>
+                  <th className="px-4 py-3 text-right whitespace-nowrap">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -282,14 +324,23 @@ const HackathonAdminProblems = () => {
                       {p.pocSubmissionCount ?? 0} / {p.prototypeSubmissionCount ?? 0}
                     </td>
                     <td className="px-4 py-3 text-right">
-                      <button
-                        type="button"
-                        onClick={() => deleteProblem(p.id)}
-                        disabled={deletingId === p.id}
-                        className="px-3 py-1.5 rounded-lg border border-red-200 text-red-700 text-xs font-semibold hover:bg-red-50 disabled:opacity-50"
-                      >
-                        {deletingId === p.id ? "Deleting…" : "Delete"}
-                      </button>
+                      <div className="inline-flex flex-wrap justify-end gap-2">
+                        <button
+                          type="button"
+                          onClick={() => startEdit(p)}
+                          className="px-3 py-1.5 rounded-lg border border-gray-200 text-gray-800 text-xs font-semibold hover:bg-gray-50"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => deleteProblem(p.id)}
+                          disabled={deletingId === p.id}
+                          className="px-3 py-1.5 rounded-lg border border-red-200 text-red-700 text-xs font-semibold hover:bg-red-50 disabled:opacity-50"
+                        >
+                          {deletingId === p.id ? "Deleting…" : "Delete"}
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -335,14 +386,23 @@ const HackathonAdminProblems = () => {
                     </dd>
                   </div>
                 </dl>
-                <button
-                  type="button"
-                  onClick={() => deleteProblem(p.id)}
-                  disabled={deletingId === p.id}
-                  className="mt-3 w-full px-3 py-2 rounded-lg border border-red-200 text-red-700 text-xs font-semibold hover:bg-red-50 disabled:opacity-50"
-                >
-                  {deletingId === p.id ? "Deleting…" : "Delete"}
-                </button>
+                <div className="mt-3 flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => startEdit(p)}
+                    className="flex-1 px-3 py-2 rounded-lg border border-gray-200 text-gray-800 text-xs font-semibold hover:bg-gray-50"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => deleteProblem(p.id)}
+                    disabled={deletingId === p.id}
+                    className="flex-1 px-3 py-2 rounded-lg border border-red-200 text-red-700 text-xs font-semibold hover:bg-red-50 disabled:opacity-50"
+                  >
+                    {deletingId === p.id ? "Deleting…" : "Delete"}
+                  </button>
+                </div>
               </div>
             ))}
           </div>

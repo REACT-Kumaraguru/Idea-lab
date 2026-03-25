@@ -171,6 +171,105 @@ export const adminAddProblem = async (req, res) => {
   }
 };
 
+export const adminUpdateProblem = async (req, res) => {
+  const id = Number(req.params.id);
+  const { title, description, sector, mentorIds, mentorId, teamRegistrationLimit } = req.body || {};
+  try {
+    if (!Number.isInteger(id)) {
+      return res.status(400).json({ message: "Invalid problem id" });
+    }
+
+    const problem = await HackathonProblem.findByPk(id);
+    if (!problem) {
+      return res.status(404).json({ message: "Problem not found" });
+    }
+
+    if (!title?.trim() || !description?.trim()) {
+      return res.status(400).json({ message: "title and description are required" });
+    }
+
+    let limitVal = null;
+    if (teamRegistrationLimit !== undefined && teamRegistrationLimit !== null && teamRegistrationLimit !== "") {
+      const n = Number(teamRegistrationLimit);
+      if (!Number.isInteger(n) || n < 1) {
+        return res.status(400).json({ message: "teamRegistrationLimit must be a positive integer" });
+      }
+      limitVal = n;
+    }
+
+    const rawIds = Array.isArray(mentorIds) ? mentorIds : mentorId != null ? [mentorId] : [];
+    const mentorIdList = [...new Set(rawIds.map((x) => Number(x)).filter((n) => Number.isInteger(n) && n > 0))];
+    if (mentorIdList.length < 1) {
+      return res.status(400).json({ message: "At least one mentor is required (mentorIds)" });
+    }
+
+    const mentors = await HackathonMentor.findAll({ where: { id: { [Op.in]: mentorIdList } } });
+    if (mentors.length !== mentorIdList.length) {
+      return res.status(400).json({ message: "One or more mentor ids are invalid" });
+    }
+
+    await problem.update({
+      title: title.trim(),
+      description: description.trim(),
+      sector: sector ? String(sector).trim() : null,
+      teamRegistrationLimit: limitVal,
+    });
+
+    await HackathonProblemMentor.destroy({ where: { problemId: id } });
+    await HackathonProblemMentor.bulkCreate(mentorIdList.map((mid) => ({ problemId: id, mentorId: mid })));
+
+    const full = await HackathonProblem.findByPk(id, {
+      include: [
+        {
+          model: HackathonMentor,
+          as: "mentors",
+          include: [{ model: HackathonUser, as: "user", attributes: ["id", "fullName", "email", "phoneNumber"] }],
+          through: { attributes: [] },
+        },
+      ],
+    });
+
+    const json = full.toJSON();
+    const mentorsJson = Array.isArray(json.mentors) ? json.mentors.map((m) => serializeMentor(m)) : [];
+
+    const teamCountMap = await getDistinctTeamCountByProblem();
+    const statusMap = await getTeamStatusCountsByProblem();
+    const statsRows = await sequelize.query(
+      `SELECT problem_id AS "problemId", submission_phase AS "submissionPhase", COUNT(*)::int AS n
+       FROM hackathon_submissions
+       WHERE problem_id = :pid
+       GROUP BY problem_id, submission_phase`,
+      { replacements: { pid: id }, type: QueryTypes.SELECT }
+    );
+    const t = { total: 0, poc: 0, prototype: 0 };
+    for (const r of statsRows) {
+      const n = Number(r.n) || 0;
+      t.total += n;
+      if (r.submissionPhase === "poc") t.poc = n;
+      if (r.submissionPhase === "prototype") t.prototype = n;
+    }
+    const st = statusMap[id] || { pending: 0, approved: 0, rejected: 0 };
+
+    return res.status(200).json({
+      problem: {
+        ...json,
+        mentors: mentorsJson,
+        mentor: mentorsJson[0] || null,
+        submissionCount: t.total,
+        pocSubmissionCount: t.poc,
+        prototypeSubmissionCount: t.prototype,
+        teamsSubmitted: teamCountMap[id] || 0,
+        teamsPending: st.pending,
+        teamsApproved: st.approved,
+        teamsRejected: st.rejected,
+      },
+    });
+  } catch (error) {
+    console.log("Error in adminUpdateProblem:", error.message);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
 export const adminGetProblems = async (req, res) => {
   try {
     const problems = await HackathonProblem.findAll({

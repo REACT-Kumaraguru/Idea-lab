@@ -1,5 +1,13 @@
 import bcrypt from "bcryptjs";
+import { sequelize } from "../../lib/db.js";
 import HackathonUser from "../../models/hackathon/HackathonUserModel.js";
+import HackathonSession from "../../models/hackathon/HackathonSessionModel.js";
+import HackathonSubmission from "../../models/hackathon/HackathonSubmissionModel.js";
+import HackathonTeam from "../../models/hackathon/HackathonTeamModel.js";
+import HackathonTeamMember from "../../models/hackathon/HackathonTeamMemberModel.js";
+import HackathonMentor from "../../models/hackathon/HackathonMentorModel.js";
+import HackathonProblemMentor from "../../models/hackathon/HackathonProblemMentorModel.js";
+import HackathonTeamMentor from "../../models/hackathon/HackathonTeamMentorModel.js";
 
 const DEFAULT_ADMIN_EMAIL = "react@kct.ac.in";
 
@@ -153,7 +161,41 @@ export const deleteHackathonAdmin = async (req, res) => {
     });
   }
 
-  await existing.destroy();
+  const userId = existing.id;
+
+  try {
+    await sequelize.transaction(async (t) => {
+      await HackathonSubmission.update(
+        { mentorApproved: false, mentorApprovedByUserId: null, mentorApprovedAt: null },
+        { where: { mentorApprovedByUserId: userId }, transaction: t }
+      );
+
+      const mentorRow = await HackathonMentor.findOne({ where: { userId }, transaction: t });
+      if (mentorRow) {
+        await HackathonProblemMentor.destroy({ where: { mentorId: mentorRow.id }, transaction: t });
+        await HackathonTeamMentor.destroy({ where: { mentorId: mentorRow.id }, transaction: t });
+        await mentorRow.destroy({ transaction: t });
+      }
+
+      const teamsLed = await HackathonTeam.findAll({ where: { leaderUserId: userId }, transaction: t });
+      for (const team of teamsLed) {
+        await HackathonSubmission.destroy({ where: { teamId: team.id }, transaction: t });
+        await HackathonTeamMember.destroy({ where: { teamId: team.id }, transaction: t });
+        await team.destroy({ transaction: t });
+      }
+
+      await HackathonTeamMember.destroy({ where: { userId }, transaction: t });
+      await HackathonSubmission.destroy({ where: { submittedByUserId: userId }, transaction: t });
+      await HackathonSession.destroy({ where: { userId }, transaction: t });
+
+      await existing.destroy({ transaction: t });
+    });
+  } catch (err) {
+    console.error("deleteHackathonAdmin:", err);
+    return res.status(500).json({
+      message: process.env.NODE_ENV === "production" ? "Internal server error" : err.message || "Internal server error",
+    });
+  }
 
   return res.status(200).json({ success: true });
 };
