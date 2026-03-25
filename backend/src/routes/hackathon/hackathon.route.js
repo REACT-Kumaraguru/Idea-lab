@@ -1,6 +1,7 @@
 import express from "express";
 import fs from "fs";
 import path from "path";
+import { fileURLToPath } from "url";
 
 import {
   register,
@@ -51,14 +52,28 @@ router.get("/uploads/hackathon/:filename", async (req, res) => {
   const { filename } = req.params || {};
   if (!filename) return res.status(400).send("filename is required");
 
-  const uploadDir = path.join(process.cwd(), "src/uploads/hackathon");
-  const filePath = path.join(uploadDir, String(filename));
+  const safeName = path.basename(String(filename));
+  const cwdUploadDir = path.join(process.cwd(), "src/uploads/hackathon");
 
-  if (!fs.existsSync(filePath)) {
-    return res.status(404).send("File not found");
+  const __filename = fileURLToPath(import.meta.url);
+  const __dirname = path.dirname(__filename);
+  const codeUploadDir = path.resolve(__dirname, "../../uploads/hackathon");
+
+  const candidates = [cwdUploadDir, codeUploadDir];
+  let foundPath = null;
+  for (const dir of candidates) {
+    const candidatePath = path.join(dir, safeName);
+    if (fs.existsSync(candidatePath)) {
+      foundPath = candidatePath;
+      break;
+    }
   }
 
-  return res.sendFile(filePath);
+  if (!foundPath) return res.status(404).send("File not found");
+
+  // Force download to match admin UX.
+  res.setHeader("Content-Disposition", `attachment; filename="${safeName}"`);
+  return res.sendFile(foundPath);
 });
 
 // Hackathon auth (module-scoped)
