@@ -63,11 +63,11 @@ export const submit = async (req, res) => {
 
     if (team.status !== "approved") {
       if (team.status === "pending") {
-        return res.status(400).json({
-          message: "Your team is not active yet. Team becomes active automatically when it has 4 members.",
-        });
+        // Auto-activate: once the team has at least 1 member, allow submissions.
+        await team.update({ status: "approved" });
+      } else {
+        return res.status(400).json({ message: "Only active teams can submit." });
       }
-      return res.status(400).json({ message: "Only active teams can submit." });
     }
 
     const problem = await HackathonProblem.findByPk(problemId);

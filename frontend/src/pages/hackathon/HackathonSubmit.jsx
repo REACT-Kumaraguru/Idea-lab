@@ -58,12 +58,7 @@ const HackathonSubmit = () => {
   const onSubmit = async (e) => {
     e.preventDefault();
     setError(null);
-    if (team?.status !== "approved") {
-      if (team?.status === "pending") {
-        return setError("Your team is not active yet. Team becomes active automatically as soon as you are in a team.");
-      }
-      return setError("Only active teams can submit.");
-    }
+    if (!team) return setError("You are not part of any team yet.");
     setSubmitting(true);
     try {
       const fd = new FormData();
@@ -92,7 +87,7 @@ const HackathonSubmit = () => {
   };
 
   const selectedProblem = problems.find((p) => String(p.id) === String(problemId));
-  const canSubmit = team?.status === "approved";
+  const canSubmit = Boolean(team);
 
   return (
     <div>
@@ -110,7 +105,7 @@ const HackathonSubmit = () => {
           ) : null}
           {team?.status === "pending" ? (
             <div className="mb-4 bg-yellow-50 border border-yellow-100 text-gray-700 rounded-xl p-4 text-sm">
-              Team is not active yet. It becomes active automatically as soon as you are in a team.
+              Team approval is automatic. Submitting will activate your team.
             </div>
           ) : null}
           <div className="grid md:grid-cols-2 gap-4">

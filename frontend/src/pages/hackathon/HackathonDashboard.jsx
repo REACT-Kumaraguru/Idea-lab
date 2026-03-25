@@ -137,13 +137,9 @@ const HackathonDashboard = () => {
 
   const selectedProblemId = selectedProblem?.problemId || null;
 
-  const canSubmit = team?.status === "approved";
-  const submissionBlockedReason =
-    !team
-      ? "You are not part of any team yet."
-      : team.status === "pending"
-      ? "Your team is not active yet. Team becomes active automatically as soon as you are in a team."
-      : null;
+  // Backend auto-activates team status on submission when needed.
+  const canSubmit = Boolean(team);
+  const submissionBlockedReason = !team ? "You are not part of any team yet." : null;
 
   const fetchProblems = async () => {
     if (problemsLoading) return;
@@ -214,7 +210,6 @@ const HackathonDashboard = () => {
     setSubmitError(null);
 
     if (!team) return setSubmitError("You are not part of any team yet.");
-    if (team.status !== "approved") return setSubmitError(submissionBlockedReason);
     if (!selectedProblemId) return setSubmitError("Please select a problem first.");
 
     if (!title?.trim()) return setSubmitError("Title is required.");
@@ -342,7 +337,7 @@ const HackathonDashboard = () => {
               <div className="font-semibold text-gray-900">You are not part of any team yet.</div>
               <div className="mt-1 text-sm text-gray-600">
                 Participants form teams themselves. Any participant can create a team, and the creator automatically becomes Team Leader.
-                Team becomes active automatically as soon as you are in a team.
+                Once you join a team, you can submit immediately (team approval is automatic).
               </div>
             </AlertCard>
           ) : (
@@ -458,7 +453,7 @@ const HackathonDashboard = () => {
           {!team ? (
             <AlertCard tone="warning">You are not part of any team yet. Create or join a team first.</AlertCard>
           ) : team.status === "pending" ? (
-            <AlertCard tone="warning">Your team is not active yet. Team becomes active automatically as soon as you are in a team.</AlertCard>
+            <AlertCard tone="warning">Team approval is automatic. You can submit now.</AlertCard>
           ) : null}
 
           <div className="mt-4 bg-white rounded-3xl border border-[#E2E8F0] p-4 sm:p-6 shadow-sm" aria-disabled={!submitAllowed}>
@@ -755,7 +750,7 @@ const HackathonDashboard = () => {
                 <div className="font-semibold text-gray-900">Team Rules</div>
                 <ul className="mt-2 space-y-1 text-sm">
                   <li>Max 4 members per team</li>
-                  <li>Only active teams can submit</li>
+                  <li>Team approval is automatic for submissions</li>
                   <li>Submit PoC / Prototype only once</li>
                 </ul>
               </div>
