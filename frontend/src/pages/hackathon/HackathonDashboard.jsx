@@ -4,6 +4,10 @@ import { axiosInstance } from "../../lib/axios.js";
 import { getHackathonTemplatePdfHref } from "../../lib/config.js";
 import { useHackathonAuthStore } from "../../store/useHackathonAuthStore";
 import { AlertTriangle } from "lucide-react";
+import {
+  HackathonProblemArticleCard,
+  mentorNamesForProblem,
+} from "../../components/hackathon/HackathonProblemArticleCard.jsx";
 
 const HackathonDashboard = () => {
   const { hackathonUser } = useHackathonAuthStore();
@@ -203,6 +207,7 @@ const HackathonDashboard = () => {
       title: p.title,
       sector: p.sector,
       mentor: p.mentor || null,
+      mentors: Array.isArray(p.mentors) ? p.mentors : p.mentor ? [p.mentor] : [],
       teamRegistrationLimit: p.teamRegistrationLimit,
       registeredTeams: p.registeredTeams,
     };
@@ -456,52 +461,54 @@ const HackathonDashboard = () => {
 
       {/* PROBLEMS TAB */}
       {activeTab === "problems" && role === "student" ? (
-        <div className="mt-5">
+        <div className="mt-5 w-full max-w-6xl mx-auto">
           {teamHasSubmitted ? (
-            <div className="mb-4 rounded-2xl border border-[#22C55E]/25 bg-[#ECFDF3] px-4 py-3 text-sm text-gray-800">
+            <div className="mb-6 sm:mb-8 rounded-2xl border border-[#22C55E]/25 bg-[#ECFDF3] px-4 py-3 text-sm text-gray-800">
               Your team has already submitted. You can review your entry under the <strong>Status</strong> tab.
             </div>
           ) : null}
           {problemsLoading ? (
-            <div className="text-gray-600">Loading problems...</div>
+            <div className="text-stone-600 font-sans">Loading problems...</div>
           ) : problems.length ? (
-            <div className="grid md:grid-cols-2 gap-5">
+            <div className="flex flex-col gap-10 sm:gap-12 lg:gap-14">
               {problems.map((p) => (
-                <div key={p.id} className="bg-white rounded-3xl border border-[#E2E8F0] shadow-sm p-5">
-                  <div className="text-xs font-semibold text-[#2563EB]">{p.sector || "Category"}</div>
-                  <div className="text-lg font-bold text-gray-900 mt-2">{p.title}</div>
-                  <div className="mt-1 text-xs text-gray-600">Mentor: {p.mentor?.user?.fullName || "Not assigned"}</div>
-                  <div className="text-gray-700 mt-3 text-sm whitespace-pre-line">
-                    {p.description?.slice(0, 220)}
-                    {p.description?.length > 220 ? "..." : ""}
-                  </div>
-                  <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
-                    <div className="text-xs text-gray-500">
+                <HackathonProblemArticleCard
+                  key={p.id}
+                  problem={p}
+                  footerMeta={
+                    <>
                       {p.teamRegistrationLimit != null && p.teamRegistrationLimit > 0 ? (
-                        <>
-                          Teams: {p.registeredTeams ?? 0} / {p.teamRegistrationLimit}
-                        </>
+                        <span>
+                          Teams registered:{" "}
+                          <strong className="font-semibold text-stone-800">{p.registeredTeams ?? 0}</strong> /{" "}
+                          {p.teamRegistrationLimit}
+                        </span>
                       ) : (
-                        <>Teams registered: {p.registeredTeams ?? 0}</>
+                        <span>
+                          Teams registered:{" "}
+                          <strong className="font-semibold text-stone-800">{p.registeredTeams ?? 0}</strong>
+                        </span>
                       )}
                       {problemIsFull(p) ? (
-                        <span className="block text-amber-700 font-semibold mt-1">Registration full</span>
+                        <span className="block mt-2 text-amber-800 font-semibold">Registration full</span>
                       ) : null}
-                    </div>
+                    </>
+                  }
+                  action={
                     <button
                       type="button"
                       disabled={problemIsFull(p) || teamHasSubmitted}
                       onClick={() => onSelectProblem(p)}
-                      className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#2563EB] to-[#1D4ED8] text-white font-semibold hover:from-[#1D4ED8] hover:to-[#2563EB] transition shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#2563EB] to-[#1D4ED8] text-white text-sm font-semibold hover:from-[#1D4ED8] hover:to-[#2563EB] transition shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto min-w-[7.5rem]"
                     >
                       {teamHasSubmitted ? "Submitted" : problemIsFull(p) ? "Full" : "Select"}
                     </button>
-                  </div>
-                </div>
+                  }
+                />
               ))}
             </div>
           ) : (
-            <div className="bg-white rounded-3xl border border-[#E2E8F0] p-6 shadow-sm text-gray-700">
+            <div className="rounded-2xl border border-stone-200 bg-white p-8 sm:p-10 shadow-sm text-stone-700 font-sans leading-relaxed">
               No problems available yet.
             </div>
           )}
@@ -643,6 +650,9 @@ const HackathonDashboard = () => {
                         value={selectedProblem ? selectedProblem.title : "Not selected yet"}
                         className="mt-2 w-full rounded-2xl border border-[#E2E8F0] px-4 py-3 text-sm bg-gray-50 text-gray-700"
                       />
+                      {selectedProblem ? (
+                        <div className="mt-2 text-xs text-gray-600">Mentors: {mentorNamesForProblem(selectedProblem)}</div>
+                      ) : null}
                     </div>
                     <div>
                       <label className="text-sm font-semibold text-gray-800">Phase</label>

@@ -21,11 +21,6 @@ const HackathonProblem = sequelize.define(
       type: DataTypes.STRING,
       allowNull: true,
     },
-    mentorId: {
-      type: DataTypes.INTEGER,
-      allowNull: true,
-      field: "mentor_id",
-    },
     teamRegistrationLimit: {
       type: DataTypes.INTEGER,
       allowNull: true,

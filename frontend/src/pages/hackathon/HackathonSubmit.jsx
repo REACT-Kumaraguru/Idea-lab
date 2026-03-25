@@ -3,6 +3,13 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { axiosInstance } from "../../lib/axios.js";
 import { getHackathonTemplatePdfHref } from "../../lib/config.js";
 
+function mentorNamesText(p) {
+  if (!p) return "Not assigned";
+  const list = Array.isArray(p.mentors) && p.mentors.length ? p.mentors : p.mentor ? [p.mentor] : [];
+  const names = list.map((m) => m?.user?.fullName).filter(Boolean);
+  return names.length ? names.join(", ") : "Not assigned";
+}
+
 const HackathonSubmit = () => {
   const navigate = useNavigate();
   const templatePdfHref = getHackathonTemplatePdfHref();
@@ -174,7 +181,7 @@ const HackathonSubmit = () => {
               {selectedProblem ? (
                 <div className="mt-3 text-sm text-gray-700">
                   <div className="font-semibold">{selectedProblem.sector || "Sector"}</div>
-                  <div className="text-gray-600">Mentor: {selectedProblem.mentor?.user?.fullName || "Not assigned"}</div>
+                  <div className="text-gray-600">Mentors: {mentorNamesText(selectedProblem)}</div>
                   <div className="text-gray-600">
                     {selectedProblem.teamRegistrationLimit != null && selectedProblem.teamRegistrationLimit > 0 ? (
                       <>

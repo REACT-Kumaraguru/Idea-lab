@@ -6,6 +6,7 @@ import HackathonProblem from "./HackathonProblemModel.js";
 import HackathonSubmission from "./HackathonSubmissionModel.js";
 import HackathonMentor from "./HackathonMentorModel.js";
 import HackathonTeamMentor from "./HackathonTeamMentorModel.js";
+import HackathonProblemMentor from "./HackathonProblemMentorModel.js";
 
 export const setupHackathonAssociations = () => {
   // Sessions
@@ -80,12 +81,16 @@ export const setupHackathonAssociations = () => {
     as: "mentor",
   });
 
-  HackathonProblem.belongsTo(HackathonMentor, {
-    foreignKey: { name: "mentorId", field: "mentor_id" },
-    as: "mentor",
+  HackathonProblem.belongsToMany(HackathonMentor, {
+    through: HackathonProblemMentor,
+    foreignKey: "problemId",
+    otherKey: "mentorId",
+    as: "mentors",
   });
-  HackathonMentor.hasMany(HackathonProblem, {
-    foreignKey: { name: "mentorId", field: "mentor_id" },
+  HackathonMentor.belongsToMany(HackathonProblem, {
+    through: HackathonProblemMentor,
+    foreignKey: "mentorId",
+    otherKey: "problemId",
     as: "problems",
   });
 };
@@ -99,5 +104,6 @@ export {
   HackathonSubmission,
   HackathonMentor,
   HackathonTeamMentor,
+  HackathonProblemMentor,
 };
 

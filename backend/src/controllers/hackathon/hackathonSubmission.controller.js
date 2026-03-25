@@ -11,6 +11,8 @@ import {
 } from "../../services/mailService.js";
 import HackathonMentor from "../../models/hackathon/HackathonMentorModel.js";
 import HackathonTeamMentor from "../../models/hackathon/HackathonTeamMentorModel.js";
+import HackathonProblemMentor from "../../models/hackathon/HackathonProblemMentorModel.js";
+import { Op } from "sequelize";
 
 const toFileUrl = (file) => {
   // Store an API-served URL so Nginx can proxy it.
@@ -192,14 +194,18 @@ export const getStatus = async (req, res) => {
       const mentor = await HackathonMentor.findOne({ where: { userId } });
       if (!mentor) return res.status(200).json({ team: null, submissions: [] });
 
-      const problems = await HackathonProblem.findAll({
+      const links = await HackathonProblemMentor.findAll({
         where: { mentorId: mentor.id },
+        attributes: ["problemId"],
+      });
+      const problemIds = [...new Set(links.map((l) => l.problemId))];
+      if (!problemIds.length) return res.status(200).json({ team: null, submissions: [] });
+
+      const problems = await HackathonProblem.findAll({
+        where: { id: { [Op.in]: problemIds } },
         attributes: ["id", "title", "sector"],
         order: [["created_at", "DESC"]],
       });
-
-      const problemIds = problems.map((p) => p.id);
-      if (!problemIds.length) return res.status(200).json({ team: null, submissions: [] });
 
       const submissionsRows = await HackathonSubmission.findAll({
         where: { problemId: problemIds },
@@ -307,10 +313,14 @@ export const mentorSetSubmissionApproval = async (req, res) => {
     if (!submission) return res.status(404).json({ message: "Submission not found" });
 
     const problem = await HackathonProblem.findByPk(submission.problemId, {
-      attributes: ["id", "title", "sector", "mentorId"],
+      attributes: ["id", "title", "sector"],
     });
     if (!problem) return res.status(404).json({ message: "Problem not found" });
-    if (Number(problem.mentorId) !== Number(mentor.id)) {
+
+    const assignment = await HackathonProblemMentor.findOne({
+      where: { problemId: problem.id, mentorId: mentor.id },
+    });
+    if (!assignment) {
       return res.status(403).json({ message: "You are not assigned to this problem" });
     }
 

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Link, Navigate } from "react-router-dom";
 import { axiosInstance } from "../../lib/axios.js";
 import { useHackathonAuthStore } from "../../store/useHackathonAuthStore";
+import { HackathonProblemArticleCard } from "../../components/hackathon/HackathonProblemArticleCard.jsx";
 
 const HackathonProblems = () => {
   const [problems, setProblems] = useState([]);
@@ -27,60 +28,61 @@ const HackathonProblems = () => {
   }, []);
 
   return (
-    <div className="max-w-5xl mx-auto">
-      <div className="flex items-start justify-between gap-4 flex-wrap">
+    <div className="w-full max-w-6xl mx-auto px-3 sm:px-4 lg:px-6">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Industry Problems</h2>
-          <p className="text-gray-600 mt-1">Pick a problem and submit your PoC / Prototype.</p>
+          <h2 className="font-article text-3xl sm:text-4xl font-bold text-stone-900 tracking-tight">Industry Problems</h2>
+          <p className="font-sans text-stone-600 mt-2 text-base leading-relaxed max-w-2xl">
+            Read each problem statement in full, then select a challenge and submit your PoC or prototype.
+          </p>
         </div>
         <Link
           to="/ich2026/guidelines"
-          className="px-4 py-2 rounded-xl bg-white border border-gray-300 text-gray-800 font-semibold hover:bg-gray-50 transition"
+          className="inline-flex shrink-0 items-center justify-center px-4 py-2.5 rounded-xl bg-white border border-stone-200 text-stone-800 text-sm font-semibold hover:bg-stone-50 transition shadow-sm"
         >
           Guidelines
         </Link>
       </div>
 
       {loading ? (
-        <div className="mt-6 text-gray-600">Loading problems...</div>
+        <div className="mt-10 font-sans text-stone-600">Loading problems...</div>
       ) : (
-        <div className="mt-6 grid md:grid-cols-2 gap-5">
+        <div className="mt-10 sm:mt-12 flex flex-col gap-10 sm:gap-12 lg:gap-14">
           {problems.map((p) => (
-            <div key={p.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-              <div className="text-xs font-semibold text-blue-700">
-                {p.sector || "Sector Unspecified"}
-              </div>
-              <div className="text-lg font-bold text-gray-900 mt-2">{p.title}</div>
-              <div className="mt-1 text-xs text-gray-600">Mentor: {p.mentor?.user?.fullName || "Not assigned"}</div>
-              <div className="text-gray-700 mt-3 text-sm whitespace-pre-line">
-                {p.description?.slice(0, 320)}
-                {p.description?.length > 320 ? "..." : ""}
-              </div>
-
-              <div className="mt-4 flex items-center justify-between gap-3">
-                <div className="text-xs text-gray-500">
+            <HackathonProblemArticleCard
+              key={p.id}
+              problem={p}
+              footerMeta={
+                <>
                   {p.teamRegistrationLimit != null && p.teamRegistrationLimit > 0 ? (
-                    <>
-                      Teams: {p.registeredTeams ?? 0} / {p.teamRegistrationLimit}
-                    </>
+                    <span>
+                      Teams registered:{" "}
+                      <strong className="font-semibold text-stone-800">{p.registeredTeams ?? 0}</strong> /{" "}
+                      {p.teamRegistrationLimit}
+                    </span>
                   ) : (
-                    <>Teams registered: {p.registeredTeams ?? 0}</>
+                    <span>
+                      Teams registered:{" "}
+                      <strong className="font-semibold text-stone-800">{p.registeredTeams ?? 0}</strong>
+                    </span>
                   )}
-                </div>
+                </>
+              }
+              action={
                 <Link
                   to={`/ich2026/submit?problemId=${p.id}`}
-                  className="px-4 py-2 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 transition"
+                  className="inline-flex w-full sm:w-auto min-w-[10rem] justify-center px-5 py-2.5 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition shadow-sm"
                 >
-                  Select & Submit
+                  Select &amp; Submit
                 </Link>
-              </div>
-            </div>
+              }
+            />
           ))}
         </div>
       )}
 
       {problems.length === 0 && !loading && (
-        <div className="mt-6 bg-blue-50 border border-blue-100 rounded-2xl p-6 text-gray-700">
+        <div className="mt-10 rounded-2xl border border-stone-200 bg-stone-50/80 p-8 sm:p-10 text-stone-700 font-sans leading-relaxed">
           No problems added yet. Please check back later.
         </div>
       )}
@@ -89,4 +91,3 @@ const HackathonProblems = () => {
 };
 
 export default HackathonProblems;
-

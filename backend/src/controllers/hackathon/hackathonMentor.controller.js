@@ -3,7 +3,7 @@ import HackathonUser from "../../models/hackathon/HackathonUserModel.js";
 import HackathonMentor from "../../models/hackathon/HackathonMentorModel.js";
 import HackathonTeam from "../../models/hackathon/HackathonTeamModel.js";
 import HackathonTeamMentor from "../../models/hackathon/HackathonTeamMentorModel.js";
-import HackathonProblem from "../../models/hackathon/HackathonProblemModel.js";
+import HackathonProblemMentor from "../../models/hackathon/HackathonProblemMentorModel.js";
 import HackathonSession from "../../models/hackathon/HackathonSessionModel.js";
 import HackathonSubmission from "../../models/hackathon/HackathonSubmissionModel.js";
 
@@ -148,7 +148,7 @@ export const adminDeleteMentor = async (req, res) => {
 
     const userId = mentor.userId;
 
-    await HackathonProblem.update({ mentorId: null }, { where: { mentorId: mentor.id } });
+    await HackathonProblemMentor.destroy({ where: { mentorId: mentor.id } });
     await HackathonTeamMentor.destroy({ where: { mentorId: mentor.id } });
     await HackathonSubmission.update(
       { mentorApproved: false, mentorApprovedByUserId: null, mentorApprovedAt: null },

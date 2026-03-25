@@ -1,6 +1,12 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { axiosInstance } from "../../lib/axios.js";
 
+function mentorNamesText(p) {
+  const list = Array.isArray(p.mentors) && p.mentors.length ? p.mentors : p.mentor ? [p.mentor] : [];
+  const names = list.map((m) => m?.user?.fullName).filter(Boolean);
+  return names.length ? names.join(", ") : "—";
+}
+
 const tabs = [
   { id: "create", label: "Add problem" },
   { id: "details", label: "Problem details" },
@@ -14,7 +20,7 @@ const HackathonAdminProblems = () => {
   const [title, setTitle] = useState("");
   const [sector, setSector] = useState("");
   const [description, setDescription] = useState("");
-  const [mentorId, setMentorId] = useState("");
+  const [selectedMentorIds, setSelectedMentorIds] = useState(() => new Set());
   const [teamRegistrationLimit, setTeamRegistrationLimit] = useState("");
 
   const [search, setSearch] = useState("");
@@ -55,20 +61,23 @@ const HackathonAdminProblems = () => {
     e.preventDefault();
     setError(null);
     try {
+      const mentorIds = [...selectedMentorIds].map(Number).filter((n) => Number.isInteger(n) && n > 0);
+      if (mentorIds.length < 1) {
+        setError("Select at least one mentor");
+        return;
+      }
       const payload = {
         title,
         description,
         sector,
-        mentorId: Number(mentorId),
+        mentorIds,
         teamRegistrationLimit: teamRegistrationLimit.trim() === "" ? null : teamRegistrationLimit,
       };
       const res = await axiosInstance.post("/ich2026/admin/problems", payload);
       const p = res.data.problem;
-      const selectedMentor = mentors.find((m) => Number(m.id) === Number(payload.mentorId)) || null;
       setProblems((prev) => [
         {
           ...p,
-          mentor: selectedMentor,
           submissionCount: 0,
           pocSubmissionCount: 0,
           prototypeSubmissionCount: 0,
@@ -82,7 +91,7 @@ const HackathonAdminProblems = () => {
       setTitle("");
       setSector("");
       setDescription("");
-      setMentorId("");
+      setSelectedMentorIds(new Set());
       setTeamRegistrationLimit("");
       setActiveTab("details");
     } catch (e2) {
@@ -154,21 +163,40 @@ const HackathonAdminProblems = () => {
                 className="mt-2 w-full rounded-xl border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
-            <div>
-              <label className="text-sm font-medium text-gray-800">Mentor</label>
-              <select
-                value={mentorId}
-                onChange={(e) => setMentorId(e.target.value)}
-                required
-                className="mt-2 w-full rounded-xl border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="">Select mentor</option>
-                {mentors.map((m) => (
-                  <option key={m.id} value={m.id}>
-                    {m.user?.fullName || "Mentor"}{m.user?.email ? ` (${m.user.email})` : ""}
-                  </option>
-                ))}
-              </select>
+            <div className="md:col-span-2">
+              <label className="text-sm font-medium text-gray-800">Mentors</label>
+              <p className="mt-1 text-xs text-gray-500">Select one or more mentors for this problem.</p>
+              <div className="mt-2 max-h-48 overflow-y-auto rounded-xl border border-gray-300 px-3 py-2 space-y-2">
+                {mentors.length === 0 ? (
+                  <div className="text-sm text-gray-500">No mentors yet. Add mentors under Admin → Mentors.</div>
+                ) : (
+                  mentors.map((m) => {
+                    const checked = selectedMentorIds.has(Number(m.id));
+                    return (
+                      <label key={m.id} className="flex items-start gap-2 cursor-pointer text-sm">
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={(e) => {
+                            setSelectedMentorIds((prev) => {
+                              const next = new Set(prev);
+                              const id = Number(m.id);
+                              if (e.target.checked) next.add(id);
+                              else next.delete(id);
+                              return next;
+                            });
+                          }}
+                          className="mt-0.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        />
+                        <span className="text-gray-800">
+                          {m.user?.fullName || "Mentor"}
+                          {m.user?.email ? <span className="text-gray-500"> ({m.user.email})</span> : null}
+                        </span>
+                      </label>
+                    );
+                  })
+                )}
+              </div>
             </div>
           </div>
 
@@ -223,7 +251,7 @@ const HackathonAdminProblems = () => {
               <thead>
                 <tr className="border-b border-gray-100 bg-gray-50 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
                   <th className="px-4 py-3">Problem</th>
-                  <th className="px-4 py-3 whitespace-nowrap">Mentor</th>
+                  <th className="px-4 py-3 whitespace-nowrap">Mentors</th>
                   <th className="px-4 py-3 whitespace-nowrap">Teams (submitted)</th>
                   <th className="px-4 py-3 whitespace-nowrap">Approved</th>
                   <th className="px-4 py-3 whitespace-nowrap">Pending</th>
@@ -240,8 +268,8 @@ const HackathonAdminProblems = () => {
                       <div className="font-semibold text-gray-900">{p.title}</div>
                       <div className="text-xs text-blue-700 mt-0.5">{p.sector || "—"}</div>
                     </td>
-                    <td className="px-4 py-3 text-gray-800 whitespace-nowrap">
-                      {p.mentor?.user?.fullName || "—"}
+                    <td className="px-4 py-3 text-gray-800 max-w-xs">
+                      {mentorNamesText(p)}
                     </td>
                     <td className="px-4 py-3 font-medium text-gray-900">{p.teamsSubmitted ?? 0}</td>
                     <td className="px-4 py-3 text-gray-800">{p.teamsApproved ?? 0}</td>
@@ -278,7 +306,7 @@ const HackathonAdminProblems = () => {
               <div key={p.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
                 <div className="text-xs font-semibold text-blue-700">{p.sector || "Sector"}</div>
                 <div className="text-base font-bold text-gray-900 mt-1">{p.title}</div>
-                <div className="mt-1 text-xs text-gray-600">Mentor: {p.mentor?.user?.fullName || "—"}</div>
+                <div className="mt-1 text-xs text-gray-600">Mentors: {mentorNamesText(p)}</div>
                 <dl className="mt-3 grid grid-cols-2 gap-2 text-xs text-gray-700">
                   <div>
                     <dt className="text-gray-500">Submitted</dt>

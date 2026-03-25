@@ -1,6 +1,7 @@
 import { Sequelize } from "sequelize";
 import { ENV } from "./env.js";
 import { ensureHackathonProblemColumns } from "../scripts/ensureHackathonProblemColumns.js";
+import { ensureHackathonProblemMentors } from "../scripts/ensureHackathonProblemMentors.js";
 import { ensureHackathonSubmissionPhaseColumns } from "../scripts/ensureHackathonSubmissionPhaseColumns.js";
 import { ensureHackathonSubmissionColumns } from "../scripts/ensureHackathonSubmissionColumns.js";
 
@@ -54,6 +55,7 @@ export const connectDB = async () => {
 
     await migrateLegacyUsers();
     await ensureHackathonProblemColumns({ sequelize });
+    await ensureHackathonProblemMentors({ sequelize });
     await ensureHackathonSubmissionPhaseColumns({ sequelize });
     await ensureHackathonSubmissionColumns({ sequelize });
     await sequelize.sync();

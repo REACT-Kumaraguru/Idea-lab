@@ -1,9 +1,10 @@
-import { QueryTypes } from "sequelize";
+import { Op, QueryTypes } from "sequelize";
 import { sequelize } from "../../lib/db.js";
 import HackathonProblem from "../../models/hackathon/HackathonProblemModel.js";
 import HackathonSubmission from "../../models/hackathon/HackathonSubmissionModel.js";
 import HackathonMentor from "../../models/hackathon/HackathonMentorModel.js";
 import HackathonUser from "../../models/hackathon/HackathonUserModel.js";
+import HackathonProblemMentor from "../../models/hackathon/HackathonProblemMentorModel.js";
 
 /** @returns {Promise<Record<number, number>>} */
 async function getDistinctTeamCountByProblem() {
@@ -70,7 +71,7 @@ export const getProblems = async (req, res) => {
       include: [
         {
           model: HackathonMentor,
-          as: "mentor",
+          as: "mentors",
           required: false,
           include: [
             {
@@ -79,6 +80,7 @@ export const getProblems = async (req, res) => {
               attributes: ["id", "fullName", "email", "phoneNumber"],
             },
           ],
+          through: { attributes: [] },
         },
       ],
     });
@@ -88,10 +90,12 @@ export const getProblems = async (req, res) => {
     const enriched = problems.map((p) => {
       const json = p.toJSON();
       const registeredTeams = teamCountMap[p.id] || 0;
+      const mentors = Array.isArray(json.mentors) ? json.mentors.map((m) => serializeMentor(m)) : [];
       return {
         ...json,
         registeredTeams,
-        mentor: serializeMentor(json.mentor),
+        mentors,
+        mentor: mentors[0] || null,
       };
     });
 
@@ -103,7 +107,7 @@ export const getProblems = async (req, res) => {
 };
 
 export const adminAddProblem = async (req, res) => {
-  const { title, description, sector, mentorId, teamRegistrationLimit } = req.body || {};
+  const { title, description, sector, mentorIds, mentorId, teamRegistrationLimit } = req.body || {};
   try {
     if (!title?.trim() || !description?.trim()) {
       return res.status(400).json({ message: "title and description are required" });
@@ -118,24 +122,49 @@ export const adminAddProblem = async (req, res) => {
       limitVal = n;
     }
 
-    const resolvedMentorId = Number(mentorId);
-    if (!Number.isInteger(resolvedMentorId)) {
-      return res.status(400).json({ message: "mentorId is required and must be a valid mentor id" });
+    const rawIds = Array.isArray(mentorIds) ? mentorIds : mentorId != null ? [mentorId] : [];
+    const mentorIdList = [...new Set(rawIds.map((x) => Number(x)).filter((n) => Number.isInteger(n) && n > 0))];
+    if (mentorIdList.length < 1) {
+      return res.status(400).json({ message: "At least one mentor is required (mentorIds)" });
     }
-    const mentor = await HackathonMentor.findByPk(resolvedMentorId);
-    if (!mentor) {
-      return res.status(404).json({ message: "Mentor not found" });
+
+    const mentors = await HackathonMentor.findAll({ where: { id: { [Op.in]: mentorIdList } } });
+    if (mentors.length !== mentorIdList.length) {
+      return res.status(400).json({ message: "One or more mentor ids are invalid" });
     }
 
     const problem = await HackathonProblem.create({
       title: title.trim(),
       description: description.trim(),
       sector: sector ? String(sector).trim() : null,
-      mentorId: resolvedMentorId,
       teamRegistrationLimit: limitVal,
     });
 
-    return res.status(201).json({ problem });
+    await HackathonProblemMentor.bulkCreate(
+      mentorIdList.map((mid) => ({ problemId: problem.id, mentorId: mid }))
+    );
+
+    const full = await HackathonProblem.findByPk(problem.id, {
+      include: [
+        {
+          model: HackathonMentor,
+          as: "mentors",
+          include: [{ model: HackathonUser, as: "user", attributes: ["id", "fullName", "email", "phoneNumber"] }],
+          through: { attributes: [] },
+        },
+      ],
+    });
+
+    const json = full.toJSON();
+    const mentorsJson = Array.isArray(json.mentors) ? json.mentors.map((m) => serializeMentor(m)) : [];
+
+    return res.status(201).json({
+      problem: {
+        ...json,
+        mentors: mentorsJson,
+        mentor: mentorsJson[0] || null,
+      },
+    });
   } catch (error) {
     console.log("Error in adminAddProblem:", error.message);
     return res.status(500).json({ message: "Internal Server Error" });
@@ -149,7 +178,7 @@ export const adminGetProblems = async (req, res) => {
       include: [
         {
           model: HackathonMentor,
-          as: "mentor",
+          as: "mentors",
           required: false,
           include: [
             {
@@ -158,6 +187,7 @@ export const adminGetProblems = async (req, res) => {
               attributes: ["id", "fullName", "email", "phoneNumber"],
             },
           ],
+          through: { attributes: [] },
         },
       ],
     });
@@ -189,6 +219,7 @@ export const adminGetProblems = async (req, res) => {
       const t = tally[p.id] || { total: 0, poc: 0, prototype: 0 };
       const st = statusMap[p.id] || { pending: 0, approved: 0, rejected: 0 };
       const teamsSubmitted = teamCountMap[p.id] || 0;
+      const mentors = Array.isArray(p.mentors) ? p.mentors.map((m) => serializeMentor(m)) : [];
       return {
         ...p.toJSON(),
         submissionCount: t.total,
@@ -198,7 +229,8 @@ export const adminGetProblems = async (req, res) => {
         teamsPending: st.pending,
         teamsApproved: st.approved,
         teamsRejected: st.rejected,
-        mentor: serializeMentor(p.mentor),
+        mentors,
+        mentor: mentors[0] || null,
       };
     });
 
@@ -222,6 +254,7 @@ export const adminDeleteProblem = async (req, res) => {
     }
 
     await HackathonSubmission.destroy({ where: { problemId: id } });
+    await HackathonProblemMentor.destroy({ where: { problemId: id } });
     await problem.destroy();
 
     return res.status(200).json({ message: "Problem deleted", id });

@@ -89,7 +89,7 @@ export const getDashboard = async (req, res) => {
       include: [
         {
           model: HackathonMentor,
-          as: "mentor",
+          as: "mentors",
           required: false,
           include: [
             {
@@ -98,6 +98,7 @@ export const getDashboard = async (req, res) => {
               attributes: ["id", "fullName", "email"],
             },
           ],
+          through: { attributes: [] },
         },
       ],
     });
@@ -114,24 +115,28 @@ export const getDashboard = async (req, res) => {
       teamCountMap[Number(r.problemId)] = Number(r.n) || 0;
     }
 
-    const problems = problemsRaw.map((p) => ({
-      ...p.toJSON(),
-      registeredTeams: teamCountMap[p.id] || 0,
-      mentor: p.mentor
-        ? {
-            id: p.mentor.id,
-            userId: p.mentor.userId,
-            expertise: p.mentor.expertise || null,
-            user: p.mentor.user
-              ? {
-                  id: p.mentor.user.id,
-                  fullName: p.mentor.user.fullName,
-                  email: p.mentor.user.email,
-                }
-              : null,
-          }
-        : null,
-    }));
+    const problems = problemsRaw.map((p) => {
+      const json = p.toJSON();
+      const mentorList = Array.isArray(json.mentors) ? json.mentors : [];
+      const mentors = mentorList.map((m) => ({
+        id: m.id,
+        userId: m.userId,
+        expertise: m.expertise || null,
+        user: m.user
+          ? {
+              id: m.user.id,
+              fullName: m.user.fullName,
+              email: m.user.email,
+            }
+          : null,
+      }));
+      return {
+        ...json,
+        registeredTeams: teamCountMap[p.id] || 0,
+        mentors,
+        mentor: mentors[0] || null,
+      };
+    });
 
     let team = null;
     if (role === "student") team = await getTeamForStudentUserId(userId);
