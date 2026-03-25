@@ -14,7 +14,8 @@ import HackathonTeamMentor from "../../models/hackathon/HackathonTeamMentorModel
 
 const toFileUrl = (file) => {
   // Store an API-served URL so Nginx can proxy it.
-  return `/api/ich2026/uploads/hackathon/${file.filename}`;
+  // Use `/download/...` to avoid Nginx rules blocking `/uploads/...`.
+  return `/api/ich2026/download/hackathon/${file.filename}`;
 };
 
 const phaseEnum = ["poc", "prototype", "final"];

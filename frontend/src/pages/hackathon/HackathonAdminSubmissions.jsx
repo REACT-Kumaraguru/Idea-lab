@@ -18,7 +18,13 @@ function fileHref(path) {
   // Backward compatibility: old submissions stored `/src/uploads/hackathon/...`.
   if (path.startsWith("/src/uploads/hackathon/")) {
     const filename = path.split("/").pop();
-    path = `/api/ich2026/uploads/hackathon/${filename}`;
+    path = `/api/ich2026/download/hackathon/${filename}`;
+  }
+
+  // Backward compatibility: old submissions stored `/api/ich2026/uploads/hackathon/...`.
+  if (path.startsWith("/api/ich2026/uploads/hackathon/")) {
+    const filename = path.split("/").pop();
+    path = `/api/ich2026/download/hackathon/${filename}`;
   }
 
   const origin = API_BASE?.replace(/\/$/, "") || "";

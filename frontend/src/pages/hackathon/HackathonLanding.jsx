@@ -396,7 +396,7 @@ const HackathonLanding = () => {
                 <div className="font-extrabold text-white">Student Coordinators</div>
                 <div className="mt-4 space-y-3 text-white/80 text-sm">
                   <div>
-                    <div className="font-semibold text-white">M. Sriarunachaleeshwaran - +91 9361883441-arun
+                    <div className="font-semibold text-white">M. Sriarunachaleeshwaran - +91 9361883441
                     </div>
                   </div>
                   <div>
