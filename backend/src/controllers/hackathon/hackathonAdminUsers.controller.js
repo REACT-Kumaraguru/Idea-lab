@@ -146,8 +146,11 @@ export const deleteHackathonAdmin = async (req, res) => {
   const existing = await HackathonUser.findByPk(adminId);
   if (!existing || existing.role !== "admin") return res.status(404).json({ message: "Admin not found" });
 
-  if (normalizeEmail(existing.email) === DEFAULT_ADMIN_EMAIL) {
-    return res.status(400).json({ message: "You cannot delete the default react@kct.ac.in admin" });
+  const adminCount = await HackathonUser.count({ where: { role: "admin" } });
+  if (adminCount <= 1) {
+    return res.status(400).json({
+      message: "Cannot delete the last remaining admin. Create another admin account first, then you can remove this one.",
+    });
   }
 
   await existing.destroy();
