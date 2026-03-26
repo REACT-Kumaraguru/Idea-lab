@@ -1,5 +1,9 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { axiosInstance } from "../../lib/axios.js";
+import {
+  collectRegisteredStudentsFromTeams,
+  handleDownloadPDF,
+} from "../../lib/hackathonDownloadStudentsPdf.js";
 
 const HackathonAdminTeams = () => {
   const [teams, setTeams] = useState([]);
@@ -20,11 +24,22 @@ const HackathonAdminTeams = () => {
     load();
   }, []);
 
+  const registeredStudents = useMemo(() => collectRegisteredStudentsFromTeams(teams), [teams]);
+
   if (loading) return <div className="text-gray-600">Loading...</div>;
 
   return (
     <div>
-      <h2 className="text-xl font-bold text-gray-900">Teams</h2>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h2 className="text-xl font-bold text-gray-900">Teams</h2>
+        <button
+          type="button"
+          onClick={() => handleDownloadPDF(registeredStudents)}
+          className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-800 shadow-sm hover:bg-gray-50"
+        >
+          Download PDF
+        </button>
+      </div>
       <p className="text-sm text-gray-600 mt-1">
         Teams are participant-created. A team becomes active automatically when it has at least 1 member.
       </p>

@@ -7,7 +7,18 @@ async function serializeTeamForAdmin(teamInstance) {
   const id = team.id;
 
   const leader = await HackathonUser.findByPk(team.leaderUserId, {
-    attributes: ["id", "fullName", "email", "phoneNumber", "role"],
+    attributes: [
+      "id",
+      "fullName",
+      "email",
+      "phone",
+      "phoneNumber",
+      "role",
+      "degree",
+      "graduationYear",
+      "college",
+      "branch",
+    ],
   });
 
   const membersRows = await HackathonTeamMember.findAll({
@@ -18,7 +29,18 @@ async function serializeTeamForAdmin(teamInstance) {
   const members = await Promise.all(
     membersRows.map(async (m) => {
       const u = await HackathonUser.findByPk(m.userId, {
-        attributes: ["id", "fullName", "email", "phoneNumber", "role"],
+        attributes: [
+          "id",
+          "fullName",
+          "email",
+          "phone",
+          "phoneNumber",
+          "role",
+          "degree",
+          "graduationYear",
+          "college",
+          "branch",
+        ],
       });
       return {
         id: m.id,
@@ -27,7 +49,12 @@ async function serializeTeamForAdmin(teamInstance) {
         fullName: u?.fullName ?? null,
         email: u?.email ?? null,
         phoneNumber: u?.phoneNumber ?? null,
+        phone: u?.phone ?? null,
         role: u?.role ?? null,
+        degree: u?.degree ?? null,
+        graduationYear: u?.graduationYear ?? null,
+        college: u?.college ?? null,
+        branch: u?.branch ?? null,
       };
     })
   );
@@ -44,7 +71,12 @@ async function serializeTeamForAdmin(teamInstance) {
           fullName: leader.fullName,
           email: leader.email,
           phoneNumber: leader.phoneNumber,
+          phone: leader.phone,
           role: leader.role,
+          degree: leader.degree,
+          graduationYear: leader.graduationYear,
+          college: leader.college,
+          branch: leader.branch,
         }
       : null,
     members,
