@@ -53,7 +53,13 @@ const HackathonLanding = () => {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3.5">
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-                <img src={KctLogo} alt="Kumaraguru College of Technology" className="h-8 sm:h-9 w-auto object-contain shrink-0" />
+                <div className="shrink-0 rounded-lg bg-white px-2 py-1.5 shadow-[0_2px_12px_rgba(0,0,0,0.25)] ring-1 ring-white/20">
+                  <img
+                    src={KctLogo}
+                    alt="Kumaraguru College of Technology"
+                    className="h-7 sm:h-8 w-auto max-h-8 object-contain block"
+                  />
+                </div>
                 <div className="h-7 w-px bg-[#3B2A6B] shrink-0" />
                 <img src={IdeaLabLogo} alt="AICTE IDEA Lab" className="h-8 sm:h-9 w-auto object-contain shrink-0" />
                 <span className="hidden sm:inline font-extrabold text-white tracking-tight text-sm md:text-base whitespace-nowrap">
