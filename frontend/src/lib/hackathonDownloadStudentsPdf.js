@@ -1,35 +1,6 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
-/**
- * Unique registered students from admin teams payload (GET /ich2026/admin/teams).
- */
-export function collectRegisteredStudentsFromTeams(teams) {
-  const byUserId = new Map();
-  for (const t of teams || []) {
-    for (const m of t.members || []) {
-      if (m.userId != null && !byUserId.has(m.userId)) {
-        byUserId.set(m.userId, m);
-      }
-    }
-    const l = t.leader;
-    if (l?.id != null && !byUserId.has(l.id)) {
-      byUserId.set(l.id, {
-        userId: l.id,
-        fullName: l.fullName,
-        email: l.email,
-        phoneNumber: l.phoneNumber,
-        phone: l.phone,
-        degree: l.degree,
-        graduationYear: l.graduationYear,
-        college: l.college,
-        branch: l.branch,
-      });
-    }
-  }
-  return Array.from(byUserId.values());
-}
-
 export function handleDownloadPDF(students) {
   const doc = new jsPDF();
 

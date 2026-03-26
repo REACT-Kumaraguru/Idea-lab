@@ -1,20 +1,22 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { axiosInstance } from "../../lib/axios.js";
-import {
-  collectRegisteredStudentsFromTeams,
-  handleDownloadPDF,
-} from "../../lib/hackathonDownloadStudentsPdf.js";
+import { handleDownloadPDF } from "../../lib/hackathonDownloadStudentsPdf.js";
 
 const HackathonAdminTeams = () => {
   const [teams, setTeams] = useState([]);
+  const [registeredStudents, setRegisteredStudents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
     const load = async () => {
       try {
-        const res = await axiosInstance.get("/ich2026/admin/teams");
-        setTeams(res.data.teams || []);
+        const [teamsRes, studentsRes] = await Promise.all([
+          axiosInstance.get("/ich2026/admin/teams"),
+          axiosInstance.get("/ich2026/admin/students"),
+        ]);
+        setTeams(teamsRes.data.teams || []);
+        setRegisteredStudents(studentsRes.data.students || []);
       } catch (e) {
         setError(e.response?.data?.message || "Failed to load teams");
       } finally {
@@ -23,8 +25,6 @@ const HackathonAdminTeams = () => {
     };
     load();
   }, []);
-
-  const registeredStudents = useMemo(() => collectRegisteredStudentsFromTeams(teams), [teams]);
 
   if (loading) return <div className="text-gray-600">Loading...</div>;
 
