@@ -216,8 +216,8 @@ const HackathonLanding = () => {
                   <div>
                     <div className="font-extrabold text-gray-900">Important Notice</div>
                     <div className="text-gray-500 text-sm mt-1 leading-relaxed">
-                      Each team must pay <span className="font-bold text-gray-900">₹500</span> registration fee.
-                      Payment should be made only after the team and selected problem statement are approved by the mentor.
+                      A registration fee of <span className="font-bold text-gray-900">₹500</span> per team must be paid
+                      only after shortlisting of the submitted solution/abstract/design by the assigned mentor.
                     </div>
                   </div>
                 </div>
@@ -256,7 +256,7 @@ const HackathonLanding = () => {
         {/* Event Timeline */}
         <section id="schedule" className="max-w-7xl mx-auto px-4 sm:px-6 scroll-mt-24">
           <div className="text-center mb-10">
-            <h2 className="text-2xl md:text-3xl font-extrabold text-gray-900">Event Timeline</h2>
+            <h2 className="text-2xl md:text-3xl font-extrabold text-gray-900">Hackathon Day</h2>
           </div>
           <div className="grid md:grid-cols-2 gap-6">
             <div className={`${cardBase} p-6 md:p-8 flex flex-col sm:flex-row gap-6`}>
@@ -267,11 +267,11 @@ const HackathonLanding = () => {
               </div>
               <div className="flex-1 space-y-4 text-left border-t sm:border-t-0 sm:border-l border-gray-200 sm:pl-6 pt-4 sm:pt-0">
                 <div>
-                  <div className="font-extrabold text-gray-900">Morning & afternoon</div>
+                  <div className="font-extrabold text-gray-900">Prototype Development & Mentoring</div>
                   <ul className="mt-2 space-y-1.5 text-gray-500 text-sm">
-                    <li>• Industry Problems</li>
-                    <li>• Ideation</li>
-                    <li>• PoC</li>
+                    <li>• Build and refine your prototype.</li>
+                    <li>• Follow technical guidance from mentors.</li>
+                    <li>• Improve your solution based on suggestions.</li>
                   </ul>
                 </div>
               </div>
@@ -284,11 +284,11 @@ const HackathonLanding = () => {
               </div>
               <div className="flex-1 space-y-4 text-left border-t sm:border-t-0 sm:border-l border-gray-200 sm:pl-6 pt-4 sm:pt-0">
                 <div>
-                  <div className="font-extrabold text-gray-900">Final stretch</div>
+                  <div className="font-extrabold text-gray-900">Final Review & Presentation</div>
                   <ul className="mt-2 space-y-1.5 text-gray-500 text-sm">
-                    <li>• Prototype (MUP)</li>
-                    <li>• Internships</li>
-                    <li>• Industry Deployment</li>
+                    <li>• Final refinement of the solution.</li>
+                    <li>• Project presentation before the jury panel.</li>
+                    <li>• Demonstration of your PoC / Prototype.</li>
                   </ul>
                 </div>
               </div>
@@ -301,10 +301,10 @@ const HackathonLanding = () => {
           <h2 className="text-2xl md:text-3xl font-extrabold text-gray-900 text-center">How to Participate</h2>
           <div className="mt-8 grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
             {[
-              { n: "01", title: "Explore", text: "Work on real industry problems." },
-              { n: "02", title: "Submit", text: "Get guided by Industry & Academic Mentors." },
-              { n: "03", title: "Shortlist", text: "Build deployable solutions." },
-              { n: "04", title: "Participate", text: "Gain hands-on experience." },
+              { n: "01", title: "Register", text: "Create your account and complete the hackathon registration form." },
+              { n: "02", title: "Choose Problem Statement", text: "Select your preferred problem statement from the available industry challenges." },
+              { n: "03", title: "Submit Your Solution", text: "Upload your abstract / proposed solution / design before the submission deadline." },
+              { n: "04", title: "Shortlisting & Registration Fee", text: "If shortlisted, you will receive confirmation and can complete the registration fee payment." },
             ].map((c) => (
               <div key={c.title} className={`${cardBase} p-6 relative overflow-hidden`}>
                 <div className="text-5xl font-black text-gray-200 absolute -right-1 -top-1 select-none">{c.n}</div>
@@ -315,6 +315,9 @@ const HackathonLanding = () => {
               </div>
             ))}
           </div>
+          <p className="mt-6 text-center text-gray-500 text-sm md:text-base">
+            <span className="font-semibold text-gray-900">5. Participate in Hackathon:</span> Join the hackathon event and present your solution.
+          </p>
         </section>
 
         {/* Post Event Benefits */}
@@ -325,7 +328,7 @@ const HackathonLanding = () => {
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
             {[
               { title: "Awards & Cash Prizes", text: "Prize upto ₹60,000", Icon: Sparkles },
-              { title: "Reimbursement", text: "Seed Money reimbursement for hardware MUP", Icon: BriefcaseBusiness },
+              { title: "Reimbursement", text: "Reimbursement for hardware MUP as per guidelines", Icon: BriefcaseBusiness },
               { title: "Industry Internship", text: "Industry Internship", Icon: Users },
               { title: "Real-world Implementation", text: "Patent eligibility", Icon: Building2 },
             ].map(({ title, text, Icon }) => (
