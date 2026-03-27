@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { axiosInstance } from "../../lib/axios.js";
 import { getHackathonTemplatePdfHref } from "../../lib/config.js";
+import { downloadHackathonSubmissionFile, fileHref } from "../../lib/hackathonSubmissionFiles.js";
 import { useHackathonAuthStore } from "../../store/useHackathonAuthStore";
 import { AlertTriangle } from "lucide-react";
 import {
@@ -831,15 +832,23 @@ const HackathonDashboard = () => {
                           {getSubmissionFiles(s).length ? (
                             <div className="mt-2 space-y-2">
                               {getSubmissionFiles(s).map((u, idx) => (
-                                <a
-                                  key={`${u}-${idx}`}
-                                  href={u}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  className="block text-sm text-[#2563EB] hover:underline break-all"
-                                >
-                                  {fileNameFromUrl(u)}
-                                </a>
+                                <div key={`${u}-${idx}`} className="flex flex-wrap items-center gap-2">
+                                  <button
+                                    type="button"
+                                    onClick={() => void downloadHackathonSubmissionFile(u)}
+                                    className="inline-flex items-center rounded-xl bg-[#2563EB] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#1D4ED8] transition"
+                                  >
+                                    Download
+                                  </button>
+                                  <a
+                                    href={fileHref(u)}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="text-sm text-[#2563EB] hover:underline break-all"
+                                  >
+                                    {fileNameFromUrl(u)}
+                                  </a>
+                                </div>
                               ))}
                             </div>
                           ) : (
@@ -917,6 +926,45 @@ const HackathonDashboard = () => {
                               </div>
                             ) : null}
                           </div>
+                        </div>
+                        {s.description ? (
+                          <div className="mt-4 text-sm text-gray-700 whitespace-pre-wrap border-t border-[#E2E8F0] pt-4">
+                            {s.description}
+                          </div>
+                        ) : null}
+                        <div className="mt-4 rounded-2xl border border-[#E2E8F0] bg-[#F8FAFC] p-4">
+                          <div className="text-sm font-bold text-gray-900">
+                            {s.submissionPhase === "poc"
+                              ? "PoC files"
+                              : s.submissionPhase === "prototype"
+                                ? "Prototype files"
+                                : "Final files"}
+                          </div>
+                          {getSubmissionFiles(s).length ? (
+                            <div className="mt-2 space-y-2">
+                              {getSubmissionFiles(s).map((u, idx) => (
+                                <div key={`${u}-${idx}`} className="flex flex-wrap items-center gap-2">
+                                  <button
+                                    type="button"
+                                    onClick={() => void downloadHackathonSubmissionFile(u)}
+                                    className="inline-flex items-center rounded-xl bg-[#2563EB] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#1D4ED8] transition"
+                                  >
+                                    Download
+                                  </button>
+                                  <a
+                                    href={fileHref(u)}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="text-sm text-[#2563EB] hover:underline break-all"
+                                  >
+                                    {fileNameFromUrl(u)}
+                                  </a>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="text-sm text-gray-600 mt-2">No files for this phase.</div>
+                          )}
                         </div>
                       </div>
                     ))}

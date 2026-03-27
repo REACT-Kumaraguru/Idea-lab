@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { axiosInstance } from "../../lib/axios.js";
-import { API_BASE } from "../../lib/config.js";
+import { downloadHackathonSubmissionFile, fileHref } from "../../lib/hackathonSubmissionFiles.js";
 
 const formatStatus = (s) => {
   if (!s) return "—";
@@ -10,26 +10,6 @@ const formatStatus = (s) => {
 
 const isDecisionLocked = (status) =>
   status === "approved" || status === "rejected" || status === "winner";
-
-function fileHref(path) {
-  if (!path) return "#";
-  if (path.startsWith("http")) return path;
-
-  // Backward compatibility: old submissions stored `/src/uploads/hackathon/...`.
-  if (path.startsWith("/src/uploads/hackathon/")) {
-    const filename = path.split("/").pop();
-    path = `/api/ich2026/download/hackathon/${filename}`;
-  }
-
-  // Backward compatibility: old submissions stored `/api/ich2026/uploads/hackathon/...`.
-  if (path.startsWith("/api/ich2026/uploads/hackathon/")) {
-    const filename = path.split("/").pop();
-    path = `/api/ich2026/download/hackathon/${filename}`;
-  }
-
-  const origin = API_BASE?.replace(/\/$/, "") || "";
-  return path.startsWith("/") ? `${origin}${path}` : `${origin}/${path}`;
-}
 
 function SubmissionCard({ s, adminNotes, setAdminNotes, updateStatus }) {
   const locked = isDecisionLocked(s.status);
@@ -95,10 +75,22 @@ function SubmissionCard({ s, adminNotes, setAdminNotes, updateStatus }) {
           <span className="font-semibold text-gray-700">
             {s.submissionPhase === "poc" ? "PoC files" : "Prototype files"}:
           </span>
-          <ul className="mt-1 space-y-1 list-disc list-inside text-blue-600">
+          <ul className="mt-1 space-y-2 list-none">
             {files.map((f, i) => (
-              <li key={i}>
-                <a href={fileHref(f)} target="_blank" rel="noopener noreferrer" className="hover:underline break-all">
+              <li key={i} className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => void downloadHackathonSubmissionFile(f)}
+                  className="inline-flex rounded-lg bg-blue-600 px-2.5 py-1 text-xs font-semibold text-white hover:bg-blue-700"
+                >
+                  Download
+                </button>
+                <a
+                  href={fileHref(f)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-600 hover:underline break-all text-xs"
+                >
                   {f.split("/").pop() || f}
                 </a>
               </li>

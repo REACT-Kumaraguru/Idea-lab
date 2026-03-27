@@ -1,26 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { axiosInstance } from "../../lib/axios.js";
-import { API_BASE } from "../../lib/config.js";
-
-function fileHref(path) {
-  if (!path) return "#";
-  if (path.startsWith("http")) return path;
-
-  // Backward compatibility: old submissions stored `/src/uploads/hackathon/...`.
-  if (path.startsWith("/src/uploads/hackathon/")) {
-    const filename = path.split("/").pop();
-    path = `/api/ich2026/download/hackathon/${filename}`;
-  }
-
-  // Backward compatibility: old submissions stored `/api/ich2026/uploads/hackathon/...`.
-  if (path.startsWith("/api/ich2026/uploads/hackathon/")) {
-    const filename = path.split("/").pop();
-    path = `/api/ich2026/download/hackathon/${filename}`;
-  }
-
-  const origin = API_BASE?.replace(/\/$/, "") || "";
-  return path.startsWith("/") ? `${origin}${path}` : `${origin}/${path}`;
-}
+import { downloadHackathonSubmissionFile, fileHref } from "../../lib/hackathonSubmissionFiles.js";
 
 const HackathonStatus = () => {
   const [data, setData] = useState(null);
@@ -99,15 +79,23 @@ const HackathonStatus = () => {
                     <div className="text-xs text-gray-500">({Array.isArray(s.pocFilePaths) ? s.pocFilePaths.length : 0} files)</div>
                     <div className="mt-2 space-y-2">
                       {(s.pocFilePaths || []).map((f, idx) => (
-                        <a
-                          key={idx}
-                          href={fileHref(f)}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="block text-blue-700 hover:underline text-sm break-all"
-                        >
-                          {f.split("/").pop()}
-                        </a>
+                        <div key={idx} className="flex flex-wrap items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => void downloadHackathonSubmissionFile(f)}
+                            className="inline-flex rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700"
+                          >
+                            Download
+                          </button>
+                          <a
+                            href={fileHref(f)}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-sm text-blue-700 hover:underline break-all"
+                          >
+                            {f.split("/").pop()}
+                          </a>
+                        </div>
                       ))}
                       {!s.pocFilePaths?.length ? <div className="text-sm text-gray-600">—</div> : null}
                     </div>
@@ -117,15 +105,23 @@ const HackathonStatus = () => {
                     <div className="text-xs text-gray-500">({Array.isArray(s.prototypeFilePaths) ? s.prototypeFilePaths.length : 0} files)</div>
                     <div className="mt-2 space-y-2">
                       {(s.prototypeFilePaths || []).map((f, idx) => (
-                        <a
-                          key={idx}
-                          href={fileHref(f)}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="block text-blue-700 hover:underline text-sm break-all"
-                        >
-                          {f.split("/").pop()}
-                        </a>
+                        <div key={idx} className="flex flex-wrap items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => void downloadHackathonSubmissionFile(f)}
+                            className="inline-flex rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700"
+                          >
+                            Download
+                          </button>
+                          <a
+                            href={fileHref(f)}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-sm text-blue-700 hover:underline break-all"
+                          >
+                            {f.split("/").pop()}
+                          </a>
+                        </div>
                       ))}
                       {!s.prototypeFilePaths?.length ? <div className="text-sm text-gray-600">—</div> : null}
                     </div>

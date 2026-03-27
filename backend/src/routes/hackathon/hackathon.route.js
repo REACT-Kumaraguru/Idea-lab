@@ -68,15 +68,16 @@ router.get("/download/hackathon/:filename", async (req, res) => {
 });
 
 // Download Templatehackthon.pdf via API (avoid Nginx static-file misconfig).
-// Resolve in order: backend/assets (Docker), repo frontend/public (local monorepo).
+// Prefer monorepo frontend/public first — backend/assets may hold a tiny placeholder
+// that still "exists", which would otherwise be served and appear as a blank PDF.
 router.get("/templatehackthon.pdf", (req, res) => {
   try {
     const __filename = fileURLToPath(import.meta.url);
     const __dirnameRoute = path.dirname(__filename);
     const candidates = [
-      path.join(process.cwd(), "assets", "Templatehackthon.pdf"),
-      path.resolve(__dirnameRoute, "../../../assets/Templatehackthon.pdf"),
       path.resolve(__dirnameRoute, "../../../../frontend/public/Templatehackthon.pdf"),
+      path.resolve(__dirnameRoute, "../../../assets/Templatehackthon.pdf"),
+      path.join(process.cwd(), "assets", "Templatehackthon.pdf"),
     ];
     const pdfPath = candidates.find((p) => fs.existsSync(p));
     if (!pdfPath) {
