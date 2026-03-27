@@ -305,6 +305,7 @@ const HackathonLanding = () => {
               { n: "02", title: "Choose Problem Statement", text: "Select your preferred problem statement from the available industry challenges." },
               { n: "03", title: "Submit Your Solution", text: "Upload your abstract / proposed solution / design before the submission deadline." },
               { n: "04", title: "Shortlisting & Registration Fee", text: "If shortlisted, you will receive confirmation and can complete the registration fee payment." },
+              { n: "05", title: "Participate in Hackathon", text: "Join the hackathon event and present your solution." },
             ].map((c) => (
               <div key={c.title} className={`${cardBase} p-6 relative overflow-hidden`}>
                 <div className="text-5xl font-black text-gray-200 absolute -right-1 -top-1 select-none">{c.n}</div>
@@ -421,8 +422,7 @@ const HackathonLanding = () => {
             <div className="mt-6 rounded-xl border border-yellow-200 bg-yellow-50 px-5 py-4">
               <div className="font-extrabold text-yellow-700">Registration Fee Rule</div>
               <div className="text-gray-500 text-sm mt-1 leading-relaxed">
-                Each team must pay <span className="font-bold text-gray-900">₹500</span>. Payment should be made only after the team and selected problem statement are
-                approved by the Mentor and Industry Partner.
+                 A registration fee of ₹500 per team must be paid only after shortlisting of the submitted solution/abstract/design by the assigned mentor.
               </div>
             </div>
 
