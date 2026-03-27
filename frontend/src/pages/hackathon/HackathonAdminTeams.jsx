@@ -4,6 +4,7 @@ import { handleDownloadPDF } from "../../lib/hackathonDownloadStudentsPdf.js";
 
 const HackathonAdminTeams = () => {
   const [teams, setTeams] = useState([]);
+  const [submissions, setSubmissions] = useState([]);
   const [registeredStudents, setRegisteredStudents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -11,12 +12,14 @@ const HackathonAdminTeams = () => {
   useEffect(() => {
     const load = async () => {
       try {
-        const [teamsRes, studentsRes] = await Promise.all([
+        const [teamsRes, studentsRes, submissionsRes] = await Promise.all([
           axiosInstance.get("/ich2026/admin/teams"),
           axiosInstance.get("/ich2026/admin/students"),
+          axiosInstance.get("/ich2026/admin/submissions"),
         ]);
         setTeams(teamsRes.data.teams || []);
         setRegisteredStudents(studentsRes.data.students || []);
+        setSubmissions(submissionsRes.data.submissions || []);
       } catch (e) {
         setError(e.response?.data?.message || "Failed to load teams");
       } finally {
@@ -25,6 +28,18 @@ const HackathonAdminTeams = () => {
     };
     load();
   }, []);
+
+  const activeTeamsCount = teams.filter((t) => {
+    const members = t.members?.length || 0;
+    return t.status === "approved" || members >= 1;
+  }).length;
+  const submittedTeamsCount = new Set(
+    (submissions || [])
+      .map((s) => s?.team?.id ?? s?.teamId)
+      .filter((id) => Number.isFinite(Number(id)))
+      .map((id) => Number(id))
+  ).size;
+  const registeredStudentsCount = registeredStudents.length;
 
   if (loading) return <div className="text-gray-600">Loading...</div>;
 
@@ -44,6 +59,21 @@ const HackathonAdminTeams = () => {
         Teams are participant-created. A team becomes active automatically when it has at least 1 member.
       </p>
       {error ? <div className="mt-3 text-sm text-red-600 font-medium">{error}</div> : null}
+
+      <div className="mt-4 grid gap-3 sm:grid-cols-3">
+        <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+          <div className="text-xs font-semibold uppercase tracking-wide text-gray-500">Active Teams</div>
+          <div className="mt-1 text-2xl font-extrabold text-gray-900">{activeTeamsCount}</div>
+        </div>
+        <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+          <div className="text-xs font-semibold uppercase tracking-wide text-gray-500">Teams Submitted</div>
+          <div className="mt-1 text-2xl font-extrabold text-gray-900">{submittedTeamsCount}</div>
+        </div>
+        <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+          <div className="text-xs font-semibold uppercase tracking-wide text-gray-500">Registered Students</div>
+          <div className="mt-1 text-2xl font-extrabold text-gray-900">{registeredStudentsCount}</div>
+        </div>
+      </div>
 
       <div className="mt-4 overflow-x-auto">
         <table className="w-full text-left text-sm border border-gray-100 rounded-2xl bg-white shadow-sm">
