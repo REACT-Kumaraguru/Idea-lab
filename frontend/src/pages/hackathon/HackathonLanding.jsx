@@ -316,9 +316,6 @@ const HackathonLanding = () => {
               </div>
             ))}
           </div>
-          <p className="mt-6 text-center text-gray-500 text-sm md:text-base">
-            <span className="font-semibold text-gray-900">5. Participate in Hackathon:</span> Join the hackathon event and present your solution.
-          </p>
         </section>
 
         {/* Post Event Benefits */}
@@ -330,7 +327,7 @@ const HackathonLanding = () => {
             {[
               { title: "Awards & Cash Prizes", text: "Prize upto ₹60,000", Icon: Sparkles },
               { title: "Reimbursement", text: "Reimbursement for hardware MUP as per guidelines", Icon: BriefcaseBusiness },
-              { title: "Industry Internship", text: "Industry Internship", Icon: Users },
+              { title: "Industry Connect", text: "Industry Connect", Icon: Users },
               { title: "Real-world Implementation", text: "Patent eligibility", Icon: Building2 },
             ].map(({ title, text, Icon }) => (
               <div key={title} className={`${cardBase} p-6 text-center`}>
