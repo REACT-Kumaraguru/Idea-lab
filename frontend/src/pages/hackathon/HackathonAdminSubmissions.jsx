@@ -120,6 +120,7 @@ const HackathonAdminSubmissions = () => {
   const [submissions, setSubmissions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [exportLoading, setExportLoading] = useState(false);
 
   const [adminNotes, setAdminNotes] = useState({});
 
@@ -156,6 +157,41 @@ const HackathonAdminSubmissions = () => {
     return groups;
   }, [submissions]);
 
+  const downloadExcel = async () => {
+    setExportLoading(true);
+    setError(null);
+    try {
+      const res = await axiosInstance.get("/ich2026/admin/submissions/export-xlsx", {
+        responseType: "blob",
+      });
+      const dateStr = new Date().toISOString().slice(0, 10);
+      const blobUrl = URL.createObjectURL(res.data);
+      const a = document.createElement("a");
+      a.href = blobUrl;
+      a.download = `submissions_${dateStr}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(blobUrl);
+    } catch (e) {
+      let msg = "Failed to download Excel export";
+      if (e.response?.data instanceof Blob) {
+        try {
+          const text = await e.response.data.text();
+          const j = JSON.parse(text);
+          if (j?.message) msg = j.message;
+        } catch {
+          // ignore
+        }
+      } else if (typeof e.response?.data?.message === "string") {
+        msg = e.response.data.message;
+      }
+      setError(msg);
+    } finally {
+      setExportLoading(false);
+    }
+  };
+
   const updateStatus = async (id, status) => {
     try {
       const notes = adminNotes[id] || "";
@@ -175,10 +211,22 @@ const HackathonAdminSubmissions = () => {
 
   return (
     <div>
-      <h2 className="text-xl font-bold text-gray-900">Submissions</h2>
-      <p className="text-sm text-gray-600 mt-1">
-        Review by team. PoC and Prototype are listed separately with uploaded files.
-      </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h2 className="text-xl font-bold text-gray-900">Submissions</h2>
+          <p className="text-sm text-gray-600 mt-1">
+            Review by team. PoC and Prototype are listed separately with uploaded files.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => void downloadExcel()}
+          disabled={exportLoading}
+          className="shrink-0 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-800 shadow-sm hover:bg-gray-50 disabled:opacity-60"
+        >
+          {exportLoading ? "Preparing…" : "Download Excel"}
+        </button>
+      </div>
       {error ? <div className="mt-3 text-sm text-red-600 font-medium">{error}</div> : null}
 
       <div className="mt-4 space-y-8">

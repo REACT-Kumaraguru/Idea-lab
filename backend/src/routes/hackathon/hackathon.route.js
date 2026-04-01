@@ -47,6 +47,7 @@ import {
   adminAssignMentor,
 } from "../../controllers/hackathon/hackathonMentor.controller.js";
 import { setupHackathonAssociations } from "../../models/hackathon/associations.js";
+import { adminExportSubmissionsExcel } from "../../controllers/hackathon/hackathonAdminExport.controller.js";
 
 setupHackathonAssociations();
 
@@ -142,6 +143,12 @@ router.put("/admin/problems/:id", protectHackathonRoute, requireHackathonAdminRo
 router.delete("/admin/problems/:id", protectHackathonRoute, requireHackathonAdminRole, adminDeleteProblem);
 
 router.get("/admin/submissions", protectHackathonRoute, requireHackathonAdminRole, adminListSubmissions);
+router.get(
+  "/admin/submissions/export-xlsx",
+  protectHackathonRoute,
+  requireHackathonAdminRole,
+  adminExportSubmissionsExcel
+);
 router.post("/admin/submissions/:id/status", protectHackathonRoute, requireHackathonAdminRole, adminSetSubmissionStatus);
 
 // Hackathon admin account management (default admin only)
