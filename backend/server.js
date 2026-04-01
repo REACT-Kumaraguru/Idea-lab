@@ -73,6 +73,9 @@ app.use(
     },
   })
 );
+// Backward-compatible public paths for previously stored URLs.
+app.use("/api/uploads/hackathon", express.static(hackathonUploadsDir));
+app.use("/uploads/hackathon", express.static(hackathonUploadsDir));
 
 app.use(notFoundHandler);
 app.use(errorHandler);
