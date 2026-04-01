@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { axiosInstance } from "../../lib/axios.js";
 import { getHackathonTemplatePdfHref } from "../../lib/config.js";
+import { isAllowedSubmissionFile, validateSubmissionFiles } from "../../lib/hackathonSubmissionFileTypes.js";
 
 function mentorNamesText(p) {
   if (!p) return "Not assigned";
@@ -211,7 +212,7 @@ const HackathonSubmit = () => {
                 <option value="final">Final</option>
               </select>
               <div className="mt-2 text-xs text-gray-500">
-                Upload at least one file for the chosen phase.
+                Upload at least one file (PDF or DOCX only) for the chosen phase.
               </div>
             </div>
           </div>
@@ -251,10 +252,21 @@ const HackathonSubmit = () => {
             <input
               type="file"
               multiple
-              onChange={(e) => setFiles(Array.from(e.target.files || []))}
+              accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+              onChange={(e) => {
+                const picked = Array.from(e.target.files || []);
+                const allowed = picked.filter(isAllowedSubmissionFile);
+                if (allowed.length < picked.length) {
+                  setError("Only PDF or DOCX files are allowed.");
+                } else {
+                  setError(null);
+                }
+                setFiles(allowed);
+              }}
               className="mt-2 block w-full text-sm text-gray-700"
               disabled={!canSubmit}
             />
+            <p className="mt-1 text-xs text-gray-500">Accepted: PDF or DOCX only (browser check).</p>
           </div>
 
           {error ? <div className="mt-4 text-sm text-red-600 font-medium">{error}</div> : null}

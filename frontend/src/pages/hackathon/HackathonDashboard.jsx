@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { axiosInstance } from "../../lib/axios.js";
 import { getHackathonTemplatePdfHref } from "../../lib/config.js";
+import { isAllowedSubmissionFile, validateSubmissionFiles } from "../../lib/hackathonSubmissionFileTypes.js";
 import { downloadHackathonSubmissionFile, fileHref } from "../../lib/hackathonSubmissionFiles.js";
 import { useHackathonAuthStore } from "../../store/useHackathonAuthStore";
 import { AlertTriangle } from "lucide-react";
@@ -242,6 +243,12 @@ const HackathonDashboard = () => {
     if (!selectedProblemId) return setSubmitError("Please select a problem first.");
 
     if (!files || files.length === 0) return setSubmitError("Upload at least one file.");
+
+    const fileErr = validateSubmissionFiles(files);
+    if (fileErr) {
+      setSubmitError(fileErr);
+      return;
+    }
 
     setSubmitting(true);
     try {
@@ -709,10 +716,21 @@ const HackathonDashboard = () => {
                     <input
                       type="file"
                       multiple
+                      accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
                       disabled={!submitAllowed}
-                      onChange={(e) => setFiles(Array.from(e.target.files || []))}
+                      onChange={(e) => {
+                        const picked = Array.from(e.target.files || []);
+                        const allowed = picked.filter(isAllowedSubmissionFile);
+                        if (allowed.length < picked.length) {
+                          setSubmitError("Only PDF or DOCX files are allowed.");
+                        } else {
+                          setSubmitError(null);
+                        }
+                        setFiles(allowed);
+                      }}
                       className="mt-2 block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-2xl file:border-0 file:text-sm file:font-semibold file:bg-gradient-to-r file:from-[#2563EB] file:to-[#1D4ED8] file:text-white file:hover:shadow-md"
                     />
+                    <p className="mt-1 text-xs text-gray-500">Accepted: PDF or DOCX only (browser check).</p>
                   </div>
 
                   <div className="mt-5 flex flex-col sm:flex-row gap-3">
