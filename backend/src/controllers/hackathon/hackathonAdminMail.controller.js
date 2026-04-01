@@ -1,4 +1,5 @@
 import HackathonTeam from "../../models/hackathon/HackathonTeamModel.js";
+import HackathonMentor from "../../models/hackathon/HackathonMentorModel.js";
 import HackathonUser from "../../models/hackathon/HackathonUserModel.js";
 import {
   buildAdminTeamNotificationHtml,
@@ -7,11 +8,18 @@ import {
 } from "../../services/mailService.js";
 
 /**
- * POST body: { type: "all" | "team" | "multiple", teamIds: number[], subject: string, message: string }
- * Resolves leader email / name from hackathon_users (leader_user_id). No schema change on teams.
+ * POST body:
+ * {
+ *   audience?: "teams" | "mentors",
+ *   type: "all" | "team" | "multiple",
+ *   teamIds?: number[],
+ *   mentorIds?: number[],
+ *   subject: string,
+ *   message: string
+ * }
  */
 export const adminSendTeamMail = async (req, res) => {
-  const { type, teamIds, subject, message } = req.body || {};
+  const { audience = "teams", type, teamIds, mentorIds, subject, message } = req.body || {};
 
   try {
     if (!subject?.trim() || !message?.trim()) {
@@ -22,56 +30,94 @@ export const adminSendTeamMail = async (req, res) => {
       return res.status(400).json({ message: 'type must be "all", "team", or "multiple"' });
     }
 
-    let teams = [];
-
-    if (type === "all") {
-      teams = await HackathonTeam.findAll({ order: [["created_at", "DESC"]] });
-    } else if (type === "team") {
-      const rawId = Array.isArray(teamIds) && teamIds.length ? teamIds[0] : req.body.teamId;
-      const id = Number(rawId);
-      if (!Number.isInteger(id)) {
-        return res.status(400).json({ message: "teamIds must include one valid team id for type team" });
-      }
-      const team = await HackathonTeam.findByPk(id);
-      if (!team) return res.status(404).json({ message: "Team not found" });
-      teams = [team];
-    } else {
-      const ids = Array.isArray(teamIds) ? teamIds.map((x) => Number(x)).filter((n) => Number.isInteger(n)) : [];
-      if (!ids.length) {
-        return res.status(400).json({ message: "teamIds is required for type multiple" });
-      }
-      teams = await HackathonTeam.findAll({ where: { id: ids } });
-    }
-
-    if (!teams.length) {
-      return res.status(200).json({
-        sent: 0,
-        failed: 0,
-        skipped: 0,
-        total: 0,
-        message: "No teams matched",
-      });
+    if (!["teams", "mentors"].includes(audience)) {
+      return res.status(400).json({ message: 'audience must be "teams" or "mentors"' });
     }
 
     /** @type {{ email: string; leaderName: string; teamName: string }[]} */
-    const recipients = [];
+    let recipients = [];
+    let attempted = 0;
 
-    for (const team of teams) {
-      const leader = await HackathonUser.findByPk(team.leaderUserId, {
-        attributes: ["email", "fullName"],
-      });
-      const email = leader?.email?.trim();
-      if (!email) {
-        continue;
+    if (audience === "teams") {
+      let teams = [];
+      if (type === "all") {
+        teams = await HackathonTeam.findAll({ order: [["created_at", "DESC"]] });
+      } else if (type === "team") {
+        const rawId = Array.isArray(teamIds) && teamIds.length ? teamIds[0] : req.body.teamId;
+        const id = Number(rawId);
+        if (!Number.isInteger(id)) {
+          return res.status(400).json({ message: "teamIds must include one valid team id for type team" });
+        }
+        const team = await HackathonTeam.findByPk(id);
+        if (!team) return res.status(404).json({ message: "Team not found" });
+        teams = [team];
+      } else {
+        const ids = Array.isArray(teamIds) ? teamIds.map((x) => Number(x)).filter((n) => Number.isInteger(n)) : [];
+        if (!ids.length) {
+          return res.status(400).json({ message: "teamIds is required for type multiple" });
+        }
+        teams = await HackathonTeam.findAll({ where: { id: ids } });
       }
-      recipients.push({
-        email: email.toLowerCase(),
-        leaderName: leader.fullName || email,
-        teamName: team.teamName,
-      });
+
+      attempted = teams.length;
+      for (const team of teams) {
+        const leader = await HackathonUser.findByPk(team.leaderUserId, {
+          attributes: ["email", "fullName"],
+        });
+        const email = leader?.email?.trim();
+        if (!email) continue;
+        recipients.push({
+          email: email.toLowerCase(),
+          leaderName: leader.fullName || email,
+          teamName: team.teamName,
+        });
+      }
+    } else {
+      let mentors = [];
+      if (type === "all") {
+        mentors = await HackathonMentor.findAll({
+          include: [{ model: HackathonUser, as: "user", attributes: ["id", "email", "fullName"] }],
+          order: [["created_at", "DESC"]],
+        });
+      } else if (type === "team") {
+        const rawId = Array.isArray(mentorIds) && mentorIds.length ? mentorIds[0] : req.body.mentorId;
+        const id = Number(rawId);
+        if (!Number.isInteger(id)) {
+          return res.status(400).json({ message: "mentorIds must include one valid mentor id for type team" });
+        }
+        const mentor = await HackathonMentor.findByPk(id, {
+          include: [{ model: HackathonUser, as: "user", attributes: ["id", "email", "fullName"] }],
+        });
+        if (!mentor) return res.status(404).json({ message: "Mentor not found" });
+        mentors = [mentor];
+      } else {
+        const ids = Array.isArray(mentorIds) ? mentorIds.map((x) => Number(x)).filter((n) => Number.isInteger(n)) : [];
+        if (!ids.length) {
+          return res.status(400).json({ message: "mentorIds is required for type multiple" });
+        }
+        mentors = await HackathonMentor.findAll({
+          where: { id: ids },
+          include: [{ model: HackathonUser, as: "user", attributes: ["id", "email", "fullName"] }],
+        });
+      }
+
+      attempted = mentors.length;
+      for (const m of mentors) {
+        const email = m?.user?.email?.trim();
+        if (!email) continue;
+        recipients.push({
+          email: email.toLowerCase(),
+          leaderName: m.user.fullName || email,
+          teamName: "Mentor",
+        });
+      }
     }
 
-    const skipped = teams.length - recipients.length;
+    if (!attempted) {
+      return res.status(200).json({ sent: 0, failed: 0, skipped: 0, total: 0, message: "No recipients matched" });
+    }
+
+    const skipped = attempted - recipients.length;
     const portalUrl = getPortalUrl();
     const subj = subject.trim();
     const msgBody = message.trim();
@@ -108,6 +154,7 @@ export const adminSendTeamMail = async (req, res) => {
       failed,
       skipped,
       total: recipients.length,
+      audience,
       ...(errors.length ? { errors } : {}),
     });
   } catch (error) {
