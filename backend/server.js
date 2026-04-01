@@ -67,12 +67,10 @@ app.use(
   "/api/ich2026/download/hackathon",
   express.static(hackathonUploadsDir, {
     fallthrough: false, // return 404 when not found (instead of continuing middleware chain)
-    setHeaders: (res) => {
-      // Force download in browsers.
-      res.setHeader("Content-Disposition", "attachment");
-    },
   })
 );
+// Direct public path (matches nginx /download/* static mapping).
+app.use("/download/hackathon", express.static(hackathonUploadsDir));
 // Backward-compatible public paths for previously stored URLs.
 app.use("/api/uploads/hackathon", express.static(hackathonUploadsDir));
 app.use("/uploads/hackathon", express.static(hackathonUploadsDir));
