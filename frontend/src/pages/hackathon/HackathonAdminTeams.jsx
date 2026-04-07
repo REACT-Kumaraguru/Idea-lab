@@ -8,6 +8,7 @@ const HackathonAdminTeams = () => {
   const [registeredStudents, setRegisteredStudents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [excelLoading, setExcelLoading] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -43,17 +44,50 @@ const HackathonAdminTeams = () => {
 
   if (loading) return <div className="text-gray-600">Loading...</div>;
 
+  const handleDownloadExcel = async () => {
+    setExcelLoading(true);
+    setError(null);
+    try {
+      const res = await axiosInstance.get("/ich2026/admin/teams/export-xlsx", {
+        responseType: "blob",
+      });
+      const dateStr = new Date().toISOString().slice(0, 10);
+      const blobUrl = URL.createObjectURL(res.data);
+      const a = document.createElement("a");
+      a.href = blobUrl;
+      a.download = `teams_${dateStr}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(blobUrl);
+    } catch (e) {
+      setError(e.response?.data?.message || "Failed to download teams Excel");
+    } finally {
+      setExcelLoading(false);
+    }
+  };
+
   return (
     <div>
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="text-xl font-bold text-gray-900">Teams</h2>
-        <button
-          type="button"
-          onClick={() => handleDownloadPDF(registeredStudents)}
-          className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-800 shadow-sm hover:bg-gray-50"
-        >
-          Download PDF
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => void handleDownloadExcel()}
+            disabled={excelLoading}
+            className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-800 shadow-sm hover:bg-gray-50 disabled:opacity-60"
+          >
+            {excelLoading ? "Preparing Excel..." : "Download Excel"}
+          </button>
+          <button
+            type="button"
+            onClick={() => handleDownloadPDF(registeredStudents)}
+            className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-800 shadow-sm hover:bg-gray-50"
+          >
+            Download PDF
+          </button>
+        </div>
       </div>
       <p className="text-sm text-gray-600 mt-1">
         Teams are participant-created. A team becomes active automatically when it has at least 1 member.
