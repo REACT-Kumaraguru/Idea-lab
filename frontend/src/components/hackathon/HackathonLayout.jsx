@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   Activity,
+  CreditCard,
   ChevronLeft,
   ChevronRight,
   ClipboardList,
@@ -68,6 +69,7 @@ const HackathonLayout = ({ children }) => {
       { to: "/ich2026/dashboard", label: "Dashboard", tabKey: "dashboard", icon: LayoutDashboard },
       { to: "/ich2026/dashboard?tab=team", label: "Team", tabKey: "team", icon: Users },
       { to: "/ich2026/dashboard?tab=problems", label: "Problems", tabKey: "problems", icon: ClipboardList },
+      { to: "/ich2026/payment-details", label: "Payment", icon: CreditCard },
     ];
     const submitItem = { to: "/ich2026/dashboard?tab=submit", label: "Submit", tabKey: "submit", icon: UploadCloud };
     const statusItem = { to: "/ich2026/dashboard?tab=status", label: "Status", tabKey: "status", icon: Activity };
@@ -90,6 +92,7 @@ const HackathonLayout = ({ children }) => {
       { to: "/ich2026/admin/mentors", label: "Mentors", icon: Users },
       { to: "/ich2026/admin/problems", label: "Problems", icon: ClipboardList },
       { to: "/ich2026/admin/submissions", label: "Submissions", icon: Activity },
+      { to: "/ich2026/admin/payment-details", label: "Payment Details", icon: CreditCard },
       { to: "/ich2026/admin/send-mail", label: "Send Mail", icon: Mail },
       { to: "/ich2026/admin/users", label: "Admins", icon: Users },
     ],
@@ -172,7 +175,9 @@ const HackathonLayout = ({ children }) => {
               const isActive =
                 role === "admin"
                   ? item.to === location.pathname
-                  : item.tabKey === activeTabKey;
+                  : item.tabKey
+                    ? item.tabKey === activeTabKey
+                    : item.to === location.pathname;
               const ItemIcon = item.icon;
               return (
                 <Link
@@ -284,7 +289,9 @@ const HackathonLayout = ({ children }) => {
                 const isActive =
                   role === "admin"
                     ? item.to === location.pathname
-                    : item.tabKey === activeTabKey;
+                    : item.tabKey
+                      ? item.tabKey === activeTabKey
+                      : item.to === location.pathname;
                 const ItemIcon = item.icon;
                 return (
                   <Link

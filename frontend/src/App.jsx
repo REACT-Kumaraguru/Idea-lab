@@ -47,6 +47,8 @@ import HackathonAdminSubmissions from "./pages/hackathon/HackathonAdminSubmissio
 import HackathonAdminSendMail from "./pages/hackathon/HackathonAdminSendMail";
 import HackathonAdminMentors from "./pages/hackathon/HackathonAdminMentors";
 import HackathonAdminUsers from "./pages/hackathon/HackathonAdminUsers";
+import HackathonPaymentDetails from "./pages/hackathon/HackathonPaymentDetails";
+import HackathonAdminPaymentDetails from "./pages/hackathon/HackathonAdminPaymentDetails";
 
 function Home() {
   return (
@@ -278,6 +280,14 @@ function App() {
           }
         />
         <Route
+          path="/ich2026/payment-details"
+          element={
+            <HackathonProtectedPage allowedRoles={["student"]}>
+              <HackathonPaymentDetails />
+            </HackathonProtectedPage>
+          }
+        />
+        <Route
           path="/ich2026/status"
           element={
             <HackathonProtectedPage allowedRoles={["student", "mentor"]}>
@@ -323,6 +333,14 @@ function App() {
           element={
             <HackathonProtectedPage allowedRoles={["admin"]}>
               <HackathonAdminMentors />
+            </HackathonProtectedPage>
+          }
+        />
+        <Route
+          path="/ich2026/admin/payment-details"
+          element={
+            <HackathonProtectedPage allowedRoles={["admin"]}>
+              <HackathonAdminPaymentDetails />
             </HackathonProtectedPage>
           }
         />

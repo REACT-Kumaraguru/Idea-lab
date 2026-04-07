@@ -121,6 +121,7 @@ const HackathonAdminSubmissions = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [exportLoading, setExportLoading] = useState(false);
+  const [mentorApprovalFilter, setMentorApprovalFilter] = useState("all");
 
   const [adminNotes, setAdminNotes] = useState({});
 
@@ -139,8 +140,13 @@ const HackathonAdminSubmissions = () => {
   }, []);
 
   const teamsGrouped = useMemo(() => {
+    const filteredSubmissions = submissions.filter((s) => {
+      if (mentorApprovalFilter === "approved") return Boolean(s.mentorApproved);
+      if (mentorApprovalFilter === "not_approved") return !s.mentorApproved;
+      return true;
+    });
     const map = new Map();
-    for (const s of submissions) {
+    for (const s of filteredSubmissions) {
       const tid = s.team?.id ?? s.teamId;
       if (tid == null) continue;
       if (!map.has(tid)) map.set(tid, []);
@@ -155,7 +161,7 @@ const HackathonAdminSubmissions = () => {
     }
     groups.sort((a, b) => a.teamName.localeCompare(b.teamName));
     return groups;
-  }, [submissions]);
+  }, [submissions, mentorApprovalFilter]);
 
   const downloadExcel = async () => {
     setExportLoading(true);
@@ -227,6 +233,18 @@ const HackathonAdminSubmissions = () => {
           {exportLoading ? "Preparing…" : "Download Excel"}
         </button>
       </div>
+      <div className="mt-3">
+        <label className="text-sm font-medium text-gray-800">Mentor approval filter</label>
+        <select
+          value={mentorApprovalFilter}
+          onChange={(e) => setMentorApprovalFilter(e.target.value)}
+          className="mt-2 w-full max-w-xs rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          <option value="all">All</option>
+          <option value="approved">Mentor approved</option>
+          <option value="not_approved">Mentor not approved</option>
+        </select>
+      </div>
       {error ? <div className="mt-3 text-sm text-red-600 font-medium">{error}</div> : null}
 
       <div className="mt-4 space-y-8">
@@ -283,7 +301,7 @@ const HackathonAdminSubmissions = () => {
           </div>
         ))}
 
-        {submissions.length === 0 ? (
+        {teamsGrouped.length === 0 ? (
           <div className="text-gray-700">No submissions found.</div>
         ) : null}
       </div>

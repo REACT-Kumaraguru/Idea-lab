@@ -11,7 +11,7 @@ import {
  * POST body:
  * {
  *   audience?: "teams" | "mentors",
- *   type: "all" | "team" | "multiple",
+ *   type: "all" | "approved" | "team" | "multiple",
  *   teamIds?: number[],
  *   mentorIds?: number[],
  *   subject: string,
@@ -26,8 +26,8 @@ export const adminSendTeamMail = async (req, res) => {
       return res.status(400).json({ message: "subject and message are required" });
     }
 
-    if (!["all", "team", "multiple"].includes(type)) {
-      return res.status(400).json({ message: 'type must be "all", "team", or "multiple"' });
+    if (!["all", "approved", "team", "multiple"].includes(type)) {
+      return res.status(400).json({ message: 'type must be "all", "approved", "team", or "multiple"' });
     }
 
     if (!["teams", "mentors"].includes(audience)) {
@@ -42,6 +42,11 @@ export const adminSendTeamMail = async (req, res) => {
       let teams = [];
       if (type === "all") {
         teams = await HackathonTeam.findAll({ order: [["created_at", "DESC"]] });
+      } else if (type === "approved") {
+        teams = await HackathonTeam.findAll({
+          where: { status: "approved" },
+          order: [["created_at", "DESC"]],
+        });
       } else if (type === "team") {
         const rawId = Array.isArray(teamIds) && teamIds.length ? teamIds[0] : req.body.teamId;
         const id = Number(rawId);
@@ -79,6 +84,8 @@ export const adminSendTeamMail = async (req, res) => {
           include: [{ model: HackathonUser, as: "user", attributes: ["id", "email", "fullName"] }],
           order: [["created_at", "DESC"]],
         });
+      } else if (type === "approved") {
+        return res.status(400).json({ message: 'type "approved" is only supported for audience "teams"' });
       } else if (type === "team") {
         const rawId = Array.isArray(mentorIds) && mentorIds.length ? mentorIds[0] : req.body.mentorId;
         const id = Number(rawId);

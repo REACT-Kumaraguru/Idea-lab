@@ -48,6 +48,13 @@ import {
 } from "../../controllers/hackathon/hackathonMentor.controller.js";
 import { setupHackathonAssociations } from "../../models/hackathon/associations.js";
 import { adminExportSubmissionsExcel } from "../../controllers/hackathon/hackathonAdminExport.controller.js";
+import {
+  getMyPaymentDetail,
+  submitMyPaymentDetail,
+  adminListPaymentDetails,
+  adminVerifyPaymentDetail,
+  adminExportPaymentDetailsExcel,
+} from "../../controllers/hackathon/hackathonPayment.controller.js";
 
 setupHackathonAssociations();
 
@@ -125,6 +132,8 @@ router.post(
   submit
 );
 router.get("/status", protectHackathonRoute, requireHackathonRole("student", "mentor"), getStatus);
+router.get("/payment-details", protectHackathonRoute, requireHackathonStudentRole, getMyPaymentDetail);
+router.post("/payment-details", protectHackathonRoute, requireHackathonStudentRole, submitMyPaymentDetail);
 router.post(
   "/mentor/submissions/:id/approval",
   protectHackathonRoute,
@@ -150,6 +159,19 @@ router.get(
   adminExportSubmissionsExcel
 );
 router.post("/admin/submissions/:id/status", protectHackathonRoute, requireHackathonAdminRole, adminSetSubmissionStatus);
+router.get("/admin/payment-details", protectHackathonRoute, requireHackathonAdminRole, adminListPaymentDetails);
+router.get(
+  "/admin/payment-details/export-xlsx",
+  protectHackathonRoute,
+  requireHackathonAdminRole,
+  adminExportPaymentDetailsExcel
+);
+router.post(
+  "/admin/payment-details/:id/verify",
+  protectHackathonRoute,
+  requireHackathonAdminRole,
+  adminVerifyPaymentDetail
+);
 
 // Hackathon admin account management (default admin only)
 router.get("/admin/users", protectHackathonRoute, requireHackathonAdminRole, listHackathonAdmins);

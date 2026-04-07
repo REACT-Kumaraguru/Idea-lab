@@ -7,6 +7,7 @@ import HackathonSubmission from "./HackathonSubmissionModel.js";
 import HackathonMentor from "./HackathonMentorModel.js";
 import HackathonTeamMentor from "./HackathonTeamMentorModel.js";
 import HackathonProblemMentor from "./HackathonProblemMentorModel.js";
+import HackathonPaymentDetail from "./HackathonPaymentDetailModel.js";
 
 export const setupHackathonAssociations = () => {
   // Sessions
@@ -67,6 +68,16 @@ export const setupHackathonAssociations = () => {
     as: "submissions",
   });
 
+  // Payment details
+  HackathonPaymentDetail.belongsTo(HackathonTeam, {
+    foreignKey: { name: "teamId", field: "team_id" },
+    as: "team",
+  });
+  HackathonTeam.hasOne(HackathonPaymentDetail, {
+    foreignKey: { name: "teamId", field: "team_id" },
+    as: "paymentDetail",
+  });
+
   // Mentors
   HackathonMentor.belongsTo(HackathonUser, {
     foreignKey: { name: "userId", field: "user_id" },
@@ -105,5 +116,6 @@ export {
   HackathonMentor,
   HackathonTeamMentor,
   HackathonProblemMentor,
+  HackathonPaymentDetail,
 };
 

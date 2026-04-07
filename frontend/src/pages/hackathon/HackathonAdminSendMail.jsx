@@ -198,8 +198,22 @@ const HackathonAdminSendMail = () => {
                 onChange={() => setMailType("all")}
                 className="text-blue-600"
               />
-              <span className="text-sm font-medium text-gray-800">All teams</span>
+              <span className="text-sm font-medium text-gray-800">
+                {audience === "teams" ? "All teams" : "All mentors"}
+              </span>
             </label>
+            {audience === "teams" ? (
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="mailType"
+                  checked={mailType === "approved"}
+                  onChange={() => setMailType("approved")}
+                  className="text-blue-600"
+                />
+                <span className="text-sm font-medium text-gray-800">Admin approved teams</span>
+              </label>
+            ) : null}
             <label className="flex items-center gap-2 cursor-pointer">
               <input
                 type="radio"
@@ -208,7 +222,9 @@ const HackathonAdminSendMail = () => {
                 onChange={() => setMailType("team")}
                 className="text-blue-600"
               />
-              <span className="text-sm font-medium text-gray-800">Specific team</span>
+              <span className="text-sm font-medium text-gray-800">
+                {audience === "teams" ? "Specific team" : "Specific mentor"}
+              </span>
             </label>
             <label className="flex items-center gap-2 cursor-pointer">
               <input
@@ -218,7 +234,9 @@ const HackathonAdminSendMail = () => {
                 onChange={() => setMailType("multiple")}
                 className="text-blue-600"
               />
-              <span className="text-sm font-medium text-gray-800">Multiple teams</span>
+              <span className="text-sm font-medium text-gray-800">
+                {audience === "teams" ? "Multiple teams" : "Multiple mentors"}
+              </span>
             </label>
           </div>
         </div>

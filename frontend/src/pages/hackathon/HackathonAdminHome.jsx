@@ -28,6 +28,13 @@ const HackathonAdminHome = () => {
           <div className="text-gray-600 mt-1">Review PoC / Prototype submissions.</div>
         </Link>
         <Link
+          to="/ich2026/admin/payment-details"
+          className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm hover:shadow-md transition"
+        >
+          <div className="font-bold text-gray-900">Payment Details</div>
+          <div className="text-gray-600 mt-1">View payment records, verify submissions, and export Excel.</div>
+        </Link>
+        <Link
           to="/ich2026/admin/send-mail"
           className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm hover:shadow-md transition"
         >
