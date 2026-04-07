@@ -3,6 +3,7 @@ import ExcelJS from "exceljs";
 import HackathonPaymentDetail from "../../models/hackathon/HackathonPaymentDetailModel.js";
 import HackathonTeam from "../../models/hackathon/HackathonTeamModel.js";
 import HackathonTeamMember from "../../models/hackathon/HackathonTeamMemberModel.js";
+import HackathonSubmission from "../../models/hackathon/HackathonSubmissionModel.js";
 
 const getUserIdFromSession = (req) => Number(req.hackathonUser?.id ?? req.session?.user?.id);
 
@@ -19,11 +20,35 @@ const getStudentTeam = async (userId) => {
   return HackathonTeam.findOne({ where: { leaderUserId: userId } });
 };
 
+const canAccessPaymentPage = async ({ team, userId }) => {
+  if (!team) {
+    return { allowed: false, message: "No team found for current user" };
+  }
+  if (Number(team.leaderUserId) !== Number(userId)) {
+    return { allowed: false, message: "Access denied – only team leader can submit payment details" };
+  }
+  if (team.status !== "approved") {
+    return { allowed: false, message: "Access denied – your team is not approved yet" };
+  }
+  const mentorApprovedSubmission = await HackathonSubmission.findOne({
+    where: { teamId: team.id, mentorApproved: true },
+    attributes: ["id"],
+  });
+  if (!mentorApprovedSubmission) {
+    return {
+      allowed: false,
+      message: "Access denied – mentor approval is pending for your team submission",
+    };
+  }
+  return { allowed: true };
+};
+
 export const getMyPaymentDetail = async (req, res) => {
   try {
     const userId = getUserIdFromSession(req);
     const team = await getStudentTeam(userId);
-    if (!team) return res.status(404).json({ message: "No team found for current user" });
+    const access = await canAccessPaymentPage({ team, userId });
+    if (!access.allowed) return res.status(403).json({ message: access.message });
 
     const existing = await HackathonPaymentDetail.findOne({ where: { teamId: team.id } });
     return res.status(200).json({
@@ -40,10 +65,8 @@ export const submitMyPaymentDetail = async (req, res) => {
   try {
     const userId = getUserIdFromSession(req);
     const team = await getStudentTeam(userId);
-    if (!team) return res.status(404).json({ message: "No team found for current user" });
-    if (team.status !== "approved") {
-      return res.status(403).json({ message: "Access denied – your team is not approved yet" });
-    }
+    const access = await canAccessPaymentPage({ team, userId });
+    if (!access.allowed) return res.status(403).json({ message: access.message });
 
     const paymentEmail = normalizeEmail(req.body?.paymentEmail);
     const paidPersonName = normalizeText(req.body?.paidPersonName);
@@ -90,9 +113,6 @@ export const adminListPaymentDetails = async (req, res) => {
     const startDate = normalizeText(req.query?.startDate);
     const endDate = normalizeText(req.query?.endDate);
 
-    const teamWhere = {};
-    if (q) teamWhere.teamName = { [Op.iLike]: `%${q}%` };
-
     const createdAtWhere = {};
     if (startDate) createdAtWhere[Op.gte] = new Date(`${startDate}T00:00:00.000Z`);
     if (endDate) createdAtWhere[Op.lte] = new Date(`${endDate}T23:59:59.999Z`);
@@ -100,21 +120,38 @@ export const adminListPaymentDetails = async (req, res) => {
     const where = {};
     if (Object.keys(createdAtWhere).length > 0) where.createdAt = createdAtWhere;
 
+    let allowedTeamIds = null;
+    if (q) {
+      const teamsMatched = await HackathonTeam.findAll({
+        where: { teamName: { [Op.iLike]: `%${q}%` } },
+        attributes: ["id"],
+      });
+      allowedTeamIds = teamsMatched.map((t) => Number(t.id)).filter((id) => Number.isInteger(id));
+      if (allowedTeamIds.length === 0) {
+        return res.status(200).json({ paymentDetails: [] });
+      }
+      where.teamId = allowedTeamIds;
+    }
+
     const records = await HackathonPaymentDetail.findAll({
       where,
-      include: [
-        {
-          model: HackathonTeam,
-          as: "team",
-          attributes: ["id", "teamName"],
-          where: Object.keys(teamWhere).length > 0 ? teamWhere : undefined,
-          required: Object.keys(teamWhere).length > 0,
-        },
-      ],
       order: [["createdAt", "DESC"]],
     });
 
-    return res.status(200).json({ paymentDetails: records });
+    const teamIds = [...new Set(records.map((r) => Number(r.teamId)).filter((id) => Number.isInteger(id)))];
+    const teams = teamIds.length
+      ? await HackathonTeam.findAll({ where: { id: teamIds }, attributes: ["id", "teamName"] })
+      : [];
+    const teamById = new Map(teams.map((t) => [Number(t.id), t]));
+
+    const payload = records.map((r) => ({
+      ...(r.toJSON ? r.toJSON() : r),
+      team: teamById.get(Number(r.teamId))
+        ? { id: Number(r.teamId), teamName: teamById.get(Number(r.teamId)).teamName }
+        : null,
+    }));
+
+    return res.status(200).json({ paymentDetails: payload });
   } catch (error) {
     console.error("adminListPaymentDetails:", error);
     return res.status(500).json({ message: "Internal Server Error" });
@@ -147,10 +184,12 @@ export const adminVerifyPaymentDetail = async (req, res) => {
 
 export const adminExportPaymentDetailsExcel = async (req, res) => {
   try {
-    const records = await HackathonPaymentDetail.findAll({
-      include: [{ model: HackathonTeam, as: "team", attributes: ["teamName"] }],
-      order: [["createdAt", "DESC"]],
-    });
+    const records = await HackathonPaymentDetail.findAll({ order: [["createdAt", "DESC"]] });
+    const teamIds = [...new Set(records.map((r) => Number(r.teamId)).filter((id) => Number.isInteger(id)))];
+    const teams = teamIds.length
+      ? await HackathonTeam.findAll({ where: { id: teamIds }, attributes: ["id", "teamName"] })
+      : [];
+    const teamById = new Map(teams.map((t) => [Number(t.id), t]));
 
     const workbook = new ExcelJS.Workbook();
     const ws = workbook.addWorksheet("Payment Details");
@@ -167,7 +206,7 @@ export const adminExportPaymentDetailsExcel = async (req, res) => {
 
     for (const rec of records) {
       ws.addRow([
-        rec.team?.teamName || "",
+        teamById.get(Number(rec.teamId))?.teamName || "",
         rec.paymentEmail || "",
         rec.paidPersonName || "",
         rec.phone || "",

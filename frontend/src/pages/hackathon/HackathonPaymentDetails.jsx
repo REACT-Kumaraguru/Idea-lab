@@ -11,6 +11,7 @@ const HackathonPaymentDetails = () => {
   const [team, setTeam] = useState(null);
   const [existing, setExisting] = useState(null);
   const [error, setError] = useState("");
+  const [accessDeniedMessage, setAccessDeniedMessage] = useState("");
   const [success, setSuccess] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
@@ -30,12 +31,11 @@ const HackathonPaymentDetails = () => {
         setTeam(teamData);
         setExisting(paymentData);
 
-        if (teamData?.status !== "approved") {
-          setError("Access denied – your team is not approved yet");
-        }
       } catch (e) {
         if (!active) return;
-        setError(e.response?.data?.message || "Failed to load payment details");
+        const msg = e.response?.data?.message || "Failed to load payment details";
+        setError(msg);
+        if (e.response?.status === 403) setAccessDeniedMessage(msg);
       } finally {
         if (active) setLoading(false);
       }
@@ -82,13 +82,12 @@ const HackathonPaymentDetails = () => {
 
   if (loading) return <div className="text-gray-600">Loading...</div>;
 
-  const denied = team && team.status !== "approved";
-  if (denied) {
+  if (accessDeniedMessage) {
     return (
       <div className="max-w-2xl">
         <h2 className="text-2xl font-bold text-gray-900">Payment Details</h2>
         <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-900">
-          Access denied – your team is not approved yet
+          {accessDeniedMessage}
         </div>
         <button
           type="button"
