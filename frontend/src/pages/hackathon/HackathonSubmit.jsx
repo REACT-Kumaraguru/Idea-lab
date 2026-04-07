@@ -33,6 +33,9 @@ const HackathonSubmit = () => {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
 
+  const [registrationClosed, setRegistrationClosed] = useState(false);
+  const [registrationClosedMessage, setRegistrationClosedMessage] = useState("");
+
   useEffect(() => {
     const loadTeam = async () => {
       try {
@@ -45,6 +48,26 @@ const HackathonSubmit = () => {
       }
     };
     loadTeam();
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      try {
+        const res = await axiosInstance.get("/ich2026/registration-status");
+        if (!active) return;
+        setRegistrationClosed(Boolean(res.data?.registrationClosed));
+        setRegistrationClosedMessage(res.data?.message || "");
+      } catch {
+        if (active) {
+          setRegistrationClosed(false);
+          setRegistrationClosedMessage("");
+        }
+      }
+    })();
+    return () => {
+      active = false;
+    };
   }, []);
 
   useEffect(() => {
@@ -113,13 +136,34 @@ const HackathonSubmit = () => {
   };
 
   const selectedProblem = problems.find((p) => String(p.id) === String(problemId));
-  const canSubmit = Boolean(team) && !teamAlreadySubmitted;
+  const canSubmit = Boolean(team) && !teamAlreadySubmitted && !registrationClosed;
 
   if (submissionGateLoading) {
     return (
       <div>
         <h2 className="text-2xl font-bold text-gray-900">Submit PoC / Prototype</h2>
         <div className="mt-6 text-gray-600">Loading...</div>
+      </div>
+    );
+  }
+
+  if (registrationClosed) {
+    return (
+      <div>
+        <h2 className="text-2xl font-bold text-gray-900">Submit PoC / Prototype</h2>
+        <div className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-6 max-w-lg">
+          <p className="text-amber-950 font-semibold">Registration closed</p>
+          <p className="mt-2 text-sm text-amber-950/90">
+            {registrationClosedMessage ||
+              "Registration is closed. PoC and submission uploads are no longer accepted."}
+          </p>
+          <Link
+            to="/ich2026/dashboard?tab=status"
+            className="mt-5 inline-flex px-5 py-2.5 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 transition"
+          >
+            Go to dashboard
+          </Link>
+        </div>
       </div>
     );
   }

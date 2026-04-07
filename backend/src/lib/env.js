@@ -26,6 +26,10 @@ export const ENV = {
   SMTP_USER: process.env.SMTP_USER,
   SMTP_PASS: process.env.SMTP_PASS,
 
+  /** Set to true/1/yes to block hackathon student registration + new PoC/submission uploads. */
+  HACKATHON_REGISTRATION_CLOSED: process.env.HACKATHON_REGISTRATION_CLOSED,
+  HACKATHON_REGISTRATION_CLOSED_MESSAGE: process.env.HACKATHON_REGISTRATION_CLOSED_MESSAGE,
+
   /** When set, OTP emails are enqueued (BullMQ) instead of blocking the API. */
   REDIS_HOST: process.env.REDIS_HOST,
   REDIS_PORT: process.env.REDIS_PORT ? Number(process.env.REDIS_PORT) : 6379,

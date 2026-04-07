@@ -11,6 +11,7 @@ import {
   sendHackathonResetOtp,
   verifyHackathonResetOtp,
   resetHackathonPassword,
+  getHackathonRegistrationStatus,
 } from "../../controllers/hackathon/hackathonAuth.controller.js";
 import {
   createTeam,
@@ -112,6 +113,7 @@ router.post("/verify-reset-otp", verifyHackathonResetOtp);
 router.post("/reset-password", resetHackathonPassword);
 
 // Public hackathon pages
+router.get("/registration-status", getHackathonRegistrationStatus);
 router.get("/problems", getProblems);
 
 // Student: team formation

@@ -5,11 +5,18 @@ import OtpCode from "../models/OtpCodeModel.js";
 import { AppError } from "../utils/AppError.js";
 import { generateOtp, getOtpExpiryDate, OTP_EXPIRY_MS } from "../utils/otp.js";
 import { sendOtpEmail } from "../services/mailService.js";
+import {
+  isHackathonRegistrationClosed,
+  hackathonRegistrationClosedMessage,
+} from "../lib/hackathonRegistrationStatus.js";
 
 const normalizeEmail = (email) => String(email || "").trim().toLowerCase();
 
 export const sendRegisterOtp = async (req, res, next) => {
   try {
+    if (isHackathonRegistrationClosed()) {
+      throw new AppError(hackathonRegistrationClosedMessage(), 403);
+    }
     const email = normalizeEmail(req.body?.email);
     if (!email) {
       throw new AppError("Email is required", 400);
@@ -45,6 +52,9 @@ export const sendRegisterOtp = async (req, res, next) => {
 
 export const verifyRegisterOtp = async (req, res, next) => {
   try {
+    if (isHackathonRegistrationClosed()) {
+      throw new AppError(hackathonRegistrationClosedMessage(), 403);
+    }
     const email = normalizeEmail(req.body?.email);
     const otp = String(req.body?.otp || "").trim();
     if (!email || !otp) {

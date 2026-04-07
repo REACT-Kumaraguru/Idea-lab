@@ -34,6 +34,9 @@ const HackathonRegister = () => {
   const [verifyingOtp, setVerifyingOtp] = useState(false);
   const [resendSeconds, setResendSeconds] = useState(0);
 
+  const [registrationClosed, setRegistrationClosed] = useState(false);
+  const [registrationClosedMessage, setRegistrationClosedMessage] = useState("");
+
   const otpRefs = useRef([]);
 
   const passwordStrength = () => {
@@ -59,6 +62,26 @@ const HackathonRegister = () => {
       otpRefs.current[0].focus();
     }
   }, [otpSent]);
+
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      try {
+        const res = await axiosInstance.get("/ich2026/registration-status");
+        if (!active) return;
+        setRegistrationClosed(Boolean(res.data?.registrationClosed));
+        setRegistrationClosedMessage(res.data?.message || "");
+      } catch {
+        if (active) {
+          setRegistrationClosed(false);
+          setRegistrationClosedMessage("");
+        }
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const validateForm = useCallback(() => {
     if (!college.trim()) {
@@ -245,6 +268,31 @@ const HackathonRegister = () => {
             </p>
           </div>
 
+          {registrationClosed ? (
+            <div className="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-6 text-center">
+              <h2 className="text-lg font-bold text-amber-950">Registration closed</h2>
+              <p className="mt-2 text-sm text-amber-950/90">
+                {registrationClosedMessage ||
+                  "Hackathon registration is closed. New sign-ups are no longer accepted."}
+              </p>
+              <div className="mt-6 flex flex-col sm:flex-row gap-3 justify-center">
+                <Link
+                  to="/ich2026/login"
+                  className="inline-flex justify-center rounded-xl bg-[#2563EB] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#1D4ED8]"
+                >
+                  Go to login
+                </Link>
+                <Link
+                  to="/ich2026"
+                  className="inline-flex justify-center rounded-xl border border-[#E2E8F0] bg-white px-5 py-2.5 text-sm font-semibold text-gray-800 hover:bg-[#F5F7FB]"
+                >
+                  Back to hackathon home
+                </Link>
+              </div>
+            </div>
+          ) : null}
+
+          {!registrationClosed ? (
           <form onSubmit={handleFormSubmit}>
             {/* Section 1 — Basic Info */}
             <div className="mb-8">
@@ -495,6 +543,7 @@ const HackathonRegister = () => {
               </button>
             )}
           </form>
+          ) : null}
         </div>
       </div>
     </div>

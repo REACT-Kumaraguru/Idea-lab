@@ -3,6 +3,11 @@ import HackathonUser from "../../models/hackathon/HackathonUserModel.js";
 import HackathonSession from "../../models/hackathon/HackathonSessionModel.js";
 import { generateOtp, OTP_EXPIRY_MS } from "../../utils/otp.js";
 import { sendOtpEmail } from "../../services/mailService.js";
+import {
+  isHackathonRegistrationClosed,
+  hackathonRegistrationClosedMessage,
+  getHackathonRegistrationClosedPayload,
+} from "../../lib/hackathonRegistrationStatus.js";
 
 const normalizeEmail = (email) => String(email || "").trim().toLowerCase();
 
@@ -40,6 +45,10 @@ export const register = async (req, res) => {
     role,
   } = req.body || {};
   try {
+    if (isHackathonRegistrationClosed()) {
+      return res.status(403).json({ message: hackathonRegistrationClosedMessage() });
+    }
+
     const normalizedEmail = normalizeEmail(email);
 
     if (req.session.registrationEmailVerified !== normalizedEmail) {
@@ -308,3 +317,6 @@ export const resetHackathonPassword = async (req, res) => {
   }
 };
 
+export const getHackathonRegistrationStatus = (req, res) => {
+  return res.status(200).json(getHackathonRegistrationClosedPayload());
+};

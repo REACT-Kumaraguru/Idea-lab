@@ -13,6 +13,10 @@ import HackathonMentor from "../../models/hackathon/HackathonMentorModel.js";
 import HackathonTeamMentor from "../../models/hackathon/HackathonTeamMentorModel.js";
 import HackathonProblemMentor from "../../models/hackathon/HackathonProblemMentorModel.js";
 import { Op } from "sequelize";
+import {
+  isHackathonRegistrationClosed,
+  hackathonRegistrationClosedMessage,
+} from "../../lib/hackathonRegistrationStatus.js";
 
 const toFileUrl = (file) => {
   // Store an API-served URL so Nginx can proxy it.
@@ -91,6 +95,10 @@ export const submit = async (req, res) => {
     agreedTerms,
   } = req.body || {};
   try {
+    if (isHackathonRegistrationClosed()) {
+      return res.status(403).json({ message: hackathonRegistrationClosedMessage() });
+    }
+
     const userId = Number(req.hackathonUser.id);
     const resolvedPhase = phaseEnum.includes(phase) ? phase : null;
     if (!problemId || !resolvedPhase) {

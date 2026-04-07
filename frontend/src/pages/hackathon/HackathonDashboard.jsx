@@ -66,6 +66,9 @@ const HackathonDashboard = () => {
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(null);
 
+  const [registrationClosed, setRegistrationClosed] = useState(false);
+  const [registrationClosedMessage, setRegistrationClosedMessage] = useState("");
+
   const loadSelectedProblem = () => {
     try {
       const raw = localStorage.getItem(selectionKey);
@@ -106,6 +109,26 @@ const HackathonDashboard = () => {
     refreshStatus();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hackathonUser?.id]);
+
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      try {
+        const res = await axiosInstance.get("/ich2026/registration-status");
+        if (!active) return;
+        setRegistrationClosed(Boolean(res.data?.registrationClosed));
+        setRegistrationClosedMessage(res.data?.message || "");
+      } catch {
+        if (active) {
+          setRegistrationClosed(false);
+          setRegistrationClosedMessage("");
+        }
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const teamHasSubmitted = (statusData?.submissions || []).length > 0;
 
@@ -160,13 +183,18 @@ const HackathonDashboard = () => {
 
   const selectedProblemId = selectedProblem?.problemId || null;
 
+  const registrationBlocksSubmission = role === "student" && registrationClosed;
+
   // Backend auto-activates team status on submission when needed.
   const canSubmit = Boolean(team);
   const submissionBlockedReason = !team
     ? "You are not part of any team yet."
     : teamHasSubmitted
       ? "Your team has already submitted. Only one submission is allowed per team."
-      : null;
+      : registrationBlocksSubmission
+        ? registrationClosedMessage ||
+          "Registration is closed. PoC and submission uploads are no longer accepted."
+        : null;
 
   const fetchProblems = async () => {
     if (problemsLoading) return;
@@ -224,7 +252,12 @@ const HackathonDashboard = () => {
     changeTab("submit");
   };
 
-  const submitAllowed = role === "student" && canSubmit && !!selectedProblemId && !teamHasSubmitted;
+  const submitAllowed =
+    role === "student" &&
+    canSubmit &&
+    !!selectedProblemId &&
+    !teamHasSubmitted &&
+    !registrationBlocksSubmission;
 
   const resetSubmissionSteps = () => {
     setSubmissionStep(1);
@@ -372,6 +405,13 @@ const HackathonDashboard = () => {
           </div>
         ) : null}
       </div>
+
+      {role === "student" && registrationClosed ? (
+        <div className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-950">
+          {registrationClosedMessage ||
+            "Registration is closed. New PoC / submission uploads are not accepted."}
+        </div>
+      ) : null}
 
       <div className="mt-5 hidden md:flex items-center gap-2 overflow-x-auto whitespace-nowrap pb-1">
         {tabs.map((t) => (

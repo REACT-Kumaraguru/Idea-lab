@@ -1,5 +1,6 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { axiosInstance } from "../../lib/axios.js";
 import {
   ArrowRight,
   BriefcaseBusiness,
@@ -22,6 +23,28 @@ const scrollToId = (id) => {
 
 const HackathonLanding = () => {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [registrationClosed, setRegistrationClosed] = useState(false);
+  const [registrationClosedMessage, setRegistrationClosedMessage] = useState("");
+
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      try {
+        const res = await axiosInstance.get("/ich2026/registration-status");
+        if (!active) return;
+        setRegistrationClosed(Boolean(res.data?.registrationClosed));
+        setRegistrationClosedMessage(res.data?.message || "");
+      } catch {
+        if (active) {
+          setRegistrationClosed(false);
+          setRegistrationClosedMessage("");
+        }
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const closeAndScroll = (id) => {
     setMobileNavOpen(false);
@@ -109,6 +132,12 @@ const HackathonLanding = () => {
           </div>
         </div>
       </header>
+
+      {registrationClosed ? (
+        <div className="relative z-40 bg-amber-100 border-b border-amber-200 text-amber-950 text-center text-sm font-semibold px-4 py-2.5">
+          {registrationClosedMessage || "Registration is closed."}
+        </div>
+      ) : null}
 
       {mobileNavOpen ? (
         <div className="fixed inset-0 z-[60] lg:hidden">
