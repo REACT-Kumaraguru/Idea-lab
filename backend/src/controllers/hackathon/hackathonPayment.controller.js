@@ -13,6 +13,9 @@ const normalizePhone = (value) => String(value || "").replace(/\D/g, "");
 
 const isValidEmail = (value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 const isValidPhone = (value) => /^\d{10}$/.test(value);
+const isMissingRelationError = (error) =>
+  error?.name === "SequelizeDatabaseError" &&
+  (error?.original?.code === "42P01" || /does not exist/i.test(String(error?.original?.message || "")));
 
 const getStudentTeam = async (userId) => {
   const member = await HackathonTeamMember.findOne({ where: { userId } });
@@ -118,7 +121,7 @@ export const adminListPaymentDetails = async (req, res) => {
     if (endDate) createdAtWhere[Op.lte] = new Date(`${endDate}T23:59:59.999Z`);
 
     const where = {};
-    if (Object.keys(createdAtWhere).length > 0) where.createdAt = createdAtWhere;
+    if (Object.keys(createdAtWhere).length > 0) where.created_at = createdAtWhere;
 
     let allowedTeamIds = null;
     if (q) {
@@ -135,7 +138,7 @@ export const adminListPaymentDetails = async (req, res) => {
 
     const records = await HackathonPaymentDetail.findAll({
       where,
-      order: [["createdAt", "DESC"]],
+      order: [["created_at", "DESC"]],
     });
 
     const teamIds = [...new Set(records.map((r) => Number(r.teamId)).filter((id) => Number.isInteger(id)))];
@@ -153,6 +156,10 @@ export const adminListPaymentDetails = async (req, res) => {
 
     return res.status(200).json({ paymentDetails: payload });
   } catch (error) {
+    if (isMissingRelationError(error)) {
+      // Table not yet present in some environments. Keep admin page usable.
+      return res.status(200).json({ paymentDetails: [] });
+    }
     console.error("adminListPaymentDetails:", error);
     return res.status(500).json({ message: "Internal Server Error" });
   }
@@ -177,6 +184,9 @@ export const adminVerifyPaymentDetail = async (req, res) => {
 
     return res.status(200).json({ message: "Payment marked as verified", paymentDetail: record });
   } catch (error) {
+    if (isMissingRelationError(error)) {
+      return res.status(400).json({ message: "Payment details table is not initialized yet" });
+    }
     console.error("adminVerifyPaymentDetail:", error);
     return res.status(500).json({ message: "Internal Server Error" });
   }
@@ -184,7 +194,7 @@ export const adminVerifyPaymentDetail = async (req, res) => {
 
 export const adminExportPaymentDetailsExcel = async (req, res) => {
   try {
-    const records = await HackathonPaymentDetail.findAll({ order: [["createdAt", "DESC"]] });
+    const records = await HackathonPaymentDetail.findAll({ order: [["created_at", "DESC"]] });
     const teamIds = [...new Set(records.map((r) => Number(r.teamId)).filter((id) => Number.isInteger(id)))];
     const teams = teamIds.length
       ? await HackathonTeam.findAll({ where: { id: teamIds }, attributes: ["id", "teamName"] })
@@ -229,6 +239,9 @@ export const adminExportPaymentDetailsExcel = async (req, res) => {
     res.setHeader("Content-Disposition", `attachment; filename="payment_details_${dateStr}.xlsx"`);
     return res.send(Buffer.from(buffer));
   } catch (error) {
+    if (isMissingRelationError(error)) {
+      return res.status(400).json({ message: "Payment details table is not initialized yet" });
+    }
     console.error("adminExportPaymentDetailsExcel:", error);
     return res.status(500).json({ message: "Failed to export payment details" });
   }
