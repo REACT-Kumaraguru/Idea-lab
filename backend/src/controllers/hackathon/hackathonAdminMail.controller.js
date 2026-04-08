@@ -1,6 +1,7 @@
 import HackathonTeam from "../../models/hackathon/HackathonTeamModel.js";
 import HackathonMentor from "../../models/hackathon/HackathonMentorModel.js";
 import HackathonUser from "../../models/hackathon/HackathonUserModel.js";
+import HackathonSubmission from "../../models/hackathon/HackathonSubmissionModel.js";
 import {
   buildAdminTeamNotificationHtml,
   sendAdminTeamNotificationEmail,
@@ -43,10 +44,19 @@ export const adminSendTeamMail = async (req, res) => {
       if (type === "all") {
         teams = await HackathonTeam.findAll({ order: [["created_at", "DESC"]] });
       } else if (type === "approved") {
-        teams = await HackathonTeam.findAll({
+        const approvedSubmissions = await HackathonSubmission.findAll({
           where: { status: "approved" },
-          order: [["created_at", "DESC"]],
+          attributes: ["teamId"],
         });
+        const approvedTeamIds = [...new Set(approvedSubmissions.map((s) => Number(s.teamId)).filter((id) => Number.isInteger(id)))];
+        if (!approvedTeamIds.length) {
+          teams = [];
+        } else {
+          teams = await HackathonTeam.findAll({
+            where: { id: approvedTeamIds },
+            order: [["created_at", "DESC"]],
+          });
+        }
       } else if (type === "team") {
         const rawId = Array.isArray(teamIds) && teamIds.length ? teamIds[0] : req.body.teamId;
         const id = Number(rawId);

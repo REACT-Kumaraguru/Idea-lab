@@ -4,6 +4,7 @@ import { axiosInstance } from "../../lib/axios.js";
 const HackathonAdminSendMail = () => {
   const [teams, setTeams] = useState([]);
   const [mentors, setMentors] = useState([]);
+  const [approvedSubmissionTeamIds, setApprovedSubmissionTeamIds] = useState([]);
   const [loadingTeams, setLoadingTeams] = useState(true);
 
   const [audience, setAudience] = useState("teams");
@@ -25,12 +26,22 @@ const HackathonAdminSendMail = () => {
   useEffect(() => {
     const load = async () => {
       try {
-        const [teamRes, mentorRes] = await Promise.all([
+        const [teamRes, mentorRes, submissionRes] = await Promise.all([
           axiosInstance.get("/ich2026/admin/teams"),
           axiosInstance.get("/ich2026/admin/mentors"),
+          axiosInstance.get("/ich2026/admin/submissions"),
         ]);
         setTeams(teamRes.data.teams || []);
         setMentors(mentorRes.data.mentors || []);
+        const approvedIds = [
+          ...new Set(
+            (submissionRes.data.submissions || [])
+              .filter((s) => String(s.status || "").toLowerCase() === "approved")
+              .map((s) => Number(s.team?.id ?? s.teamId))
+              .filter((id) => Number.isInteger(id))
+          ),
+        ];
+        setApprovedSubmissionTeamIds(approvedIds);
       } catch (e) {
         setError(e.response?.data?.message || "Failed to load recipients");
       } finally {
@@ -40,8 +51,8 @@ const HackathonAdminSendMail = () => {
     load();
   }, []);
 
-  const approvedTeams = teams.filter((t) => String(t.status || "").toLowerCase() === "approved");
-  const filteredApprovedTeams = approvedTeams.filter((t) => {
+  const approvedSubmissionTeams = teams.filter((t) => approvedSubmissionTeamIds.includes(Number(t.id)));
+  const filteredApprovedSubmissionTeams = approvedSubmissionTeams.filter((t) => {
     const q = searchTeams.trim().toLowerCase();
     if (!q) return true;
     return `${t.teamName} ${t.leader?.email || ""}`.toLowerCase().includes(q);
@@ -212,7 +223,7 @@ const HackathonAdminSendMail = () => {
                   onChange={() => setMailType("approved")}
                   className="text-blue-600"
                 />
-                <span className="text-sm font-medium text-gray-800">Admin approved teams</span>
+                <span className="text-sm font-medium text-gray-800">Admin approved submissions</span>
               </label>
             ) : null}
             <label className="flex items-center gap-2 cursor-pointer">
@@ -246,14 +257,16 @@ const HackathonAdminSendMail = () => {
           <div>
             <label className="text-sm font-medium text-gray-800">Approved teams to receive this email</label>
             <div className="mt-2 w-full max-w-md rounded-xl border border-gray-200 bg-white max-h-64 overflow-auto p-3 space-y-2">
-              {approvedTeams.map((t) => (
+              {approvedSubmissionTeams.map((t) => (
                 <div key={t.id} className="text-sm text-gray-800">
                   {t.teamName} <span className="text-gray-500">— {t.leader?.email || "no email"}</span>
                 </div>
               ))}
-              {approvedTeams.length === 0 ? <div className="text-xs text-gray-500">No approved teams found.</div> : null}
+              {approvedSubmissionTeams.length === 0 ? (
+                <div className="text-xs text-gray-500">No admin-approved submissions found.</div>
+              ) : null}
             </div>
-            <p className="mt-1 text-xs text-gray-500">{approvedTeams.length} approved team(s)</p>
+            <p className="mt-1 text-xs text-gray-500">{approvedSubmissionTeams.length} approved team(s)</p>
           </div>
         ) : null}
 
@@ -267,7 +280,7 @@ const HackathonAdminSendMail = () => {
               className="mt-2 w-full max-w-md rounded-xl border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="">Select a team</option>
-              {approvedTeams.map((t) => (
+              {approvedSubmissionTeams.map((t) => (
                 <option key={t.id} value={t.id}>
                   {t.teamName} — {t.leader?.email || "no email"}
                 </option>
@@ -305,7 +318,7 @@ const HackathonAdminSendMail = () => {
               className="mt-2 w-full max-w-md rounded-xl border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
             <div className="mt-2 w-full max-w-md rounded-xl border border-gray-200 bg-white max-h-64 overflow-auto p-3 space-y-2">
-              {filteredApprovedTeams.map((t) => (
+              {filteredApprovedSubmissionTeams.map((t) => (
                 <label key={t.id} className="flex items-start gap-2 cursor-pointer">
                   <input
                     type="checkbox"
@@ -318,7 +331,9 @@ const HackathonAdminSendMail = () => {
                   </span>
                 </label>
               ))}
-              {filteredApprovedTeams.length === 0 ? <div className="text-xs text-gray-500">No approved teams found.</div> : null}
+              {filteredApprovedSubmissionTeams.length === 0 ? (
+                <div className="text-xs text-gray-500">No approved teams found.</div>
+              ) : null}
             </div>
             <p className="mt-1 text-xs text-gray-500">{multiTeamIds.length} team(s) selected</p>
           </div>
