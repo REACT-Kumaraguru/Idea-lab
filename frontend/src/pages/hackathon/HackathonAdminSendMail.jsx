@@ -242,6 +242,21 @@ const HackathonAdminSendMail = () => {
           </div>
         </div>
 
+        {audience === "teams" && mailType === "approved" ? (
+          <div>
+            <label className="text-sm font-medium text-gray-800">Approved teams to receive this email</label>
+            <div className="mt-2 w-full max-w-md rounded-xl border border-gray-200 bg-white max-h-64 overflow-auto p-3 space-y-2">
+              {approvedTeams.map((t) => (
+                <div key={t.id} className="text-sm text-gray-800">
+                  {t.teamName} <span className="text-gray-500">— {t.leader?.email || "no email"}</span>
+                </div>
+              ))}
+              {approvedTeams.length === 0 ? <div className="text-xs text-gray-500">No approved teams found.</div> : null}
+            </div>
+            <p className="mt-1 text-xs text-gray-500">{approvedTeams.length} approved team(s)</p>
+          </div>
+        ) : null}
+
         {audience === "teams" && mailType === "team" ? (
           <div>
             <label className="text-sm font-medium text-gray-800">Team</label>
