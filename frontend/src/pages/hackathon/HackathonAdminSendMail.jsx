@@ -40,7 +40,8 @@ const HackathonAdminSendMail = () => {
     load();
   }, []);
 
-  const filteredTeams = teams.filter((t) => {
+  const approvedTeams = teams.filter((t) => String(t.status || "").toLowerCase() === "approved");
+  const filteredApprovedTeams = approvedTeams.filter((t) => {
     const q = searchTeams.trim().toLowerCase();
     if (!q) return true;
     return `${t.teamName} ${t.leader?.email || ""}`.toLowerCase().includes(q);
@@ -251,7 +252,7 @@ const HackathonAdminSendMail = () => {
               className="mt-2 w-full max-w-md rounded-xl border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="">Select a team</option>
-              {teams.map((t) => (
+              {approvedTeams.map((t) => (
                 <option key={t.id} value={t.id}>
                   {t.teamName} — {t.leader?.email || "no email"}
                 </option>
@@ -289,7 +290,7 @@ const HackathonAdminSendMail = () => {
               className="mt-2 w-full max-w-md rounded-xl border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
             <div className="mt-2 w-full max-w-md rounded-xl border border-gray-200 bg-white max-h-64 overflow-auto p-3 space-y-2">
-              {filteredTeams.map((t) => (
+              {filteredApprovedTeams.map((t) => (
                 <label key={t.id} className="flex items-start gap-2 cursor-pointer">
                   <input
                     type="checkbox"
@@ -302,7 +303,7 @@ const HackathonAdminSendMail = () => {
                   </span>
                 </label>
               ))}
-              {filteredTeams.length === 0 ? <div className="text-xs text-gray-500">No teams found.</div> : null}
+              {filteredApprovedTeams.length === 0 ? <div className="text-xs text-gray-500">No approved teams found.</div> : null}
             </div>
             <p className="mt-1 text-xs text-gray-500">{multiTeamIds.length} team(s) selected</p>
           </div>
