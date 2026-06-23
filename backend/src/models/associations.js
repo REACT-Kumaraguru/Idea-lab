@@ -1,4 +1,3 @@
-import "./OtpCodeModel.js";
 import Equipment from "./EquipmentModel.js";
 import EquipmentBooking from "./EquipmentBooking.model.js";
 import User from "./UserModel.js";

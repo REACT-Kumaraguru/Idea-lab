@@ -198,9 +198,9 @@ export const Login = () => {
                   Remember me
                 </label>
               </div>
-              <Link to="/forgot-password" className="text-sm text-blue-600 hover:text-blue-700 font-medium">
+              <a href="/forgot-password" className="text-sm text-blue-600 hover:text-blue-700 font-medium">
                 Forgot password?
-              </Link>
+              </a>
             </div>
 
             {/* Submit Button */}

@@ -15,19 +15,6 @@ services:
       timeout: 5s
       retries: 5
 
-  redis:
-    image: redis:7-alpine
-    command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
-    volumes:
-      - ./redis/redis.conf:/usr/local/etc/redis/redis.conf:ro
-    ports:
-      - "6379:6379"
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
-      timeout: 3s
-      retries: 5
-
   backend:
     build:
       context: ./backend
@@ -37,50 +24,22 @@ services:
     environment:
       DATABASE_URL: postgres://idea_lab:idea_lab_secret@postgres:5432/idea_lab
       SESSION_SECRET: ${SESSION_SECRET:-change-me-in-production}
-      NODE_ENV: production
-      CLIENT_URL: ${CLIENT_URL:-https://idealab.kct.ac.in}
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
     depends_on:
       postgres:
-        condition: service_healthy
-      redis:
         condition: service_healthy
     ports:
       - "5001:5001"
     volumes:
-      - backend_uploads:/app/uploads
+      - backend_uploads:/app/src/uploads
 
-  worker:
-    build:
-      context: .
-      dockerfile: worker/Dockerfile
-    env_file:
-      - ./backend/.env
-    environment:
-      NODE_ENV: production
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
-      EMAIL_WORKER_CONCURRENCY: ${EMAIL_WORKER_CONCURRENCY:-10}
-    depends_on:
-      redis:
-        condition: service_healthy
-    restart: unless-stopped
-
-  nginx:
+  frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        VITE_API_URL: ${VITE_API_URL:-https://idealab.kct.ac.in}
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:5173}
     ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf
-      - ./ssl/certs:/etc/ssl/certs
-      - ./ssl/private:/etc/ssl/private
-      - backend_uploads:/app/uploads:ro
+      - "5173:80"
     depends_on:
       - backend
 
