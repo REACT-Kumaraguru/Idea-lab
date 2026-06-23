@@ -59,7 +59,7 @@ export const getAllBookings = async (req, res) => {
 // @access  Private
 export const createBooking = async (req, res) => {
   try {
-    const { equipmentId, bookingDate, bookingTime, duration, notes } = req.body;
+    const { equipmentId, bookingDate, bookingTime, duration, purposeOfUsage, benefitsForKCT, benefitsReason, notes } = req.body;
     const userId = req.user.id;
 
     // Validate required fields
@@ -67,6 +67,28 @@ export const createBooking = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: "Please provide all required fields",
+      });
+    }
+
+    // Validate new fields
+    if (!purposeOfUsage || purposeOfUsage.trim() === "") {
+      return res.status(400).json({
+        success: false,
+        message: "Please provide purpose of usage",
+      });
+    }
+
+    if (!benefitsForKCT || !["yes", "no"].includes(benefitsForKCT)) {
+      return res.status(400).json({
+        success: false,
+        message: "Please specify if this benefits KCT",
+      });
+    }
+
+    if (!benefitsReason || benefitsReason.trim() === "") {
+      return res.status(400).json({
+        success: false,
+        message: "Please provide reason for benefits selection",
       });
     }
 
@@ -167,6 +189,9 @@ export const createBooking = async (req, res) => {
       bookingTime,
       duration: durationHours,
       totalAmount,
+      purposeOfUsage,
+      benefitsForKCT,
+      benefitsReason,
       notes,
       status: "draft",
     });
