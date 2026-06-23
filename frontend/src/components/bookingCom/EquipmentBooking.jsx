@@ -23,6 +23,9 @@ const EquipmentBooking = ({ equipment, isOpen, onClose, onBookingSuccess }) => {
     bookingDate: "",
     startTime: "",
     endTime: "",
+    purposeOfUsage: "",
+    benefitsForKCT: "",
+    benefitsReason: "",
     notes: "",
   });
   const [error, setError] = useState("");
@@ -46,6 +49,9 @@ const EquipmentBooking = ({ equipment, isOpen, onClose, onBookingSuccess }) => {
       bookingDate: "",
       startTime: "",
       endTime: "",
+      purposeOfUsage: "",
+      benefitsForKCT: "",
+      benefitsReason: "",
       notes: "",
     });
     setError("");
@@ -156,6 +162,19 @@ const EquipmentBooking = ({ equipment, isOpen, onClose, onBookingSuccess }) => {
       return false;
     }
 
+    if (!bookingData.purposeOfUsage.trim()) {
+      setError("Please enter the purpose of usage");
+      return false;
+    }
+    if (!bookingData.benefitsForKCT) {
+      setError("Please select whether this benefits KCT");
+      return false;
+    }
+    if (!bookingData.benefitsReason.trim()) {
+      setError("Please specify the reason for your Benefits for KCT selection");
+      return false;
+    }
+
     return true;
   };
 
@@ -169,6 +188,9 @@ const EquipmentBooking = ({ equipment, isOpen, onClose, onBookingSuccess }) => {
       bookingDate: bookingData.bookingDate,
       bookingTime: bookingData.startTime,
       duration: Math.round(durationInHours * 100) / 100,
+      purposeOfUsage: bookingData.purposeOfUsage,
+      benefitsForKCT: bookingData.benefitsForKCT,
+      benefitsReason: bookingData.benefitsReason,
       notes: bookingData.notes,
     });
 
@@ -284,6 +306,69 @@ const EquipmentBooking = ({ equipment, isOpen, onClose, onBookingSuccess }) => {
                 ))}
               </select>
               <p className="text-xs text-gray-500 mt-1">End time must be after start time. Booked slots are not selectable.</p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Purpose of Usage *</label>
+              <textarea
+                name="purposeOfUsage"
+                value={bookingData.purposeOfUsage}
+                onChange={handleInputChange}
+                rows={3}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                placeholder="Describe the purpose for which you are using this equipment..."
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Benefits for KCT *</label>
+              <div className="flex gap-6 mb-3">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="benefitsForKCT"
+                    value="yes"
+                    checked={bookingData.benefitsForKCT === "yes"}
+                    onChange={handleInputChange}
+                    className="w-4 h-4 text-blue-600"
+                  />
+                  <span className="text-sm text-gray-700">Yes</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="benefitsForKCT"
+                    value="no"
+                    checked={bookingData.benefitsForKCT === "no"}
+                    onChange={handleInputChange}
+                    className="w-4 h-4 text-blue-600"
+                  />
+                  <span className="text-sm text-gray-700">No</span>
+                </label>
+              </div>
+              {bookingData.benefitsForKCT && (
+                <div>
+                  <label className="block text-sm text-gray-600 mb-1">
+                    {bookingData.benefitsForKCT === "yes"
+                      ? "Specify why this benefits KCT *"
+                      : "Specify why this does not benefit KCT *"}
+                  </label>
+                  <textarea
+                    name="benefitsReason"
+                    value={bookingData.benefitsReason}
+                    onChange={handleInputChange}
+                    rows={3}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                    placeholder={
+                      bookingData.benefitsForKCT === "yes"
+                        ? "Explain how this usage benefits KCT..."
+                        : "Explain why this usage does not benefit KCT..."
+                    }
+                    required
+                  />
+                </div>
+              )}
             </div>
 
             <div>
