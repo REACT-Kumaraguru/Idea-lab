@@ -94,7 +94,7 @@ const Header = () => {
               >
                 Apply
               </Link>
-            
+              
 
               <button
                 className="md:hidden text-slate-800 text-xl"
