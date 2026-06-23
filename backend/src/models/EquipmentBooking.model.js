@@ -50,6 +50,21 @@ const EquipmentBooking = sequelize.define(
       allowNull: false,
       field: "total_amount",
     },
+    purposeOfUsage: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+      field: "purpose_of_usage",
+    },
+    benefitsForKCT: {
+      type: DataTypes.ENUM("yes", "no"),
+      allowNull: true,
+      field: "benefits_for_kct",
+    },
+    benefitsReason: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+      field: "benefits_reason",
+    },
     notes: {
       type: DataTypes.TEXT,
       allowNull: true,
