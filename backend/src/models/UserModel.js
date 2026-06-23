@@ -19,9 +19,16 @@ const User = sequelize.define(
       allowNull: false,
       field: "full_name",
     },
-    password: {
+    passwordHash: {
       type: DataTypes.STRING,
       allowNull: false,
+      field: "password_hash",
+    },
+    isVerified: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: true,
+      field: "is_verified",
     },
     phoneNumber: {
       type: DataTypes.STRING,

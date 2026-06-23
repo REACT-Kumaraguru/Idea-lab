@@ -11,6 +11,7 @@ import NewEquipment from "./components/AdminCom/Equipment/NewEquipment";
 import Equipment from "./components/AdminCom/Equipment/Equipment";
 import Approval from "./components/AdminCom/ApprovalCom/Approval";
 import { Login } from "./components/AuthCom/Login";
+import { ForgotPassword } from "./components/AuthCom/ForgotPassword";
 import { Signup } from "./components/AuthCom/SignUp";
 import { useAuthStore } from "./store/useAuthStore";
 import { useBookingStore } from "./store/useBookingStore";
@@ -24,6 +25,30 @@ import QRScanner from "./components/AdminCom/QRScanner";
 import ProblemSubmissionInfo from "./components/ProblemCom/ProblemSubmissionInfo";
 import ProjectForm from "./components/ProblemCom/ProjectForm";
 import MySubmissions from "./components/ProblemCom/MySubmissions";
+
+// Hackathon module (isolated)
+import HackathonProtectedPage from "./components/hackathon/HackathonProtectedPage";
+import HackathonLanding from "./pages/hackathon/HackathonLanding";
+import HackathonLogin from "./pages/hackathon/HackathonLogin";
+import HackathonForgotPassword from "./pages/hackathon/HackathonForgotPassword";
+import HackathonRegister from "./pages/hackathon/HackathonRegister";
+import HackathonProblems from "./pages/hackathon/HackathonProblems";
+import HackathonGuidelines from "./pages/hackathon/HackathonGuidelines";
+import HackathonDashboard from "./pages/hackathon/HackathonDashboard";
+import HackathonTeam from "./pages/hackathon/HackathonTeam";
+import HackathonCreateTeam from "./pages/hackathon/HackathonCreateTeam";
+import HackathonJoinTeam from "./pages/hackathon/HackathonJoinTeam";
+import HackathonSubmit from "./pages/hackathon/HackathonSubmit";
+import HackathonStatus from "./pages/hackathon/HackathonStatus";
+import HackathonAdminHome from "./pages/hackathon/HackathonAdminHome";
+import HackathonAdminTeams from "./pages/hackathon/HackathonAdminTeams";
+import HackathonAdminProblems from "./pages/hackathon/HackathonAdminProblems";
+import HackathonAdminSubmissions from "./pages/hackathon/HackathonAdminSubmissions";
+import HackathonAdminSendMail from "./pages/hackathon/HackathonAdminSendMail";
+import HackathonAdminMentors from "./pages/hackathon/HackathonAdminMentors";
+import HackathonAdminUsers from "./pages/hackathon/HackathonAdminUsers";
+import HackathonPaymentDetails from "./pages/hackathon/HackathonPaymentDetails";
+import HackathonAdminPaymentDetails from "./pages/hackathon/HackathonAdminPaymentDetails";
 
 function Home() {
   return (
@@ -110,6 +135,8 @@ function App() {
           path="/login"
           element={<LoginOrRedirect authUser={authUser} />}
         />
+
+        <Route path="/forgot-password" element={<ForgotPassword />} />
 
         {/* User Protected Routes */}
         <Route
@@ -204,6 +231,135 @@ function App() {
       <Route path="users" element={<AdminAccess />} />
     </Route>
 
+        {/* Hackathon module routes (ICH 2026) */}
+        <Route path="/ich2026" element={<HackathonLanding />} />
+        <Route path="/ich2026/login" element={<HackathonLogin />} />
+        <Route path="/ich2026/forgot-password" element={<HackathonForgotPassword />} />
+        <Route path="/ich2026/register" element={<HackathonRegister />} />
+        <Route path="/ich2026/problems" element={<HackathonProblems />} />
+        <Route path="/ich2026/guidelines" element={<HackathonGuidelines />} />
+
+        <Route
+          path="/ich2026/dashboard"
+          element={
+            <HackathonProtectedPage allowedRoles={["student", "mentor"]}>
+              <HackathonDashboard />
+            </HackathonProtectedPage>
+          }
+        />
+        <Route
+          path="/ich2026/team"
+          element={
+            <HackathonProtectedPage allowedRoles={["student", "mentor"]}>
+              <HackathonTeam />
+            </HackathonProtectedPage>
+          }
+        />
+        <Route
+          path="/ich2026/create-team"
+          element={
+            <HackathonProtectedPage allowedRoles={["student"]}>
+              <HackathonCreateTeam />
+            </HackathonProtectedPage>
+          }
+        />
+        <Route
+          path="/ich2026/join-team"
+          element={
+            <HackathonProtectedPage allowedRoles={["student"]}>
+              <HackathonJoinTeam />
+            </HackathonProtectedPage>
+          }
+        />
+        <Route
+          path="/ich2026/submit"
+          element={
+            <HackathonProtectedPage allowedRoles={["student"]}>
+              <HackathonSubmit />
+            </HackathonProtectedPage>
+          }
+        />
+        <Route
+          path="/ich2026/payment-details"
+          element={
+            <HackathonProtectedPage allowedRoles={["student"]}>
+              <HackathonPaymentDetails />
+            </HackathonProtectedPage>
+          }
+        />
+        <Route
+          path="/ich2026/status"
+          element={
+            <HackathonProtectedPage allowedRoles={["student", "mentor"]}>
+              <HackathonStatus />
+            </HackathonProtectedPage>
+          }
+        />
+
+        <Route
+          path="/ich2026/admin"
+          element={
+            <HackathonProtectedPage allowedRoles={["admin"]}>
+              <HackathonAdminHome />
+            </HackathonProtectedPage>
+          }
+        />
+        <Route
+          path="/ich2026/admin/teams"
+          element={
+            <HackathonProtectedPage allowedRoles={["admin"]}>
+              <HackathonAdminTeams />
+            </HackathonProtectedPage>
+          }
+        />
+        <Route
+          path="/ich2026/admin/problems"
+          element={
+            <HackathonProtectedPage allowedRoles={["admin"]}>
+              <HackathonAdminProblems />
+            </HackathonProtectedPage>
+          }
+        />
+        <Route
+          path="/ich2026/admin/submissions"
+          element={
+            <HackathonProtectedPage allowedRoles={["admin"]}>
+              <HackathonAdminSubmissions />
+            </HackathonProtectedPage>
+          }
+        />
+        <Route
+          path="/ich2026/admin/mentors"
+          element={
+            <HackathonProtectedPage allowedRoles={["admin"]}>
+              <HackathonAdminMentors />
+            </HackathonProtectedPage>
+          }
+        />
+        <Route
+          path="/ich2026/admin/payment-details"
+          element={
+            <HackathonProtectedPage allowedRoles={["admin"]}>
+              <HackathonAdminPaymentDetails />
+            </HackathonProtectedPage>
+          }
+        />
+        <Route
+          path="/ich2026/admin/send-mail"
+          element={
+            <HackathonProtectedPage allowedRoles={["admin"]}>
+              <HackathonAdminSendMail />
+            </HackathonProtectedPage>
+          }
+        />
+        <Route
+          path="/ich2026/admin/users"
+          element={
+            <HackathonProtectedPage allowedRoles={["admin"]}>
+              <HackathonAdminUsers />
+            </HackathonProtectedPage>
+          }
+        />
       </Routes>
 
       <Toaster />
