@@ -24,6 +24,8 @@ services:
     environment:
       DATABASE_URL: postgres://idea_lab:idea_lab_secret@postgres:5432/idea_lab
       SESSION_SECRET: ${SESSION_SECRET:-change-me-in-production}
+      NODE_ENV: production
+      CLIENT_URL: ${CLIENT_URL:-https://idealab.kct.ac.in}
     depends_on:
       postgres:
         condition: service_healthy
@@ -32,14 +34,20 @@ services:
     volumes:
       - backend_uploads:/app/src/uploads
 
-  frontend:
+  nginx:
     build:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        VITE_API_URL: ${VITE_API_URL:-http://localhost:5173}
+        # Empty => frontend uses relative "/api" (works on any domain, http or https)
+        VITE_API_URL: ${VITE_API_URL-}
     ports:
-      - "5173:80"
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf
+      - ./ssl/certs:/etc/ssl/certs
+      - ./ssl/private:/etc/ssl/private
     depends_on:
       - backend
 
