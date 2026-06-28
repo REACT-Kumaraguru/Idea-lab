@@ -126,6 +126,18 @@ const EquipmentBooking = ({ equipment, isOpen, onClose, onBookingSuccess }) => {
       setError("Please select an end time");
       return false;
     }
+    if (!bookingData.purposeOfUsage.trim()) {
+      setError("Please enter the purpose of usage");
+      return false;
+    }
+    if (!bookingData.benefitsForKCT) {
+      setError("Please select whether this benefits KCT");
+      return false;
+    }
+    if (!bookingData.benefitsReason.trim()) {
+      setError("Please provide a reason for your selection");
+      return false;
+    }
     if (durationInHours < 0.5) {
       setError("End time must be after start time (minimum 0.5 hours)");
       return false;
@@ -134,7 +146,7 @@ const EquipmentBooking = ({ equipment, isOpen, onClose, onBookingSuccess }) => {
       setError("Maximum booking duration is 12 hours");
       return false;
     }
-
+    
     const selectedDate = new Date(bookingData.bookingDate);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -325,7 +337,7 @@ const EquipmentBooking = ({ equipment, isOpen, onClose, onBookingSuccess }) => {
               </select>
             </div>
 
-            {bookingData.benefitsForKCT === "yes" && (
+            {bookingData.benefitsForKCT && (
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Benefits Reason
@@ -336,7 +348,12 @@ const EquipmentBooking = ({ equipment, isOpen, onClose, onBookingSuccess }) => {
                   onChange={handleInputChange}
                   rows={3}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg"
-                  placeholder="Explain the benefits"
+                  placeholder={
+                    bookingData.benefitsForKCT === "yes"
+                      ? "Explain how this benefits KCT"
+                      : "Explain why this does not benefit KCT"
+                  }
+                  required
                 />
               </div>
             )}
