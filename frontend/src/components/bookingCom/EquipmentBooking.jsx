@@ -24,6 +24,9 @@ const EquipmentBooking = ({ equipment, isOpen, onClose, onBookingSuccess }) => {
     startTime: "",
     endTime: "",
     notes: "",
+    purposeOfUsage: "",
+    benefitsForKCT: "",
+    benefitsReason: "",
   });
   const [error, setError] = useState("");
 
@@ -47,6 +50,9 @@ const EquipmentBooking = ({ equipment, isOpen, onClose, onBookingSuccess }) => {
       startTime: "",
       endTime: "",
       notes: "",
+      purposeOfUsage: "",
+      benefitsForKCT: "",
+      benefitsReason: "",
     });
     setError("");
   };
@@ -170,6 +176,9 @@ const EquipmentBooking = ({ equipment, isOpen, onClose, onBookingSuccess }) => {
       bookingTime: bookingData.startTime,
       duration: Math.round(durationInHours * 100) / 100,
       notes: bookingData.notes,
+      purposeOfUsage: bookingData.purposeOfUsage,
+      benefitsForKCT: bookingData.benefitsForKCT,
+      benefitsReason: bookingData.benefitsReason,
     });
 
     if (result) {
@@ -286,6 +295,52 @@ const EquipmentBooking = ({ equipment, isOpen, onClose, onBookingSuccess }) => {
               <p className="text-xs text-gray-500 mt-1">End time must be after start time. Booked slots are not selectable.</p>
             </div>
 
+            <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Purpose of Usage
+                </label>
+                <textarea
+                  name="purposeOfUsage"
+                  value={bookingData.purposeOfUsage}
+                  onChange={handleInputChange}
+                  rows={3}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg"
+                  placeholder="Describe how the equipment will be used"
+                />
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Benefits for KCT
+              </label>
+              <select
+                name="benefitsForKCT"
+                value={bookingData.benefitsForKCT}
+                onChange={handleInputChange}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg"
+              >        
+                <option value="">Select</option>
+                <option value="yes">Yes</option>
+                <option value="no">No</option>
+              </select>
+            </div>
+
+            {bookingData.benefitsForKCT === "yes" && (
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Benefits Reason
+                </label>
+                <textarea
+                  name="benefitsReason"
+                  value={bookingData.benefitsReason}
+                  onChange={handleInputChange}
+                  rows={3}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg"
+                  placeholder="Explain the benefits"
+                />
+              </div>
+            )}
+            
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">Additional Notes (Optional)</label>
               <textarea
