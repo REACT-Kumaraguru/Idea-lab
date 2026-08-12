@@ -6,6 +6,7 @@ import Navbar from "../Navbar";
 import ProblemStatementPDF from "./ProblemStatementPDF";
 import { axiosInstance } from "../../lib/axios";
 import { toast } from "react-hot-toast";
+import AmbientBackground from "../AmbientBackground";
 
 const statusConfig = {
   pending: {
@@ -98,99 +99,108 @@ export default function MySubmissions() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[#0a0809] text-stone-100 font-sans selection:bg-amber-400 selection:text-stone-950 relative overflow-x-hidden">
+      <AmbientBackground height="fixed inset-0" />
       <Navbar />
-      <div className="max-w-4xl mx-auto px-6 py-10">
+      <div className="relative z-10 max-w-4xl mx-auto px-6 py-10">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">My Submissions</h1>
-          <p className="text-gray-600 mt-1">
-            View your problem statements and download them as PDF.
+          <h1 className="font-serif text-3xl sm:text-4xl text-stone-100 uppercase tracking-widest mb-1 font-normal">
+            My Problem Submissions
+          </h1>
+          <p className="text-xs font-dancing text-amber-200/90">
+            Industrial Challenge Verification & PDF Specifications
           </p>
         </div>
 
         {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center gap-3">
-            <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0" />
-            <p className="text-sm text-red-700">{error}</p>
+          <div className="mb-6 p-4 bg-rose-950/40 border border-rose-500/40 rounded-xl flex items-center gap-3 text-rose-200 text-xs font-sans">
+            <AlertCircle className="w-5 h-5 text-rose-400 shrink-0" />
+            <p>{error}</p>
           </div>
         )}
 
         {loading ? (
-          <div className="flex flex-col items-center justify-center py-16">
-            <Loader2 className="w-10 h-10 text-blue-600 animate-spin mb-4" />
-            <p className="text-gray-600">Loading your submissions...</p>
+          <div className="flex flex-col items-center justify-center py-20">
+            <Loader2 className="w-10 h-10 text-amber-400 animate-spin mb-4" />
+            <p className="text-stone-400 font-sans text-xs uppercase tracking-widest font-semibold">Retrieving your problem specifications...</p>
           </div>
         ) : submissions.length === 0 ? (
-          <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
-            <FileText className="w-14 h-14 text-gray-300 mx-auto mb-4" />
-            <h2 className="text-lg font-semibold text-gray-800 mb-2">No submissions yet</h2>
-            <p className="text-gray-600 mb-6 max-w-sm mx-auto">
-              Submit a problem statement from the Upload Problem page to see it here.
+          <div className="serene-glass-card rounded-3xl border border-amber-500/20 p-12 text-center max-w-lg mx-auto shadow-2xl">
+            <FileText className="w-14 h-14 text-amber-400/40 mx-auto mb-4" />
+            <h2 className="font-serif text-2xl text-stone-100 uppercase tracking-wide mb-2">No Submissions Recorded</h2>
+            <p className="text-stone-400 font-sans text-xs font-light leading-relaxed mb-6">
+              Submit an industrial problem statement from the specification portal to view and export it here.
             </p>
             <Link
               to="/upload-problem"
-              className="inline-flex items-center gap-2 bg-blue-600 text-white px-5 py-2.5 rounded-lg font-medium hover:bg-blue-700"
+              className="inline-flex items-center gap-2 bg-gradient-to-r from-amber-400 via-amber-300 to-amber-500 text-stone-950 px-6 py-3 rounded-full text-xs font-sans font-bold uppercase tracking-[0.15em] hover:brightness-110 shadow-lg"
             >
-              Upload Problem
+              Submit Problem Statement
             </Link>
           </div>
         ) : (
-          <ul className="space-y-4">
+          <ul className="space-y-5">
             {submissions.map((sub) => {
               const config = statusConfig[sub.status] || statusConfig.pending;
               const Icon = config.icon;
               return (
                 <li
                   key={sub.id}
-                  className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm hover:shadow-md transition-shadow"
+                  className="serene-glass-card rounded-3xl border border-amber-500/20 overflow-hidden shadow-xl hover:border-amber-500/40 transition-all"
                 >
-                  <div className="p-5">
+                  <div className="p-6">
                     <div className="flex flex-wrap items-start justify-between gap-4">
                       <div className="flex-1 min-w-0">
-                        <h2 className="text-lg font-semibold text-gray-900 truncate pr-2">
+                        <h2 className="font-serif text-2xl text-stone-100 uppercase tracking-wide truncate pr-2 font-normal">
                           {sub.problemTitle || "Untitled Problem Statement"}
                         </h2>
-                        <p className="text-sm text-gray-500 mt-0.5">
+                        <p className="text-xs font-dancing text-amber-200/90 mt-1">
                           {sub.organisationName} · {sub.organisationType}
                         </p>
-                        <p className="text-xs text-gray-400 mt-1">
+                        <p className="text-[11px] font-sans text-stone-400 mt-2 font-light">
                           Submitted {formatDate(sub.createdAt)}
                           {sub.reviewedAt && (
                             <> · Reviewed {formatDate(sub.reviewedAt)}</>
                           )}
                         </p>
                       </div>
-                      <div className="flex items-center gap-3 flex-shrink-0">
+                      <div className="flex items-center gap-3 flex-shrink-0 font-sans text-xs">
                         <span
-                          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium border ${config.bg} ${config.text} ${config.border}`}
+                          className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider border ${
+                            sub.status === "approved"
+                              ? "bg-emerald-950/60 text-emerald-300 border-emerald-500/40"
+                              : sub.status === "rejected"
+                              ? "bg-rose-950/60 text-rose-300 border-rose-500/40"
+                              : "bg-amber-950/60 text-amber-300 border-amber-500/40"
+                          }`}
                         >
-                          <Icon className="w-4 h-4" />
+                          <Icon className="w-3.5 h-3.5" />
                           {config.label}
                         </span>
                         <button
                           type="button"
                           onClick={() => handleDownloadPDF(sub)}
                           disabled={downloadingId === sub.id}
-                          className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed"
+                          className="inline-flex items-center gap-2 bg-gradient-to-r from-amber-400 via-amber-300 to-amber-500 text-stone-950 px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider hover:brightness-110 shadow-md disabled:opacity-60 cursor-pointer"
                         >
                           {downloadingId === sub.id ? (
                             <Loader2 className="w-4 h-4 animate-spin" />
                           ) : (
                             <Download className="w-4 h-4" />
                           )}
-                          Download PDF
+                          Export PDF
                         </button>
                       </div>
                     </div>
                     {sub.adminNotes && (
-                      <div className="mt-4 p-3 bg-gray-50 rounded-lg border border-gray-100">
-                        <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
-                          Admin notes
+                      <div className="mt-4 p-4 bg-stone-900/80 rounded-2xl border border-amber-500/15">
+                        <p className="text-[10px] font-sans font-bold text-amber-300 uppercase tracking-widest mb-1">
+                          Admin Review Feedback
                         </p>
-                        <p className="text-sm text-gray-700">{sub.adminNotes}</p>
+                        <p className="text-xs font-sans text-stone-300 font-light">{sub.adminNotes}</p>
                       </div>
                     )}
-                    <div className="mt-3 flex flex-wrap gap-2 text-xs text-gray-500">
+                    <div className="mt-4 flex flex-wrap gap-2 text-xs font-sans text-stone-400 font-light">
                       <span>{sub.sectorCategory && `Sector: ${sub.sectorCategory}`}</span>
                       <span>{sub.geographicContext && `· ${sub.geographicContext}`}</span>
                       {Array.isArray(sub.relevantSDGs) && sub.relevantSDGs.length > 0 && (

@@ -4,6 +4,7 @@ import { Trash2, MapPin, Users, Calendar, Clock } from "lucide-react";
 import { useBookingStore } from "../store/useBookingStore";
 import { axiosInstance } from "../lib/axios";
 import { getImageUrl } from "../lib/config.js";
+import AmbientBackground from "./AmbientBackground";
 
 const Cart = ({ cart = [], setCart = () => {} }) => {
   const { bookings, fetchMyBookings, isFetchingBookings, submitCart, isSubmittingCart } = useBookingStore();
@@ -63,29 +64,37 @@ const Cart = ({ cart = [], setCart = () => {} }) => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[#0a0809] text-stone-100 font-sans selection:bg-amber-400 selection:text-stone-950 relative overflow-x-hidden">
+      <AmbientBackground height="h-[500px]" />
       <Navbar cartCount={cartCount} />
 
-      <div className="max-w-6xl mx-auto px-6 py-8">
-        <h1 className="text-3xl font-bold text-gray-800 mb-6">Your Cart</h1>
+      <div className="relative z-10 max-w-[1400px] mx-auto px-6 py-8">
+        <div className="mb-8">
+          <h1 className="text-3xl sm:text-4xl font-serif uppercase tracking-widest text-stone-100 mb-1 font-normal">
+            Your Equipment Cart
+          </h1>
+          <p className="text-xs font-dancing text-amber-200/90">
+            Selected Prototyping Hardware Ready For Reservation Request
+          </p>
+        </div>
 
         {isFetchingBookings ? (
-          <div className="flex justify-center items-center py-16">
-            <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+          <div className="flex justify-center items-center py-20">
+            <div className="w-12 h-12 border-4 border-amber-400 border-t-transparent rounded-full animate-spin" />
           </div>
         ) : displayBookings.length === 0 ? (
-          <div className="text-center py-16">
-            <div className="text-5xl mb-4">🛒</div>
-            <h2 className="text-xl font-semibold text-gray-700">
-              Your cart is empty
+          <div className="text-center py-20 serene-glass-card rounded-3xl border border-amber-500/20 shadow-2xl max-w-xl mx-auto">
+            <div className="text-5xl mb-4 opacity-70">🛒</div>
+            <h2 className="font-serif text-3xl text-stone-100 uppercase tracking-wide font-normal mb-2">
+              Your Cart is Empty
             </h2>
-            <p className="text-gray-500 mt-2">
-              Schedule equipment from the listing page to see your booked items here.
+            <p className="text-stone-400 font-sans text-xs font-light leading-relaxed">
+              Schedule equipment from the catalog page to see your booked items here.
             </p>
           </div>
         ) : (
           <>
-            <div className="bg-white border rounded-lg shadow-sm">
+            <div className="serene-glass-card rounded-3xl border border-amber-500/20 shadow-2xl overflow-hidden">
               {displayBookings.map((booking) => {
                 const eq = booking.equipment || {};
                 const imageUrl = getImageUrl(eq.image);
@@ -93,71 +102,71 @@ const Cart = ({ cart = [], setCart = () => {} }) => {
                 return (
                   <div
                     key={booking.id}
-                    className="flex items-start gap-4 p-4 border-b last:border-none"
+                    className="flex items-start gap-5 p-6 border-b border-amber-500/15 last:border-none"
                   >
                     <img
-                      src={imageUrl || "https://via.placeholder.com/80/e5e7eb/6b7280?text=Equipment"}
+                      src={imageUrl || "https://via.placeholder.com/80/191618/d4af37?text=Equipment"}
                       alt={eq.equipmentName}
-                      className="w-20 h-20 object-cover rounded-md"
+                      className="w-24 h-24 object-cover rounded-2xl border border-amber-500/30 shrink-0"
                       onError={(e) => {
                         e.target.src =
-                          "https://via.placeholder.com/80/e5e7eb/6b7280?text=Equipment";
+                          "https://via.placeholder.com/80/191618/d4af37?text=Equipment";
                       }}
                     />
 
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-lg text-gray-800">
+                      <h3 className="font-serif text-2xl text-stone-100 uppercase tracking-wide">
                         {eq.equipmentName}
                       </h3>
                       {eq.brandName && (
-                        <p className="text-xs text-gray-500 mt-0.5">{eq.brandName}</p>
+                        <p className="text-xs font-dancing text-amber-200/90 mt-0.5">{eq.brandName}</p>
                       )}
                       {eq.equipmentDetails && (
-                        <p className="text-sm text-gray-600 mt-1 line-clamp-2">
+                        <p className="text-xs font-sans text-stone-400 font-light mt-1.5 line-clamp-2">
                           {eq.equipmentDetails}
                         </p>
                       )}
 
-                      <div className="flex flex-wrap gap-4 mt-2 text-sm text-gray-600">
-                        <div className="flex items-center gap-1">
-                          <MapPin className="w-4 h-4 text-gray-400" />
-                          IDEA LAB
+                      <div className="flex flex-wrap gap-4 mt-3 text-xs font-sans text-stone-300">
+                        <div className="flex items-center gap-1.5 text-amber-400">
+                          <MapPin className="w-3.5 h-3.5" />
+                          <span>IDEA LAB</span>
                         </div>
                         {eq.quantity != null && (
-                          <div className="flex items-center gap-1">
-                            <Users className="w-4 h-4 text-gray-400" />
-                            Qty: {eq.quantity}
+                          <div className="flex items-center gap-1.5">
+                            <Users className="w-3.5 h-3.5 text-stone-400" />
+                            <span>Qty: {eq.quantity}</span>
                           </div>
                         )}
                         {eq.pricePerHour != null && (
-                          <span className="font-medium text-blue-600">
+                          <span className="font-mono text-amber-300 font-bold">
                             ₹{eq.pricePerHour}/hr
                           </span>
                         )}
                       </div>
 
                       {/* Scheduled slot */}
-                      <div className="mt-3 p-3 bg-gray-50 rounded-lg border border-gray-100">
-                        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
-                          Scheduled
+                      <div className="mt-4 p-4 bg-stone-900/80 rounded-2xl border border-amber-500/15">
+                        <p className="text-[10px] font-sans font-bold uppercase tracking-widest text-amber-300 mb-1.5">
+                          Scheduled Slot
                         </p>
-                        <div className="flex flex-wrap items-center gap-3 text-sm text-gray-700">
-                          <span className="flex items-center gap-1">
-                            <Calendar className="w-4 h-4 text-gray-400" />
+                        <div className="flex flex-wrap items-center gap-4 text-xs font-sans text-stone-200">
+                          <span className="flex items-center gap-1.5">
+                            <Calendar className="w-3.5 h-3.5 text-amber-400" />
                             {formatDate(booking.bookingDate)}
                           </span>
-                          <span className="flex items-center gap-1">
-                            <Clock className="w-4 h-4 text-gray-400" />
+                          <span className="flex items-center gap-1.5">
+                            <Clock className="w-3.5 h-3.5 text-amber-400" />
                             {formatTime(booking.bookingTime)} • {booking.duration}h
                           </span>
                           {booking.totalAmount != null && (
-                            <span className="font-semibold text-gray-800">
-                              ₹{booking.totalAmount}
+                            <span className="font-mono font-bold text-amber-300 text-sm ml-auto">
+                              Total: ₹{booking.totalAmount}
                             </span>
                           )}
                         </div>
                         {booking.notes && (
-                          <p className="text-xs text-gray-600 mt-2 italic">
+                          <p className="text-xs text-stone-400 mt-2 italic font-light">
                             Note: {booking.notes}
                           </p>
                         )}
@@ -168,11 +177,11 @@ const Cart = ({ cart = [], setCart = () => {} }) => {
                       <button
                         onClick={() => handleCancelBooking(booking.id)}
                         disabled={cancellingId === booking.id}
-                        className="text-red-500 hover:text-red-700 disabled:opacity-50 p-1"
+                        className="text-rose-400 hover:text-rose-300 disabled:opacity-50 p-2 rounded-xl border border-rose-500/30 hover:bg-rose-500/10 transition-colors"
                         title="Remove from cart"
                       >
                         {cancellingId === booking.id ? (
-                          <div className="w-5 h-5 border-2 border-red-500 border-t-transparent rounded-full animate-spin" />
+                          <div className="w-5 h-5 border-2 border-rose-400 border-t-transparent rounded-full animate-spin" />
                         ) : (
                           <Trash2 className="w-5 h-5" />
                         )}
@@ -182,23 +191,23 @@ const Cart = ({ cart = [], setCart = () => {} }) => {
                 );
               })}
 
-              <div className="flex justify-between items-center p-4 bg-gray-50">
-                <span className="font-semibold text-gray-700">
-                  Total items: {displayBookings.length}
+              <div className="flex justify-between items-center p-6 bg-stone-900/90 border-t border-amber-500/20">
+                <span className="font-sans text-xs uppercase tracking-widest text-stone-400 font-semibold">
+                  Total items: <span className="text-stone-100 font-mono">{displayBookings.length}</span>
                 </span>
 
                 <button
                   onClick={handleProceedToRequest}
                   disabled={draftCount === 0 || isSubmittingCart}
-                  className={`px-6 py-2 rounded-lg font-semibold ${
+                  className={`px-8 py-3 rounded-full font-sans text-xs uppercase font-bold tracking-[0.2em] transition-all shadow-lg ${
                     draftCount > 0 && !isSubmittingCart
-                      ? "bg-blue-600 text-white hover:bg-blue-700"
-                      : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                      ? "bg-gradient-to-r from-amber-400 via-amber-300 to-amber-500 text-stone-950 hover:brightness-110 hover:shadow-amber-500/20 cursor-pointer"
+                      : "bg-stone-800 text-stone-600 border border-stone-700 cursor-not-allowed"
                   }`}
                 >
                   {isSubmittingCart ? (
                     <>
-                      <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin align-middle mr-2" />
+                      <span className="inline-block w-4 h-4 border-2 border-stone-950 border-t-transparent rounded-full animate-spin align-middle mr-2" />
                       Submitting...
                     </>
                   ) : (

@@ -33,14 +33,14 @@ export const Sidebar = () => {
   };
 
   return (
-    <div className="fixed top-0 left-0 flex flex-col h-screen w-16 bg-white border-r border-gray-200 py-4 items-center justify-between z-50">
+    <div className="fixed top-0 left-0 flex flex-col h-screen w-16 bg-stone-950/90 border-r border-amber-500/20 backdrop-blur-xl py-4 items-center justify-between z-50">
 
       {/* Top Section */}
       <div className="flex flex-col items-center space-y-2 w-full">
         {/* Logo Container */}
         <div className="flex flex-col items-center w-full mb-2">
           <img src={Logo} alt="Idea Lab" className="h-10 mb-3 object-contain" />
-          <div className="w-10 border-b border-gray-200"></div>
+          <div className="w-10 border-b border-amber-500/20"></div>
         </div>
 
         {/* Main Menu Items */}
@@ -52,15 +52,15 @@ export const Sidebar = () => {
             <button
               key={item.id}
               onClick={() => navigate(item.path)}
-              className={`w-10 h-10 flex items-center justify-center rounded-lg transition-all duration-200 relative group ${isActive
-                  ? 'bg-teal-600 text-white shadow-md'
-                  : 'text-gray-500 hover:bg-teal-50 hover:text-teal-600'
+              className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all duration-200 relative group ${isActive
+                  ? 'bg-gradient-to-r from-amber-400 via-amber-300 to-amber-500 text-stone-950 shadow-md shadow-amber-500/20'
+                  : 'text-stone-400 hover:bg-amber-400/10 hover:text-amber-300'
                 }`}
             >
               <Icon className="w-5 h-5" />
 
               {/* Tooltip - appears on hover */}
-              <span className="absolute left-14 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap transition-opacity duration-200 shadow-lg z-50">
+              <span className="absolute left-14 px-2.5 py-1 bg-stone-900 border border-amber-500/30 text-amber-200 text-xs font-sans uppercase tracking-wider rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap transition-opacity duration-200 shadow-xl z-50">
                 {item.label}
               </span>
             </button>
@@ -72,10 +72,10 @@ export const Sidebar = () => {
       <div className="flex flex-col items-center space-y-2 w-full">
         <button
           onClick={handleLogout}
-          className="w-10 h-10 flex items-center justify-center rounded-lg text-gray-500 hover:bg-red-50 hover:text-red-600 transition-colors relative group"
+          className="w-10 h-10 flex items-center justify-center rounded-xl text-stone-400 hover:bg-rose-500/10 hover:text-rose-400 transition-colors relative group"
         >
           <LogOut className="w-5 h-5" />
-          <span className="absolute left-14 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap transition-opacity duration-200 shadow-lg z-50">
+          <span className="absolute left-14 px-2.5 py-1 bg-stone-900 border border-rose-500/30 text-rose-300 text-xs font-sans uppercase tracking-wider rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap transition-opacity duration-200 shadow-xl z-50">
             Logout
           </span>
         </button>

@@ -4,6 +4,7 @@ import { Save, ArrowLeft, ArrowRight, Upload, X, CheckCircle } from "lucide-reac
 import Navbar from "../Navbar";
 import { axiosInstance } from "../../lib/axios";
 import { toast } from "react-hot-toast";
+import AmbientBackground from "../AmbientBackground";
 
 const ProjectForm = () => {
   const navigate = useNavigate();
@@ -1747,30 +1748,31 @@ const ProjectForm = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[#0a0809] text-stone-100 font-sans selection:bg-amber-400 selection:text-stone-950 relative overflow-x-hidden">
+      <AmbientBackground height="h-[500px]" />
       <Navbar />
 
-      <div className="max-w-5xl mx-auto px-6 py-8">
+      <div className="relative z-10 max-w-5xl mx-auto px-6 py-10">
         {/* Progress Indicator */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-gray-700">
-              Section {currentSection + 1} of {sections.length}
+        <div className="mb-8 serene-glass-card p-6 rounded-2xl border border-amber-500/20 shadow-lg">
+          <div className="flex items-center justify-between mb-3 font-sans text-xs">
+            <span className="font-serif text-lg text-amber-300 uppercase tracking-wider">
+              Section {currentSection + 1} of {sections.length}: <span className="text-stone-100">{sections[currentSection].title}</span>
             </span>
-            <span className="text-sm text-gray-500">
+            <span className="text-stone-400 font-mono font-bold">
               {Math.round(((currentSection + 1) / sections.length) * 100)}% Complete
             </span>
           </div>
-          <div className="w-full bg-gray-200 rounded-full h-2">
+          <div className="w-full bg-stone-900 rounded-full h-2 overflow-hidden border border-amber-500/20">
             <div
-              className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+              className="bg-gradient-to-r from-amber-500 via-amber-300 to-amber-400 h-2 rounded-full transition-all duration-300"
               style={{ width: `${((currentSection + 1) / sections.length) * 100}%` }}
             />
           </div>
         </div>
 
         {/* Section Navigation */}
-        <div className="mb-6 flex flex-wrap gap-2">
+        <div className="mb-8 flex flex-wrap gap-2">
           {sections.map((section, index) => (
             <button
               key={index}
@@ -1778,12 +1780,12 @@ const ProjectForm = () => {
                 setCurrentSection(index);
                 window.scrollTo({ top: 0, behavior: "smooth" });
               }}
-              className={`px-3 py-1 text-xs rounded-full transition-colors ${
+              className={`px-3.5 py-1.5 text-xs font-sans uppercase font-bold tracking-wider rounded-full transition-all cursor-pointer ${
                 index === currentSection
-                  ? "bg-blue-600 text-white"
+                  ? "bg-amber-400 text-stone-950 shadow-md scale-105"
                   : index < currentSection
-                  ? "bg-green-100 text-green-700"
-                  : "bg-gray-100 text-gray-600"
+                  ? "bg-amber-400/20 text-amber-300 border border-amber-500/30"
+                  : "bg-stone-900 text-stone-500 border border-stone-800"
               }`}
             >
               {section.key}
@@ -1792,25 +1794,26 @@ const ProjectForm = () => {
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-lg p-8">
-          <div className="mb-6">
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">
+        <form onSubmit={handleSubmit} className="serene-glass-card rounded-3xl border border-amber-500/30 p-8 sm:p-10 shadow-2xl">
+          <div className="mb-8 pb-4 border-b border-amber-500/20">
+            <h2 className="font-serif text-3xl text-stone-100 uppercase tracking-wide">
               Section {sections[currentSection].key}: {sections[currentSection].title}
             </h2>
+            <p className="text-xs font-dancing text-amber-200/90 mt-1">Industrial Specification Portal</p>
           </div>
 
           {renderCurrentSection()}
 
           {/* Navigation Buttons */}
-          <div className="flex justify-between mt-8 pt-6 border-t border-gray-200">
+          <div className="flex justify-between mt-10 pt-6 border-t border-amber-500/20 font-sans text-xs">
             <button
               type="button"
               onClick={handlePrevious}
               disabled={currentSection === 0}
-              className={`flex items-center gap-2 px-6 py-2 rounded-lg font-medium transition-colors ${
+              className={`flex items-center gap-2 px-6 py-3 rounded-full font-bold uppercase tracking-wider transition-all ${
                 currentSection === 0
-                  ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                  : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                  ? "bg-stone-900 text-stone-700 border border-stone-800 cursor-not-allowed"
+                  : "bg-stone-900 text-stone-300 border border-amber-500/30 hover:text-amber-300 cursor-pointer"
               }`}
             >
               <ArrowLeft className="w-4 h-4" />
@@ -1821,21 +1824,21 @@ const ProjectForm = () => {
               <button
                 type="button"
                 onClick={handleNext}
-                className="flex items-center gap-2 bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+                className="flex items-center gap-2 bg-gradient-to-r from-amber-400 via-amber-300 to-amber-500 text-stone-950 font-bold uppercase tracking-[0.15em] px-7 py-3 rounded-full hover:brightness-110 shadow-lg cursor-pointer transition-all"
               >
-                Next
+                Next Section
                 <ArrowRight className="w-4 h-4" />
               </button>
             ) : (
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="flex items-center gap-2 bg-green-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-green-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+                className="flex items-center gap-2 bg-gradient-to-r from-emerald-400 via-emerald-300 to-emerald-500 text-stone-950 font-bold uppercase tracking-[0.15em] px-8 py-3 rounded-full hover:brightness-110 shadow-lg cursor-pointer transition-all disabled:opacity-60"
               >
                 {isSubmitting ? (
                   <>
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    Submitting...
+                    <div className="w-4 h-4 border-2 border-stone-950 border-t-transparent rounded-full animate-spin" />
+                    Submitting Specification...
                   </>
                 ) : (
                   <>

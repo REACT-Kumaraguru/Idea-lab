@@ -3,6 +3,7 @@ import { Users, Clock, FileCheck, FileX, Download, Check, X, Printer, Search, Fi
 import { useAuthStore } from '../../../store/useAuthStore';
 import InvoiceModal from './PDFformat'; // Import the invoice modal
 import { axiosInstance } from '../../../lib/axios.js';
+import AmbientBackground from '../../AmbientBackground';
 
 const Approval = () => {
   // Get authenticated user from Zustand store
@@ -243,50 +244,42 @@ const Approval = () => {
 
   if (loading) {
     return (
-      <div className="ml-20 min-h-screen bg-white flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading bookings...</p>
+      <div className="min-h-screen bg-[#0a0809] flex items-center justify-center font-sans text-stone-100">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-10 h-10 border-4 border-amber-400 border-t-transparent rounded-full animate-spin" />
+          <p className="text-xs uppercase tracking-widest text-stone-400 font-bold">Loading Reservation Requests...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="ml-20 min-h-screen bg-white font-sans text-slate-700">
-      <div className="p-10 max-w-[1600px]">
-        
-        {/* Stats Cards */}
-        <div className="grid grid-cols-4 gap-6 mb-12">
-          {statsCards.map((stat, index) => (
-            <div key={index} className={`bg-white p-6 rounded-xl shadow-sm border-b-[6px] ${stat.borderColor} border border-gray-100 flex justify-between items-center`}>
-              <div>
-                <p className="text-gray-400 text-[10px] font-bold tracking-widest mb-2">{stat.label}</p>
-                <p className={`text-3xl font-bold ${stat.textColor}`}>{stat.count}</p>
-              </div>
-              <div className={`p-3 rounded-xl ${stat.iconBg} ${stat.textColor}`}>{stat.icon}</div>
-            </div>
-          ))}
-        </div>
+    <div className="min-h-screen bg-[#0a0809] text-stone-100 font-sans relative overflow-x-hidden p-6 md:p-8">
+      <AmbientBackground height="fixed inset-0" />
 
+      <div className="relative z-10 max-w-7xl mx-auto space-y-8">
+        
         {/* Header */}
-        <div className="flex justify-between items-center mb-10">
-          <h2 className="text-2xl font-extrabold text-slate-800 tracking-tight">Booking Approval</h2>
-          <div className="flex items-center gap-3">
+        <div className="flex justify-between items-center flex-wrap gap-4">
+          <div>
+            <h2 className="font-serif text-3xl text-stone-100 uppercase tracking-widest font-normal">Booking Approvals</h2>
+            <p className="text-xs font-dancing text-amber-200/90 mt-1">Review prototyping equipment reservation requests and grant access</p>
+          </div>
+          <div className="flex items-center gap-3 font-sans">
             <button
               type="button"
               onClick={fetchBookings}
               disabled={loading}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+              className="inline-flex items-center gap-2 px-4 py-2.5 bg-stone-900/80 border border-amber-500/30 rounded-xl text-xs font-bold uppercase tracking-wider text-amber-300 hover:bg-amber-400/10 transition disabled:opacity-60 cursor-pointer"
             >
-              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`w-4 h-4 text-amber-400 ${loading ? 'animate-spin' : ''}`} />
               Refresh
             </button>
             <button 
               onClick={exportToCSV}
-              className="flex items-center gap-2 px-5 py-2 border-2 border-blue-500 text-blue-600 rounded-lg hover:bg-blue-50 transition font-bold text-sm"
+              className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-amber-400 via-amber-300 to-amber-500 text-stone-950 rounded-xl hover:brightness-110 transition font-extrabold uppercase text-xs tracking-wider shadow-lg cursor-pointer border border-amber-300"
             >
-              <Download size={18} /> Export List
+              <Download size={16} /> Export List
             </button>
           </div>
         </div>
@@ -295,26 +288,24 @@ const Approval = () => {
         {activeTab === 'all' && (
           <div className="flex gap-4 mb-6">
             <div className="flex-1 relative">
-              <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-amber-400/70" />
               <input
                 type="text"
                 placeholder="Search by name, email, equipment, or ID..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-amber-500/30 bg-stone-900/80 text-xs text-stone-100 placeholder-stone-600 focus:outline-none focus:border-amber-400 font-sans"
               />
             </div>
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
-              className="px-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm font-semibold"
+              className="px-4 py-2.5 rounded-xl border border-amber-500/30 bg-stone-900/80 text-xs text-stone-100 focus:outline-none focus:border-amber-400 font-sans cursor-pointer"
             >
-              <option value="all">All Status</option>
-              <option value="pending">Pending</option>
-              <option value="approved">Approved</option>
-              <option value="rejected">Rejected</option>
-              <option value="completed">Completed</option>
-              <option value="cancelled">Cancelled</option>
+              <option value="all" className="bg-stone-900 text-stone-100">All Statuses</option>
+              <option value="pending" className="bg-stone-900 text-stone-100">Pending</option>
+              <option value="approved" className="bg-stone-900 text-stone-100">Approved</option>
+              <option value="rejected" className="bg-stone-900 text-stone-100">Declined</option>
             </select>
           </div>
         )}

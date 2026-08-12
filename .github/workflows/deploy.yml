@@ -16,15 +16,8 @@ jobs:
           host: ${{ secrets.SERVER_IP }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
-          port: ${{ secrets.SERVER_PORT || 22 }}
-          timeout: 60s
-          command_timeout: 20m
           script: |
-            set -e
             cd /opt/Idea-lab
-            git fetch --all --prune
-            git reset --hard origin/main
-            echo "Deployed commit: $(git rev-parse HEAD)"
-            docker compose down --remove-orphans
-            docker compose up -d --build --force-recreate
-            docker image prune -f
+            git pull
+            docker compose down
+            docker compose up --build -d

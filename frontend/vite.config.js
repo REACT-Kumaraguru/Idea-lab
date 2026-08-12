@@ -7,10 +7,11 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: {
     host: true,
-    port: 5173,
+    port: 5205,
+    strictPort: false,
     proxy: {
       '/api': {
-        target: 'http://localhost:5001',
+        target: 'http://localhost:5003',
         changeOrigin: false,
         secure: false,
         configure: (proxy) => {
@@ -25,7 +26,7 @@ export default defineConfig({
         },
       },
       '/src/uploads': {
-        target: 'http://localhost:5001',
+        target: 'http://localhost:5003',
         changeOrigin: false,
       },
     },

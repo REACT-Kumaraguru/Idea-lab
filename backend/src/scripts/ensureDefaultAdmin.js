@@ -1,26 +1,38 @@
 import bcrypt from "bcryptjs";
 import Admin from "../models/AdminModel.js";
 
-const DEFAULT_ADMIN = {
-  email: "idealab@kct.ac.in",
-  password: "idealab-kct",
-  fullName: "Idea Lab Admin",
-  phoneNumber: "0000000000",
-};
+const ADMIN_ACCOUNTS = [
+  {
+    email: "idealab@kct.ac.in",
+    password: "idealab-kct",
+    fullName: "Idea Lab Admin",
+    phoneNumber: "0000000000",
+  },
+  {
+    email: "adithya@kct.ac.in",
+    password: "adithyapass123",
+    fullName: "Adithya (25BBCS016)",
+    phoneNumber: "9876543210",
+  }
+];
 
 export async function ensureDefaultAdmin() {
-  const existing = await Admin.findOne({ where: { email: DEFAULT_ADMIN.email } });
-  if (existing) return;
+  for (const account of ADMIN_ACCOUNTS) {
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(account.password, salt);
+    const existing = await Admin.findOne({ where: { email: account.email } });
 
-  const salt = await bcrypt.genSalt(10);
-  const hashedPassword = await bcrypt.hash(DEFAULT_ADMIN.password, salt);
+    if (!existing) {
+      await Admin.create({
+        email: account.email,
+        password: hashedPassword,
+        fullName: account.fullName,
+        phoneNumber: account.phoneNumber,
+      });
+    } else {
+      await existing.update({ password: hashedPassword, fullName: account.fullName });
+    }
+  }
 
-  await Admin.create({
-    email: DEFAULT_ADMIN.email,
-    password: hashedPassword,
-    fullName: DEFAULT_ADMIN.fullName,
-    phoneNumber: DEFAULT_ADMIN.phoneNumber,
-  });
-
-  console.log("Default admin created:", DEFAULT_ADMIN.email);
+  console.log("Default admins created/updated cleanly.");
 }

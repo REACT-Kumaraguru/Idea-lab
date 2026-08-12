@@ -15,35 +15,36 @@ import {
 import { axiosInstance } from "../../lib/axios";
 import { toast } from "react-hot-toast";
 import ProblemStatementPDF from "../ProblemCom/ProblemStatementPDF";
+import AmbientBackground from "../AmbientBackground";
 
 const statusConfig = {
   pending: {
     label: "Pending",
     icon: Clock,
-    bg: "bg-amber-50",
-    text: "text-amber-800",
-    border: "border-amber-200",
+    bg: "bg-amber-500/10",
+    text: "text-amber-300",
+    border: "border-amber-500/30",
   },
   approved: {
     label: "Approved",
     icon: CheckCircle,
-    bg: "bg-green-50",
-    text: "text-green-800",
-    border: "border-green-200",
+    bg: "bg-emerald-500/10",
+    text: "text-emerald-300",
+    border: "border-emerald-500/30",
   },
   rejected: {
     label: "Rejected",
     icon: XCircle,
-    bg: "bg-red-50",
-    text: "text-red-800",
-    border: "border-red-200",
+    bg: "bg-rose-500/10",
+    text: "text-rose-300",
+    border: "border-rose-500/30",
   },
   draft: {
     label: "Draft",
     icon: FileText,
-    bg: "bg-gray-50",
-    text: "text-gray-700",
-    border: "border-gray-200",
+    bg: "bg-stone-900",
+    text: "text-stone-400",
+    border: "border-amber-500/20",
   },
 };
 
@@ -145,137 +146,156 @@ export default function ProblemStatements() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Problem Statements</h1>
-          <p className="text-gray-600 text-sm mt-0.5">
-            Review submissions and download as PDF
-          </p>
+    <div className="min-h-screen bg-[#0a0809] text-stone-100 font-sans relative overflow-x-hidden p-6 md:p-8">
+      <AmbientBackground height="fixed inset-0" />
+
+      <div className="relative z-10 space-y-6">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h1 className="font-serif text-3xl text-stone-100 uppercase tracking-widest font-normal">Submitted Problem Statements</h1>
+            <p className="text-xs font-dancing text-amber-200/90 mt-1">Review industrial challenge proposals, verify details, and export PDF specifications</p>
+          </div>
+          <button
+            type="button"
+            onClick={fetchList}
+            disabled={loading}
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-stone-900/80 border border-amber-500/30 rounded-xl text-xs font-sans uppercase font-bold tracking-wider text-amber-300 hover:bg-amber-400/10 transition disabled:opacity-60 cursor-pointer"
+          >
+            <RefreshCw className={`w-4 h-4 text-amber-400 ${loading ? "animate-spin" : ""}`} />
+            Refresh List
+          </button>
         </div>
-        <button
-          type="button"
-          onClick={fetchList}
-          disabled={loading}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-60"
-        >
-          <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
-          Refresh
-        </button>
-      </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 font-sans text-xs">
         <div
           onClick={() => setStatusFilter("all")}
-          className={`p-4 rounded-xl border-2 cursor-pointer transition-colors ${statusFilter === "all" ? "border-teal-600 bg-teal-50" : "border-gray-200 bg-white hover:border-gray-300"}`}
+          className={`p-4 rounded-2xl border cursor-pointer transition-all ${
+            statusFilter === "all"
+              ? "border-amber-400 bg-amber-400/10 text-amber-300 shadow-lg"
+              : "border-amber-500/20 bg-stone-900/80 text-stone-300 hover:border-amber-500/40"
+          }`}
         >
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-gray-100">
-              <FileText className="w-5 h-5 text-gray-600" />
+            <div className="p-2 rounded-xl bg-amber-400/10 border border-amber-400/20">
+              <FileText className="w-5 h-5 text-amber-400" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
-              <p className="text-xs text-gray-500">Total</p>
+              <p className="text-2xl font-bold font-mono text-stone-100">{stats.total}</p>
+              <p className="text-[11px] uppercase tracking-wider font-bold text-stone-400">Total</p>
             </div>
           </div>
         </div>
         <div
           onClick={() => setStatusFilter("pending")}
-          className={`p-4 rounded-xl border-2 cursor-pointer transition-colors ${statusFilter === "pending" ? "border-amber-500 bg-amber-50" : "border-gray-200 bg-white hover:border-gray-300"}`}
+          className={`p-4 rounded-2xl border cursor-pointer transition-all ${
+            statusFilter === "pending"
+              ? "border-amber-400 bg-amber-400/10 text-amber-300 shadow-lg"
+              : "border-amber-500/20 bg-stone-900/80 text-stone-300 hover:border-amber-500/40"
+          }`}
         >
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-amber-100">
-              <Clock className="w-5 h-5 text-amber-700" />
+            <div className="p-2 rounded-xl bg-amber-400/10 border border-amber-400/20">
+              <Clock className="w-5 h-5 text-amber-300" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-gray-900">{stats.pending}</p>
-              <p className="text-xs text-gray-500">Pending</p>
+              <p className="text-2xl font-bold font-mono text-amber-300">{stats.pending}</p>
+              <p className="text-[11px] uppercase tracking-wider font-bold text-stone-400">Pending</p>
             </div>
           </div>
         </div>
         <div
           onClick={() => setStatusFilter("approved")}
-          className={`p-4 rounded-xl border-2 cursor-pointer transition-colors ${statusFilter === "approved" ? "border-green-500 bg-green-50" : "border-gray-200 bg-white hover:border-gray-300"}`}
+          className={`p-4 rounded-2xl border cursor-pointer transition-all ${
+            statusFilter === "approved"
+              ? "border-emerald-400 bg-emerald-400/10 text-emerald-300 shadow-lg"
+              : "border-amber-500/20 bg-stone-900/80 text-stone-300 hover:border-amber-500/40"
+          }`}
         >
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-green-100">
-              <CheckCircle className="w-5 h-5 text-green-700" />
+            <div className="p-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
+              <CheckCircle className="w-5 h-5 text-emerald-400" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-gray-900">{stats.approved}</p>
-              <p className="text-xs text-gray-500">Approved</p>
+              <p className="text-2xl font-bold font-mono text-emerald-300">{stats.approved}</p>
+              <p className="text-[11px] uppercase tracking-wider font-bold text-stone-400">Approved</p>
             </div>
           </div>
         </div>
         <div
           onClick={() => setStatusFilter("rejected")}
-          className={`p-4 rounded-xl border-2 cursor-pointer transition-colors ${statusFilter === "rejected" ? "border-red-500 bg-red-50" : "border-gray-200 bg-white hover:border-gray-300"}`}
+          className={`p-4 rounded-2xl border cursor-pointer transition-all ${
+            statusFilter === "rejected"
+              ? "border-rose-400 bg-rose-400/10 text-rose-300 shadow-lg"
+              : "border-amber-500/20 bg-stone-900/80 text-stone-300 hover:border-amber-500/40"
+          }`}
         >
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-red-100">
-              <XCircle className="w-5 h-5 text-red-700" />
+            <div className="p-2 rounded-xl bg-rose-500/10 border border-rose-500/20">
+              <XCircle className="w-5 h-5 text-rose-400" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-gray-900">{stats.rejected}</p>
-              <p className="text-xs text-gray-500">Rejected</p>
+              <p className="text-2xl font-bold font-mono text-rose-300">{stats.rejected}</p>
+              <p className="text-[11px] uppercase tracking-wider font-bold text-stone-400">Rejected</p>
             </div>
           </div>
         </div>
       </div>
 
       {/* Search */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-        <input
-          type="text"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          placeholder="Search by title, organisation, contact..."
-          className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-        />
+      <div className="serene-glass-card p-4 rounded-2xl border border-amber-500/20 shadow-xl">
+        <div className="relative">
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-amber-400/70" />
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="Search by title, organisation, contact..."
+            className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-amber-500/30 bg-stone-900/80 text-xs text-stone-100 placeholder-stone-600 focus:outline-none focus:border-amber-400 font-sans"
+          />
+        </div>
       </div>
 
       {/* Table */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
+      <div className="serene-glass-card border border-amber-500/25 rounded-3xl overflow-hidden shadow-2xl">
         {loading ? (
           <div className="flex flex-col items-center justify-center py-16">
-            <Loader2 className="w-10 h-10 text-teal-600 animate-spin mb-4" />
-            <p className="text-gray-600">Loading...</p>
+            <Loader2 className="w-10 h-10 text-amber-400 animate-spin mb-4" />
+            <p className="text-stone-400 text-xs font-sans uppercase tracking-widest font-bold">Loading Proposals...</p>
           </div>
         ) : filteredList.length === 0 ? (
-          <div className="py-16 text-center text-gray-500">
-            <FileText className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-            <p>No problem statements found.</p>
+          <div className="py-16 text-center text-stone-400">
+            <FileText className="w-12 h-12 mx-auto mb-3 text-amber-400/40" />
+            <p className="text-xs uppercase tracking-wider font-bold">No problem statements found.</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full text-left font-sans text-xs">
               <thead>
-                <tr className="bg-gray-50 border-b border-gray-200">
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">#</th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Title</th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Organisation</th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Status</th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Submitted</th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Reviewed</th>
-                  <th className="text-right py-3 px-4 font-semibold text-gray-700">Actions</th>
+                <tr className="border-b border-amber-500/20 text-stone-400 uppercase tracking-wider font-bold">
+                  <th className="py-4 px-6">#</th>
+                  <th className="py-4 px-6">Title</th>
+                  <th className="py-4 px-6">Organisation</th>
+                  <th className="py-4 px-6">Status</th>
+                  <th className="py-4 px-6">Submitted</th>
+                  <th className="py-4 px-6">Reviewed</th>
+                  <th className="py-4 px-6 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-amber-500/10">
                 {filteredList.map((row, index) => {
                   const config = statusConfig[row.status] || statusConfig.pending;
                   const Icon = config.icon;
                   return (
                     <tr
                       key={row.id}
-                      className="border-b border-gray-100 hover:bg-gray-50/50"
+                      className="hover:bg-amber-400/5 transition"
                     >
-                      <td className="py-3 px-4 text-gray-500">{index + 1}</td>
-                      <td className="py-3 px-4 font-medium text-gray-900 max-w-[200px] truncate">
+                      <td className="py-4 px-6 font-mono text-stone-400">{index + 1}</td>
+                      <td className="py-4 px-6 font-serif text-sm text-stone-100 uppercase tracking-wide max-w-[200px] truncate">
                         {row.problemTitle || "—"}
                       </td>
-                      <td className="py-3 px-4 text-gray-700 max-w-[160px] truncate">
+                      <td className="py-4 px-6 text-stone-300 max-w-[160px] truncate">
                         {row.organisationName || "—"}
                       </td>
                       <td className="py-3 px-4">
@@ -403,6 +423,7 @@ export default function ProblemStatements() {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }

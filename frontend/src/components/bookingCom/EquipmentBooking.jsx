@@ -23,10 +23,10 @@ const EquipmentBooking = ({ equipment, isOpen, onClose, onBookingSuccess }) => {
     bookingDate: "",
     startTime: "",
     endTime: "",
-    notes: "",
     purposeOfUsage: "",
     benefitsForKCT: "",
     benefitsReason: "",
+    notes: "",
   });
   const [error, setError] = useState("");
 
@@ -49,10 +49,10 @@ const EquipmentBooking = ({ equipment, isOpen, onClose, onBookingSuccess }) => {
       bookingDate: "",
       startTime: "",
       endTime: "",
-      notes: "",
       purposeOfUsage: "",
       benefitsForKCT: "",
       benefitsReason: "",
+      notes: "",
     });
     setError("");
   };
@@ -126,18 +126,6 @@ const EquipmentBooking = ({ equipment, isOpen, onClose, onBookingSuccess }) => {
       setError("Please select an end time");
       return false;
     }
-    if (!bookingData.purposeOfUsage.trim()) {
-      setError("Please enter the purpose of usage");
-      return false;
-    }
-    if (!bookingData.benefitsForKCT) {
-      setError("Please select whether this benefits KCT");
-      return false;
-    }
-    if (!bookingData.benefitsReason.trim()) {
-      setError("Please provide a reason for your selection");
-      return false;
-    }
     if (durationInHours < 0.5) {
       setError("End time must be after start time (minimum 0.5 hours)");
       return false;
@@ -146,7 +134,7 @@ const EquipmentBooking = ({ equipment, isOpen, onClose, onBookingSuccess }) => {
       setError("Maximum booking duration is 12 hours");
       return false;
     }
-    
+
     const selectedDate = new Date(bookingData.bookingDate);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -174,6 +162,19 @@ const EquipmentBooking = ({ equipment, isOpen, onClose, onBookingSuccess }) => {
       return false;
     }
 
+    if (!bookingData.purposeOfUsage.trim()) {
+      setError("Please enter the purpose of usage");
+      return false;
+    }
+    if (!bookingData.benefitsForKCT) {
+      setError("Please select whether this benefits KCT");
+      return false;
+    }
+    if (!bookingData.benefitsReason.trim()) {
+      setError("Please specify the reason for your Benefits for KCT selection");
+      return false;
+    }
+
     return true;
   };
 
@@ -187,10 +188,10 @@ const EquipmentBooking = ({ equipment, isOpen, onClose, onBookingSuccess }) => {
       bookingDate: bookingData.bookingDate,
       bookingTime: bookingData.startTime,
       duration: Math.round(durationInHours * 100) / 100,
-      notes: bookingData.notes,
       purposeOfUsage: bookingData.purposeOfUsage,
       benefitsForKCT: bookingData.benefitsForKCT,
       benefitsReason: bookingData.benefitsReason,
+      notes: bookingData.notes,
     });
 
     if (result) {
@@ -205,33 +206,36 @@ const EquipmentBooking = ({ equipment, isOpen, onClose, onBookingSuccess }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="sticky top-0 bg-white border-b border-gray-200 p-6 flex items-center justify-between">
-          <h2 className="text-2xl font-bold text-gray-800">Book Equipment</h2>
-          <button type="button" onClick={onClose} className="text-gray-500 hover:text-gray-700 transition-colors">
-            <X className="w-6 h-6" />
+    <div className="fixed inset-0 bg-stone-950/80 backdrop-blur-md flex items-center justify-center z-50 p-4 font-sans text-stone-100">
+      <div className="serene-glass-card border border-amber-500/30 rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
+        <div className="sticky top-0 bg-stone-950/90 border-b border-amber-500/20 p-6 flex items-center justify-between z-10 backdrop-blur-xl">
+          <div>
+            <h2 className="text-3xl font-serif tracking-wider uppercase text-stone-100 font-normal">Book Equipment</h2>
+            <p className="text-xs font-dancing text-amber-200/90">Sanctuary Schedule Access</p>
+          </div>
+          <button type="button" onClick={onClose} className="w-9 h-9 rounded-full border border-amber-500/30 bg-stone-900 flex items-center justify-center text-stone-400 hover:text-amber-300 hover:border-amber-400 transition-all">
+            <X className="w-5 h-5" />
           </button>
         </div>
 
-        <div className="p-6 bg-gray-50 border-b border-gray-200">
+        <div className="p-6 bg-stone-900/60 border-b border-amber-500/20">
           <div className="flex gap-4">
             <img
               src={equipment?.image || "https://via.placeholder.com/150"}
               alt={equipment?.equipmentName}
-              className="w-24 h-24 object-cover rounded-lg"
+              className="w-24 h-24 object-cover rounded-2xl border border-amber-500/30"
               onError={(e) => { e.target.src = "https://via.placeholder.com/150"; }}
             />
             <div className="flex-1">
-              <h3 className="text-xl font-bold text-gray-800 mb-1">{equipment?.equipmentName}</h3>
-              <p className="text-sm text-gray-600 mb-2">{equipment?.brandName}</p>
-              <p className="text-sm text-gray-700 line-clamp-2">{equipment?.equipmentDetails}</p>
-              <div className="mt-2 flex items-center gap-3">
-                <span className="inline-block bg-blue-100 text-blue-800 text-xs font-semibold px-3 py-1 rounded-full">
+              <h3 className="text-2xl font-serif text-stone-100 uppercase tracking-wide mb-1">{equipment?.equipmentName}</h3>
+              <p className="text-xs font-dancing text-amber-200/90 mb-2">{equipment?.brandName}</p>
+              <p className="text-xs font-sans text-stone-400 font-light line-clamp-2">{equipment?.equipmentDetails}</p>
+              <div className="mt-3 flex items-center gap-3">
+                <span className="inline-block bg-amber-500/15 border border-amber-500/30 text-amber-300 text-xs font-mono font-bold px-3 py-1 rounded-full">
                   ₹{pricePerHour}/hr
                 </span>
-                <span className="inline-block bg-green-100 text-green-800 text-xs font-semibold px-3 py-1 rounded-full">
-                  {equipment?.quantity} Available
+                <span className="inline-block bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs font-sans font-semibold uppercase tracking-wider px-3 py-1 rounded-full">
+                  {equipment?.quantity} Available Units
                 </span>
               </div>
             </div>
@@ -308,56 +312,68 @@ const EquipmentBooking = ({ equipment, isOpen, onClose, onBookingSuccess }) => {
             </div>
 
             <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Purpose of Usage
-                </label>
-                <textarea
-                  name="purposeOfUsage"
-                  value={bookingData.purposeOfUsage}
-                  onChange={handleInputChange}
-                  rows={3}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg"
-                  placeholder="Describe how the equipment will be used"
-                />
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Purpose of Usage *</label>
+              <textarea
+                name="purposeOfUsage"
+                value={bookingData.purposeOfUsage}
+                onChange={handleInputChange}
+                rows={3}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                placeholder="Describe the purpose for which you are using this equipment..."
+                required
+              />
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Benefits for KCT
-              </label>
-              <select
-                name="benefitsForKCT"
-                value={bookingData.benefitsForKCT}
-                onChange={handleInputChange}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg"
-              >        
-                <option value="">Select</option>
-                <option value="yes">Yes</option>
-                <option value="no">No</option>
-              </select>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Benefits for KCT *</label>
+              <div className="flex gap-6 mb-3">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="benefitsForKCT"
+                    value="yes"
+                    checked={bookingData.benefitsForKCT === "yes"}
+                    onChange={handleInputChange}
+                    className="w-4 h-4 text-blue-600"
+                  />
+                  <span className="text-sm text-gray-700">Yes</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="benefitsForKCT"
+                    value="no"
+                    checked={bookingData.benefitsForKCT === "no"}
+                    onChange={handleInputChange}
+                    className="w-4 h-4 text-blue-600"
+                  />
+                  <span className="text-sm text-gray-700">No</span>
+                </label>
+              </div>
+              {bookingData.benefitsForKCT && (
+                <div>
+                  <label className="block text-sm text-gray-600 mb-1">
+                    {bookingData.benefitsForKCT === "yes"
+                      ? "Specify why this benefits KCT *"
+                      : "Specify why this does not benefit KCT *"}
+                  </label>
+                  <textarea
+                    name="benefitsReason"
+                    value={bookingData.benefitsReason}
+                    onChange={handleInputChange}
+                    rows={3}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                    placeholder={
+                      bookingData.benefitsForKCT === "yes"
+                        ? "Explain how this usage benefits KCT..."
+                        : "Explain why this usage does not benefit KCT..."
+                    }
+                    required
+                  />
+                </div>
+              )}
             </div>
 
-            {bookingData.benefitsForKCT && (
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Benefits Reason
-                </label>
-                <textarea
-                  name="benefitsReason"
-                  value={bookingData.benefitsReason}
-                  onChange={handleInputChange}
-                  rows={3}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg"
-                  placeholder={
-                    bookingData.benefitsForKCT === "yes"
-                      ? "Explain how this benefits KCT"
-                      : "Explain why this does not benefit KCT"
-                  }
-                  required
-                />
-              </div>
-            )}
-            
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">Additional Notes (Optional)</label>
               <textarea

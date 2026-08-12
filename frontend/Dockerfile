@@ -4,7 +4,7 @@ FROM node:20-alpine AS builder
 WORKDIR /app
 
 # API URL for the browser (set at build time; use backend host as seen by the user)
-ARG VITE_API_URL=http://localhost:5001
+ARG VITE_API_URL=https://idealab.kct.ac.in:5001
 ENV VITE_API_URL=$VITE_API_URL
 
 COPY package.json package-lock.json ./

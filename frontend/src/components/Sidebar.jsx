@@ -34,25 +34,25 @@ const Sidebar = ({
   };
 
   return (
-    <aside className="w-[240px] flex-shrink-0 font-sans">
-      <div className="sticky top-6 bg-white border border-gray-200 rounded-md p-5 shadow-sm">
+    <aside className="w-full flex-shrink-0 font-sans text-stone-100">
+      <div className="bg-transparent">
         
         {/* Filters Header */}
-        <div className="flex items-center gap-2 mb-5">
-          <Filter className="w-4 h-4 text-gray-600" />
-          <h2 className="font-semibold text-gray-800">Filters</h2>
+        <div className="flex items-center gap-2 mb-5 pb-3 border-b border-amber-500/15">
+          <Filter className="w-4 h-4 text-amber-400" />
+          <h2 className="font-serif text-xl tracking-wider uppercase text-stone-100 font-normal">Filters</h2>
         </div>
 
         {/* Applied Filters */}
         {appliedFilters.length > 0 && (
           <div className="mb-5">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-semibold text-gray-600">
-                Applied
+              <span className="text-[10px] font-sans uppercase tracking-widest text-stone-400">
+                Applied Filters
               </span>
               <button
                 onClick={clearAllFilters}
-                className="text-xs text-blue-600 hover:text-blue-800 font-medium"
+                className="text-[10px] font-sans uppercase tracking-widest text-amber-300 hover:text-amber-200 font-bold"
               >
                 Clear all
               </button>
@@ -62,10 +62,10 @@ const Sidebar = ({
               {appliedFilters.map((filter) => (
                 <span
                   key={filter}
-                  className="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-50 text-blue-700 border border-blue-200 rounded text-xs"
+                  className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-500/15 text-amber-300 border border-amber-500/30 rounded-full text-xs font-sans"
                 >
                   {filter}
-                  <button onClick={() => removeFilter(filter)}>
+                  <button onClick={() => removeFilter(filter)} className="hover:text-white">
                     <X className="w-3 h-3" />
                   </button>
                 </span>
@@ -74,26 +74,24 @@ const Sidebar = ({
           </div>
         )}
 
-        <hr className="my-4 border-gray-200" />
-
         {/* Category Filter */}
         <div>
           <button
             onClick={() => setCategoryOpen(!categoryOpen)}
-            className="flex items-center justify-between w-full mb-3"
+            className="flex items-center justify-between w-full mb-4 group cursor-pointer"
           >
-            <span className="font-semibold text-sm text-gray-800">
+            <span className="font-serif text-lg tracking-wider text-stone-200 uppercase group-hover:text-amber-300 transition-colors">
               Category
             </span>
             {categoryOpen ? (
-              <ChevronUp className="w-4 h-4 text-gray-600" />
+              <ChevronUp className="w-4 h-4 text-amber-400" />
             ) : (
-              <ChevronDown className="w-4 h-4 text-gray-600" />
+              <ChevronDown className="w-4 h-4 text-amber-400" />
             )}
           </button>
 
           {categoryOpen && (
-            <div className="space-y-3">
+            <div className="space-y-3 font-sans text-xs">
               {[
                 "Mandatory Machines",
                 "Mechanical Tools",
@@ -102,15 +100,15 @@ const Sidebar = ({
               ].map((category) => (
                 <label
                   key={category}
-                  className="flex items-center gap-2 cursor-pointer"
+                  className="flex items-center gap-2.5 cursor-pointer text-stone-300 hover:text-amber-200 transition-colors"
                 >
                   <input
                     type="checkbox"
                     checked={selectedCategories.includes(category)}
                     onChange={() => toggleCategory(category)}
-                    className="w-4 h-4 rounded border-gray-300 text-blue-700 focus:ring-blue-600"
+                    className="w-4 h-4 rounded border-amber-500/30 bg-stone-900 text-amber-400 focus:ring-amber-400 accent-amber-400"
                   />
-                  <span className="text-sm text-gray-700">
+                  <span>
                     {category}
                   </span>
                 </label>

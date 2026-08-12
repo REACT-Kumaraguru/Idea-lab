@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { useAuthStore } from "../../store/useAuthStore";
-import { Link } from "react-router-dom";
-import { Loader2 } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { Loader2, ArrowLeft } from "lucide-react";
+import AmbientBackground from "../AmbientBackground";
 
 export const Signup = () => {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     name: '',
     mobile: '',
@@ -100,12 +102,40 @@ export const Signup = () => {
     }
   };
 
+  const handleGoBack = (e) => {
+    if (e) e.preventDefault();
+    if (window.history.state && typeof window.history.state.idx === "number" && window.history.state.idx > 0) {
+      navigate(-1);
+    } else {
+      navigate("/");
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-8">
+    <div className="min-h-screen bg-[#0a0809] text-stone-100 flex items-center justify-center p-6 relative font-sans selection:bg-amber-400 selection:text-stone-950 overflow-hidden">
+      <AmbientBackground height="h-full inset-0" />
+
+      {/* Top Left Navigation - Go Back Button */}
+      <div className="absolute top-6 left-6 z-30">
+        <Link
+          to="/"
+          onClick={(e) => {
+            if (window.history.state && typeof window.history.state.idx === "number" && window.history.state.idx > 0) {
+              e.preventDefault();
+              navigate(-1);
+            }
+          }}
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-amber-500/30 bg-stone-900/80 text-xs font-sans uppercase font-bold tracking-widest text-stone-300 hover:text-amber-300 hover:border-amber-400/60 hover:bg-stone-900 transition-all shadow-xl backdrop-blur-md cursor-pointer"
+        >
+          <ArrowLeft className="w-4 h-4 text-amber-400" />
+          <span>Go Back</span>
+        </Link>
+      </div>
+
+      <div className="serene-glass-card rounded-3xl border border-amber-500/30 w-full max-w-md p-8 md:p-10 shadow-2xl relative z-10 my-8">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">Idea Lab</h1>
-          <p className="text-gray-600">Create your account</p>
+          <h1 className="font-serif text-4xl text-stone-100 uppercase tracking-wider mb-1 font-normal">Create Account</h1>
+          <p className="text-xs font-dancing text-amber-200/90">Join the sanctuary of innovation</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-5">

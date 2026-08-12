@@ -3,6 +3,7 @@ import { Html5Qrcode } from "html5-qrcode";
 import { CheckCircle, XCircle, Camera, Loader2, ShieldCheck, ChevronDown, Upload, Image as ImageIcon } from "lucide-react";
 import { axiosInstance } from "../../lib/axios";
 import { toast } from "react-hot-toast";
+import AmbientBackground from "../AmbientBackground";
 
 const QR_READER_ID = "qr-reader";
 
@@ -519,65 +520,68 @@ export default function QRScanner() {
   };
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">QR Code Scanner</h1>
-        <p className="text-gray-600 text-sm mt-0.5">
-          Scan booking QR codes to verify reservations.
-        </p>
-        {window.location.protocol !== "https:" && 
-         window.location.hostname !== "localhost" && 
-         window.location.hostname !== "127.0.0.1" &&
-         window.location.hostname !== "213.210.37.189" && (
-          <div className="mt-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-            <p className="text-xs text-yellow-800">
-              ⚠️ <strong>Camera requires HTTPS:</strong> Access via <code className="bg-yellow-100 px-1 rounded">https://</code> or use <code className="bg-yellow-100 px-1 rounded">localhost</code> / <code className="bg-yellow-100 px-1 rounded">213.210.37.189</code> for camera to work.
-            </p>
-          </div>
-        )}
-      </div>
+    <div className="min-h-screen bg-[#0a0809] text-stone-100 font-sans relative overflow-x-hidden p-6 md:p-8 space-y-6">
+      <AmbientBackground height="fixed inset-0" />
 
-      {!scanning && !scanResult && !uploadingImage && (
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
-          <div className="text-center py-8">
-            <Camera className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
-              Ready to scan
-            </h3>
-            <p className="text-gray-600 mb-6">
-              Scan QR codes using your camera or upload an image containing a QR code.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-3 justify-center items-center">
-              <button
-                onClick={startScanning}
-                className="inline-flex items-center gap-2 px-6 py-3 bg-teal-600 text-white rounded-lg font-medium hover:bg-teal-700 transition-colors"
-              >
-                <Camera className="w-5 h-5" />
-                Start Camera Scanner
-              </button>
-              <div className="relative">
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={handleFileChange}
-                  className="hidden"
-                  id="qr-image-upload"
-                />
-                <label
-                  htmlFor="qr-image-upload"
-                  className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors cursor-pointer"
-                >
-                  <Upload className="w-5 h-5" />
-                  Upload QR Image
-                </label>
-              </div>
+      <div className="relative z-10 space-y-6 max-w-5xl mx-auto">
+        <div>
+          <h1 className="font-serif text-3xl text-stone-100 uppercase tracking-widest font-normal">QR Code Scanner</h1>
+          <p className="text-xs font-dancing text-amber-200/90 mt-1">
+            Scan booking QR codes via camera or image upload to verify real-time equipment access
+          </p>
+          {window.location.protocol !== "https:" && 
+           window.location.hostname !== "localhost" && 
+           window.location.hostname !== "127.0.0.1" &&
+           window.location.hostname !== "213.210.37.189" && (
+            <div className="mt-3 p-3.5 bg-amber-500/10 border border-amber-500/30 rounded-2xl">
+              <p className="text-xs text-amber-300 font-sans">
+                ⚠️ <strong>Camera requires HTTPS:</strong> Access via <code className="bg-stone-900 px-1.5 py-0.5 rounded text-amber-400">https://</code> or use <code className="bg-stone-900 px-1.5 py-0.5 rounded text-amber-400">localhost</code> for camera to work.
+              </p>
             </div>
-            <div
-              onDrop={handleDrop}
-              onDragOver={handleDragOver}
-              className="mt-6 p-8 border-2 border-dashed border-gray-300 rounded-lg hover:border-teal-500 transition-colors"
-            >
+          )}
+        </div>
+
+        {!scanning && !scanResult && !uploadingImage && (
+          <div className="serene-glass-card border border-amber-500/25 rounded-3xl p-6 md:p-10 shadow-2xl text-stone-100">
+            <div className="text-center py-6">
+              <Camera className="w-16 h-16 text-amber-400/80 mx-auto mb-4" />
+              <h3 className="font-serif text-xl text-stone-100 uppercase tracking-wider mb-2 font-normal">
+                Ready to Scan Reservation
+              </h3>
+              <p className="text-xs text-stone-400 max-w-md mx-auto mb-8 font-sans">
+                Scan QR code using your webcam/camera or upload an image file containing a booking verification code.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center items-center font-sans">
+                <button
+                  onClick={startScanning}
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-amber-400 via-amber-300 to-amber-500 text-stone-950 rounded-xl font-extrabold text-xs uppercase tracking-wider hover:brightness-110 transition shadow-lg border border-amber-300 cursor-pointer"
+                >
+                  <Camera className="w-4 h-4" />
+                  Start Camera Scanner
+                </button>
+                <div className="relative">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileChange}
+                    className="hidden"
+                    id="qr-image-upload"
+                  />
+                  <label
+                    htmlFor="qr-image-upload"
+                    className="inline-flex items-center gap-2 px-6 py-3 bg-stone-900/90 border border-amber-500/30 text-amber-300 rounded-xl font-bold text-xs uppercase tracking-wider hover:bg-amber-400/10 transition cursor-pointer"
+                  >
+                    <Upload className="w-4 h-4 text-amber-400" />
+                    Upload QR Image
+                  </label>
+                </div>
+              </div>
+              <div
+                onDrop={handleDrop}
+                onDragOver={handleDragOver}
+                className="mt-8 p-8 border-2 border-dashed border-amber-500/30 rounded-2xl bg-stone-900/40 hover:border-amber-400/60 transition cursor-pointer"
+              >
               <ImageIcon className="w-12 h-12 text-gray-400 mx-auto mb-2" />
               <p className="text-sm text-gray-600 mb-1">
                 Or drag and drop an image here
@@ -807,6 +811,7 @@ export default function QRScanner() {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useEquipmentStore } from '../../../store/useEquipmentStore';
 import { getImageUrl } from '../../../lib/config.js';
+import AmbientBackground from '../../AmbientBackground';
 
 export default function NewEquipment() {
   const location = useLocation();
@@ -9,7 +10,7 @@ export default function NewEquipment() {
   const { createEquipment, updateEquipment, isCreatingEquipment, isUpdatingEquipment } = useEquipmentStore();
 
   // Check if we are in "Edit" mode
-  const editingEquipment = location.state?.equipment;
+  const editingEquipment = location.state?.editItem || location.state?.equipment;
 
   const [formData, setFormData] = useState({
     equipmentName: '',
@@ -106,22 +107,24 @@ export default function NewEquipment() {
   const isSaving = isCreatingEquipment || isUpdatingEquipment;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 p-4 lg:p-8">
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen bg-[#0a0809] text-stone-100 font-sans relative overflow-x-hidden p-6 lg:p-8">
+      <AmbientBackground height="fixed inset-0" />
+
+      <div className="relative z-10 max-w-7xl mx-auto space-y-6">
         {/* Header */}
-        <div className="mb-6 animate-fade-in">
-          <h1 className="text-3xl lg:text-4xl font-bold text-slate-900 mb-2 tracking-tight">
-            {editingEquipment ? 'Edit Equipment' : 'Add New Equipment'}
+        <div className="mb-6">
+          <h1 className="font-serif text-3xl lg:text-4xl text-stone-100 uppercase tracking-widest font-normal mb-1">
+            {editingEquipment ? 'Edit Equipment Asset' : 'Add New Equipment Asset'}
           </h1>
-          <p className="text-slate-600 text-base lg:text-lg">
-            {editingEquipment ? 'Update details below' : 'Fill in the details and see a live preview of your equipment'}
+          <p className="text-xs font-dancing text-amber-200/90">
+            {editingEquipment ? 'Update equipment specification details below' : 'Fill in hardware details and inspect real-time preview'}
           </p>
         </div>
 
         {/* Split Layout - Form and Preview */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Form Section - Left Side */}
-          <div className="bg-white rounded-2xl p-6 lg:p-8 shadow-xl border border-slate-200 animate-scale-in h-fit">
+          <div className="serene-glass-card rounded-3xl p-6 lg:p-8 shadow-2xl border border-amber-500/25 h-fit space-y-4">
             <form onSubmit={handleSubmit}>
               {/* Image Upload Section */}
               <div className="mb-6">

@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { useAuthStore } from "../../store/useAuthStore";
-import { Link } from "react-router-dom";
-import { Loader2, Eye, EyeOff, Mail, Lock } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { Loader2, Eye, EyeOff, Mail, Lock, ArrowLeft } from "lucide-react";
 import Arduino from '../../assets/arduino mega.webp'
+import AmbientBackground from "../AmbientBackground";
 
 export const Login = () => {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     email: '',
     password: ''
@@ -73,36 +75,70 @@ export const Login = () => {
     }
   };
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-gray-50 to-blue-100 flex items-center justify-center p-4">
-      <div className="w-full max-w-6xl grid lg:grid-cols-2 gap-12 items-center">
+  const handleGoBack = (e) => {
+    if (e) e.preventDefault();
+    if (window.history.state && typeof window.history.state.idx === "number" && window.history.state.idx > 0) {
+      navigate(-1);
+    } else {
+      navigate("/");
+    }
+  };
 
+  return (
+    <div className="min-h-screen bg-[#0a0809] text-stone-100 flex items-center justify-center p-6 relative font-sans selection:bg-amber-400 selection:text-stone-950 overflow-hidden">
+      <AmbientBackground height="h-full inset-0" />
+
+      {/* Top Left Navigation - Go Back Button */}
+      <div className="absolute top-6 left-6 z-30">
+        <Link
+          to="/"
+          onClick={(e) => {
+            if (window.history.state && typeof window.history.state.idx === "number" && window.history.state.idx > 0) {
+              e.preventDefault();
+              navigate(-1);
+            }
+          }}
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-amber-500/30 bg-stone-900/80 text-xs font-sans uppercase font-bold tracking-widest text-stone-300 hover:text-amber-300 hover:border-amber-400/60 hover:bg-stone-900 transition-all shadow-xl backdrop-blur-md cursor-pointer"
+        >
+          <ArrowLeft className="w-4 h-4 text-amber-400" />
+          <span>Go Back</span>
+        </Link>
+      </div>
+
+      <div className="max-w-5xl w-full grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-center relative z-10 py-8">
+        
         {/* Left Side - Logo and Branding */}
-        <div className="flex items-center justify-center">
-          <img src={Arduino} alt="Arduino" className="max-w-full h-auto" />
-        </div>
+        <Link to="/" className="flex flex-col items-center justify-center text-center p-4 group cursor-pointer">
+          <img
+            src={Arduino}
+            alt="Arduino Mega"
+            className="w-72 sm:w-96 md:w-[420px] lg:w-[460px] max-w-full h-auto mb-6 filter drop-shadow-[0_20px_50px_rgba(245,158,11,0.35)] group-hover:scale-105 transition-transform duration-500"
+          />
+          <h2 className="font-serif text-3xl lg:text-4xl text-stone-100 uppercase tracking-widest mb-1 font-normal group-hover:text-amber-300 transition-colors">AICTE IDEA LAB</h2>
+          <p className="font-dancing text-amber-200 text-xl">Sanctuary of Innovation</p>
+        </Link>
 
         {/* Right Side - Login Form */}
-        <div className="bg-white rounded-2xl shadow-2xl p-8 md:p-10">
-          <div className="mb-6">
-            <h1 className="text-3xl font-bold text-gray-900 text-center mb-3">Login</h1>
-            <p className="text-center text-gray-600">
+        <div className="serene-glass-card rounded-3xl border border-amber-500/30 p-8 md:p-10 shadow-2xl">
+          <div className="mb-6 text-center">
+            <h1 className="font-serif text-4xl text-stone-100 uppercase tracking-wider mb-2 font-normal">Portal Access</h1>
+            <p className="text-xs font-sans text-stone-400">
               Do not have an account?{' '}
-              <Link to="/signup" className="text-blue-600 hover:text-blue-700 font-semibold">
+              <Link to="/signup" className="text-amber-300 hover:text-amber-200 font-bold uppercase tracking-wider">
                 Sign-Up
               </Link>
             </p>
           </div>
 
           {/* Tab Selection */}
-          <div className="mb-6 border-b-2 border-gray-200">
+          <div className="mb-6 border-b border-amber-500/20">
             <div className="flex">
               <button
                 type="button"
                 onClick={() => setActiveTab('user')}
-                className={`flex-1 pb-3 font-semibold text-base transition-all ${activeTab === 'user'
-                    ? 'text-gray-900 border-b-2 border-blue-500 -mb-0.5'
-                    : 'text-gray-500 hover:text-gray-700'
+                className={`flex-1 pb-3 font-sans text-xs uppercase font-bold tracking-widest transition-all ${activeTab === 'user'
+                    ? 'text-amber-300 border-b-2 border-amber-400 -mb-0.5'
+                    : 'text-stone-500 hover:text-stone-300'
                   }`}
               >
                 User Login
@@ -110,9 +146,9 @@ export const Login = () => {
               <button
                 type="button"
                 onClick={() => setActiveTab('admin')}
-                className={`flex-1 pb-3 font-semibold text-base transition-all ${activeTab === 'admin'
-                    ? 'text-gray-900 border-b-2 border-blue-500 -mb-0.5'
-                    : 'text-gray-500 hover:text-gray-700'
+                className={`flex-1 pb-3 font-sans text-xs uppercase font-bold tracking-widest transition-all ${activeTab === 'admin'
+                    ? 'text-amber-300 border-b-2 border-amber-400 -mb-0.5'
+                    : 'text-stone-500 hover:text-stone-300'
                   }`}
               >
                 Admin Login
@@ -120,15 +156,15 @@ export const Login = () => {
             </div>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-5">
             {/* Email Field */}
             <div>
-              <label htmlFor="email" className="block text-sm font-semibold text-gray-900 mb-2">
-                Email Address <span className="text-red-500">*</span>
+              <label htmlFor="email" className="block text-xs font-sans uppercase tracking-widest text-stone-300 mb-2 font-semibold">
+                Email Address <span className="text-amber-400">*</span>
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <Mail className="h-5 w-5 text-gray-400" />
+                  <Mail className="h-4 w-4 text-amber-400/70" />
                 </div>
                 <input
                   type="email"
@@ -137,24 +173,24 @@ export const Login = () => {
                   value={formData.email}
                   onChange={handleChange}
                   onBlur={handleBlur}
-                  className={`w-full pl-12 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition ${errors.email && touched.email ? 'border-red-500' : 'border-gray-300'
+                  className={`w-full pl-11 pr-4 py-3 bg-stone-900/80 border rounded-xl text-stone-100 placeholder-stone-600 text-sm focus:outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400 transition ${errors.email && touched.email ? 'border-rose-500' : 'border-amber-500/30'
                     }`}
                   placeholder="Enter your email"
                 />
               </div>
               {errors.email && touched.email && (
-                <p className="mt-1.5 text-sm text-red-500">{errors.email}</p>
+                <p className="mt-1.5 text-xs text-rose-400 font-sans">{errors.email}</p>
               )}
             </div>
 
             {/* Password Field */}
             <div>
-              <label htmlFor="password" className="block text-sm font-semibold text-gray-900 mb-2">
-                Password <span className="text-red-500">*</span>
+              <label htmlFor="password" className="block text-xs font-sans uppercase tracking-widest text-stone-300 mb-2 font-semibold">
+                Password <span className="text-amber-400">*</span>
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <Lock className="h-5 w-5 text-gray-400" />
+                  <Lock className="h-4 w-4 text-amber-400/70" />
                 </div>
                 <input
                   type={showPassword ? "text" : "password"}
@@ -163,59 +199,59 @@ export const Login = () => {
                   value={formData.password}
                   onChange={handleChange}
                   onBlur={handleBlur}
-                  className={`w-full pl-12 pr-12 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition ${errors.password && touched.password ? 'border-red-500' : 'border-gray-300'
+                  className={`w-full pl-11 pr-11 py-3 bg-stone-900/80 border rounded-xl text-stone-100 placeholder-stone-600 text-sm focus:outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400 transition ${errors.password && touched.password ? 'border-rose-500' : 'border-amber-500/30'
                     }`}
                   placeholder="Enter your password"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-4 flex items-center"
+                  className="absolute inset-y-0 right-0 pr-4 flex items-center text-stone-400 hover:text-amber-300"
                 >
                   {showPassword ? (
-                    <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                    <EyeOff className="h-4 w-4" />
                   ) : (
-                    <Eye className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                    <Eye className="h-4 w-4" />
                   )}
                 </button>
               </div>
               {errors.password && touched.password && (
-                <p className="mt-1.5 text-sm text-red-500">{errors.password}</p>
+                <p className="mt-1.5 text-xs text-rose-400 font-sans">{errors.password}</p>
               )}
             </div>
 
             {/* Remember Me and Forgot Password */}
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between font-sans text-xs">
               <div className="flex items-center">
                 <input
                   type="checkbox"
                   id="rememberMe"
                   checked={rememberMe}
                   onChange={(e) => setRememberMe(e.target.checked)}
-                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                  className="w-4 h-4 text-amber-400 bg-stone-900 border-amber-500/30 rounded accent-amber-400 focus:ring-amber-400"
                 />
-                <label htmlFor="rememberMe" className="ml-2 text-sm text-gray-700">
+                <label htmlFor="rememberMe" className="ml-2 text-stone-300">
                   Remember me
                 </label>
               </div>
-              <a href="/forgot-password" className="text-sm text-blue-600 hover:text-blue-700 font-medium">
+              <Link to="/forgot-password" className="text-amber-300 hover:text-amber-200 uppercase tracking-wider text-[11px] font-semibold">
                 Forgot password?
-              </a>
+              </Link>
             </div>
 
             {/* Submit Button */}
             <button
               type="submit"
-              className="w-full bg-blue-500 text-white py-3.5 rounded-lg font-semibold hover:bg-blue-600 transition duration-200 shadow-md hover:shadow-lg flex justify-center items-center text-base"
+              className="w-full py-3.5 rounded-xl bg-gradient-to-r from-amber-400 via-amber-300 to-amber-500 text-stone-950 font-sans text-xs uppercase font-bold tracking-[0.2em] hover:brightness-110 hover:shadow-xl hover:shadow-amber-500/20 hover:scale-[1.02] transition-all duration-300 cursor-pointer shadow-lg mt-2 flex justify-center items-center"
               disabled={isLoggingIn}
             >
               {isLoggingIn ? (
                 <>
-                  <Loader2 className="size-5 animate-spin mr-2" />
-                  Logging In...
+                  <Loader2 className="size-4 animate-spin mr-2" />
+                  Authenticating...
                 </>
               ) : (
-                activeTab === 'admin' ? "Admin Login" : "Login"
+                activeTab === 'admin' ? "Admin Access Login" : "Authenticate & Enter"
               )}
             </button>
           </form>

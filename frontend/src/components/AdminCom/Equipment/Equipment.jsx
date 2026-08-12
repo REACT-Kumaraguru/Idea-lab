@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { useEquipmentStore } from '../../../store/useEquipmentStore';
 import { getImageUrl } from '../../../lib/config.js';
+import AmbientBackground from '../../AmbientBackground';
 
 const Equipment = () => {
   const navigate = useNavigate();
@@ -28,14 +29,7 @@ const Equipment = () => {
   const handleDelete = async (id) => {
     if (window.confirm("Are you sure you want to delete this equipment?")) {
       await deleteEquipment(id);
-      // No need to manually update state, store handles it
     }
-  };
-
-  const getStatusColor = (isAvailable) => {
-    return isAvailable
-      ? 'bg-green-100 text-green-700'
-      : 'bg-red-100 text-red-700';
   };
 
   const filteredList = equipment.filter(item =>
@@ -44,104 +38,113 @@ const Equipment = () => {
   );
 
   return (
-    <div className="ml-16 p-4 md:p-8 min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto space-y-6">
+    <div className="min-h-screen bg-[#0a0809] text-stone-100 font-sans relative overflow-x-hidden p-6 md:p-8">
+      <AmbientBackground height="fixed inset-0" />
+
+      <div className="relative z-10 max-w-7xl mx-auto space-y-6">
 
         {/* Header Section */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-gray-800">Equipment Inventory</h1>
-            <p className="text-gray-500 text-sm">Manage and track all lab assets</p>
+            <h1 className="font-serif text-3xl text-stone-100 uppercase tracking-widest font-normal">Equipment Inventory</h1>
+            <p className="text-xs font-dancing text-amber-200/90 mt-1">Manage and track all sanctuary prototyping hardware assets</p>
           </div>
 
           <button
             onClick={() => navigate('/admin/new-equipment')}
-            className="flex items-center justify-center gap-2 bg-teal-600 hover:bg-teal-700 text-white px-5 py-2.5 rounded-lg transition-all shadow-sm active:scale-95"
+            className="flex items-center justify-center gap-2 bg-gradient-to-r from-amber-400 via-amber-300 to-amber-500 text-stone-950 px-5 py-2.5 rounded-full text-xs font-sans uppercase font-bold tracking-wider hover:brightness-110 transition shadow-lg cursor-pointer"
           >
-            <Plus className="w-5 h-5" />
-            <span className="font-medium">Add Equipment</span>
+            <Plus className="w-4 h-4" />
+            <span>Add New Equipment</span>
           </button>
         </div>
 
         {/* Filters and Search */}
-        <div className="flex flex-col sm:flex-row gap-4 bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+        <div className="serene-glass-card p-4 rounded-2xl border border-amber-500/20 shadow-xl flex flex-col sm:flex-row gap-4">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-amber-400/70 w-4 h-4" />
             <input
               type="text"
               placeholder="Search by name or brand..."
-              className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all"
+              className="w-full pl-10 pr-4 py-2 rounded-xl border border-amber-500/30 bg-stone-900/80 text-xs text-stone-100 placeholder-stone-600 focus:outline-none focus:border-amber-400 font-sans"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-          <button className="flex items-center justify-center gap-2 px-4 py-2 border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50 transition-colors">
-            <Filter className="w-4 h-4" />
-            <span>Filters</span>
-          </button>
         </div>
 
         {/* Table Section */}
-        <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+        <div className="serene-glass-card border border-amber-500/25 rounded-3xl overflow-hidden shadow-2xl">
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
+            <table className="w-full text-left font-sans text-xs">
               <thead>
-                <tr className="bg-gray-50 border-b border-gray-200">
-                  <th className="px-6 py-4 text-xs font-semibold text-gray-600 uppercase tracking-wider">Image</th>
-                  <th className="px-6 py-4 text-xs font-semibold text-gray-600 uppercase tracking-wider">Equipment</th>
-                  <th className="px-6 py-4 text-xs font-semibold text-gray-600 uppercase tracking-wider">Brand</th>
-                  <th className="px-6 py-4 text-xs font-semibold text-gray-600 uppercase tracking-wider">Quantity</th>
-                  <th className="px-6 py-4 text-xs font-semibold text-gray-600 uppercase tracking-wider">Rent (₹)</th>
-                  <th className="px-6 py-4 text-xs font-semibold text-gray-600 uppercase tracking-wider">Status</th>
-                  <th className="px-6 py-4 text-xs font-semibold text-gray-600 uppercase tracking-wider text-right">Actions</th>
+                <tr className="border-b border-amber-500/20 text-stone-400 uppercase tracking-wider font-bold">
+                  <th className="px-6 py-4">Image</th>
+                  <th className="px-6 py-4">Equipment</th>
+                  <th className="px-6 py-4">Brand</th>
+                  <th className="px-6 py-4">Quantity</th>
+                  <th className="px-6 py-4">Price (₹/hr)</th>
+                  <th className="px-6 py-4">Status</th>
+                  <th className="px-6 py-4 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-amber-500/10">
                 {isFetchingEquipment ? (
                   <tr>
-                    <td colSpan="7" className="px-6 py-4 text-center text-gray-500">Loading...</td>
+                    <td colSpan="7" className="text-center py-8 text-stone-500 uppercase tracking-widest text-xs">
+                      Loading hardware inventory...
+                    </td>
                   </tr>
                 ) : filteredList.length === 0 ? (
                   <tr>
-                    <td colSpan="7" className="px-6 py-4 text-center text-gray-500">No equipment found</td>
+                    <td colSpan="7" className="text-center py-8 text-stone-500 uppercase tracking-widest text-xs">
+                      No matching equipment found.
+                    </td>
                   </tr>
                 ) : (
                   filteredList.map((item) => (
-                    <tr key={item.id} className="hover:bg-gray-50/50 transition-colors group">
+                    <tr key={item.id} className="hover:bg-amber-400/5 transition">
                       <td className="px-6 py-4">
-                        {item.image ? (
-                          <img src={getImageUrl(item.image)} alt={item.equipmentName} className="w-10 h-10 object-cover rounded-md" />
-                        ) : (
-                          <div className="w-10 h-10 bg-gray-200 rounded-md flex items-center justify-center text-gray-400 text-xs">No Img</div>
-                        )}
+                        <img
+                          src={getImageUrl(item.image)}
+                          alt={item.equipmentName}
+                          className="w-12 h-12 object-cover rounded-xl border border-amber-500/30 bg-stone-900"
+                        />
+                      </td>
+                      <td className="px-6 py-4 font-serif text-sm text-stone-100 uppercase tracking-wide">
+                        {item.equipmentName}
+                      </td>
+                      <td className="px-6 py-4 text-amber-300/90 font-mono">
+                        {item.brandName || "Standard"}
+                      </td>
+                      <td className="px-6 py-4 font-mono text-stone-300">
+                        {item.quantity}
+                      </td>
+                      <td className="px-6 py-4 font-mono text-amber-400 font-bold">
+                        ₹{item.pricePerHour}
                       </td>
                       <td className="px-6 py-4">
-                        <span className="font-medium text-gray-800 block">{item.equipmentName}</span>
-                        <span className="text-xs text-gray-500">{item.equipmentDetails}</span>
-                      </td>
-                      <td className="px-6 py-4 text-gray-600">{item.brandName}</td>
-                      <td className="px-6 py-4 text-gray-500 font-mono text-sm">{item.quantity}</td>
-                      <td className="px-6 py-4 text-gray-700 font-mono text-sm">
-                        {item.pricePerHour != null ? `₹${item.pricePerHour}/hr` : '-'}
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(item.isAvailable)}`}>
+                        <span className={`px-2.5 py-1 rounded-full text-[10px] uppercase font-bold tracking-wider border ${
+                          item.isAvailable
+                            ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
+                            : 'bg-rose-500/20 text-rose-300 border-rose-500/30'
+                        }`}>
                           {item.isAvailable ? 'Available' : 'Unavailable'}
                         </span>
                       </td>
                       <td className="px-6 py-4 text-right">
-                        <div className="flex justify-end gap-1 opacity-100 transition-opacity">
+                        <div className="flex items-center justify-end gap-2">
                           <button
-                            className="p-2 text-gray-400 hover:text-teal-600 hover:bg-teal-50 rounded-lg transition-colors"
+                            onClick={() => navigate('/admin/new-equipment', { state: { editItem: item } })}
+                            className="p-2 text-stone-400 hover:text-amber-300 hover:bg-amber-400/10 rounded-xl transition cursor-pointer"
                             title="Edit"
-                            onClick={() => navigate('/admin/new-equipment', { state: { equipment: item } })}
                           >
                             <Edit2 className="w-4 h-4" />
                           </button>
                           <button
-                            className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                            title="Delete"
                             onClick={() => handleDelete(item.id)}
+                            className="p-2 text-stone-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-xl transition cursor-pointer"
+                            title="Delete"
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
@@ -153,12 +156,8 @@ const Equipment = () => {
               </tbody>
             </table>
           </div>
-
-          {/* Footer */}
-          <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between text-sm text-gray-500 bg-gray-50/30">
-            <span>Showing {filteredList.length} items</span>
-          </div>
         </div>
+
       </div>
     </div>
   );

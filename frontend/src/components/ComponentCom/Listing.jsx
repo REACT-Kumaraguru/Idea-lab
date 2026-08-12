@@ -6,6 +6,7 @@ import { Calendar, Users, MapPin, AlertCircle } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { getImageUrl as getImageUrlFromConfig } from "../../lib/config.js";
 import { axiosInstance } from "../../lib/axios.js";
+import AmbientBackground from "../AmbientBackground";
 
 const Listing = ({ cart, setCart }) => {
 
@@ -101,7 +102,9 @@ const Listing = ({ cart, setCart }) => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[#0a0809] text-stone-100 font-sans selection:bg-amber-400 selection:text-stone-950 relative overflow-x-hidden">
+      <AmbientBackground height="fixed inset-0" />
+
       {/* Navbar */}
       <Navbar
         searchQuery={searchQuery}
@@ -110,34 +113,36 @@ const Listing = ({ cart, setCart }) => {
       />
 
       {/* Main Content */}
-      <div className="max-w-[1400px] mx-auto px-6 py-6">
-        <div className="flex gap-6">
+      <div className="relative z-10 max-w-[1400px] mx-auto px-6 py-8">
+        <div className="flex flex-col lg:flex-row gap-8">
           {/* Sidebar */}
-          <Sidebar
-            selectedCategories={selectedCategories}
-            setSelectedCategories={setSelectedCategories}
-            selectedTypes={selectedTypes}
-            setSelectedTypes={setSelectedTypes}
-            categoryOpen={categoryOpen}
-            setCategoryOpen={setCategoryOpen}
-            typeOpen={typeOpen}
-            setTypeOpen={setTypeOpen}
-          />
+          <div className="w-full lg:w-64 shrink-0 serene-glass-card p-6 rounded-2xl border border-amber-500/20 h-fit">
+            <Sidebar
+              selectedCategories={selectedCategories}
+              setSelectedCategories={setSelectedCategories}
+              selectedTypes={selectedTypes}
+              setSelectedTypes={setSelectedTypes}
+              categoryOpen={categoryOpen}
+              setCategoryOpen={setCategoryOpen}
+              typeOpen={typeOpen}
+              setTypeOpen={setTypeOpen}
+            />
+          </div>
 
           {/* Main Content Area */}
           <main className="flex-1">
             {/* Header */}
-            <div className="mb-6">
-              <div className="text-sm text-gray-600 mb-2">
-                Home / Lab Equipment
+            <div className="mb-8">
+              <div className="text-xs font-sans uppercase tracking-widest text-amber-200/80 mb-2">
+                Home / Lab Equipment Catalog
               </div>
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <h1 className="text-3xl font-bold text-gray-800">
+                <div className="flex items-center gap-4">
+                  <h1 className="text-3xl sm:text-4xl font-serif uppercase tracking-widest text-stone-100">
                     Lab Equipment
                   </h1>
-                  <span className="text-sm text-gray-600 bg-gray-200 px-3 py-1 rounded-full">
-                    {filteredEquipment.length} Items
+                  <span className="text-xs font-sans uppercase font-bold tracking-wider text-amber-300 bg-amber-500/10 border border-amber-500/30 px-3.5 py-1 rounded-full">
+                    {filteredEquipment.length} Items Available
                   </span>
                 </div>
               </div>
@@ -145,91 +150,102 @@ const Listing = ({ cart, setCart }) => {
 
             {/* Error Message */}
             {error && (
-              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
-                <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+              <div className="mb-6 p-4 bg-rose-950/40 border border-rose-500/40 rounded-xl flex items-start gap-3 text-rose-200">
+                <AlertCircle className="w-5 h-5 text-rose-400 shrink-0 mt-0.5" />
                 <div>
-                  <p className="text-sm font-semibold text-red-800">Error</p>
-                  <p className="text-sm text-red-700">{error}</p>
+                  <p className="text-xs font-sans uppercase tracking-wider font-semibold text-rose-300">Error</p>
+                  <p className="text-sm font-sans text-stone-300">{error}</p>
                 </div>
               </div>
             )}
 
             {/* Loading State */}
             {loading && (
-              <div className="flex items-center justify-center py-12">
-                <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+              <div className="flex flex-col items-center justify-center py-16">
+                <div className="w-12 h-12 border-4 border-amber-400 border-t-transparent rounded-full animate-spin mb-4" />
+                <p className="text-xs font-sans uppercase tracking-widest text-amber-200/80">Loading Prototyping Hardware...</p>
               </div>
             )}
 
             {/* Equipment Grid */}
             {!loading && (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredEquipment.map((item) => (
                   <div
                     key={item.id}
-                    className="bg-white rounded-lg overflow-hidden border border-gray-200 hover:shadow-lg transition-shadow"
+                    className="serene-glass-card rounded-2xl overflow-hidden border border-amber-500/20 hover:border-amber-400/50 hover:shadow-2xl hover:shadow-amber-500/10 transition-all duration-300 flex flex-col justify-between"
                   >
                     {/* Equipment Image */}
-                    <div className="relative h-48 overflow-hidden">
+                    <div className="relative h-52 overflow-hidden bg-stone-950">
                       <img
                         src={getImageUrl(item.image)}
                         alt={item.equipmentName}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-cover filter brightness-95 contrast-105 hover:scale-105 transition-transform duration-500"
                         onError={(e) => {
                           e.target.src =
-                            "https://via.placeholder.com/500x400/e5e7eb/6b7280?text=" +
+                            "https://via.placeholder.com/500x400/191618/d4af37?text=" +
                             encodeURIComponent(item.equipmentName);
                         }}
                       />
                       {!item.isAvailable && (
-                        <div className="absolute top-3 left-3 bg-orange-500 text-white px-3 py-1 rounded-full text-xs font-semibold">
+                        <div className="absolute top-3 left-3 bg-amber-600/90 backdrop-blur-md text-stone-950 px-3 py-1 rounded-full text-[10px] font-sans font-bold uppercase tracking-widest shadow-lg border border-amber-400/50">
                           In Use
                         </div>
                       )}
                       {item.isAvailable && (
-                        <div className="absolute top-3 left-3 bg-green-500 text-white px-3 py-1 rounded-full text-xs font-semibold">
+                        <div className="absolute top-3 left-3 bg-emerald-500/90 backdrop-blur-md text-stone-950 px-3 py-1 rounded-full text-[10px] font-sans font-bold uppercase tracking-widest shadow-lg border border-emerald-300">
                           Available
                         </div>
                       )}
                     </div>
 
                     {/* Equipment Info */}
-                    <div className="p-4">
-                      <h3 className="font-bold text-lg mb-1 text-gray-800">
-                        {item.equipmentName}
-                      </h3>
-                      <p className="text-xs text-gray-500 mb-1">
-                        {item.brandName}
-                      </p>
-                      <p className="text-sm text-gray-600 mb-3 line-clamp-2">
-                        {item.equipmentDetails}
-                      </p>
-
-                      {/* Details */}
-                      <div className="space-y-2 mb-4">
-                        <div className="flex items-center gap-2 text-sm text-gray-600">
-                          <MapPin className="w-4 h-4 text-gray-400" />
-                          <span>IDEA LAB</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-sm text-gray-600">
-                          <Users className="w-4 h-4 text-gray-400" />
-                          <span>Quantity: {item.quantity}</span>
-                        </div>
-                        {item.pricePerHour != null && (
-                          <div className="flex items-center gap-2 text-sm font-semibold text-blue-600">
-                            <span>₹{item.pricePerHour}/hr</span>
-                          </div>
-                        )}
+                    <div className="p-5 flex-1 flex flex-col justify-between">
+                      <div>
+                        <h3 className="font-serif text-2xl text-stone-100 mb-1 uppercase tracking-wide">
+                          {item.equipmentName}
+                        </h3>
+                        <p className="text-xs font-dancing text-amber-200/90 mb-2">
+                          {item.brandName}
+                        </p>
+                        <p className="text-xs font-sans text-stone-400 mb-4 font-light leading-relaxed line-clamp-2">
+                          {item.equipmentDetails}
+                        </p>
                       </div>
 
-                      {/* Action Buttons */}
-                      <div className="flex gap-2">
+                      <div>
+                        {/* Details */}
+                        <div className="space-y-2 mb-5 font-sans text-xs border-t border-amber-500/10 pt-3 text-stone-300">
+                          <div className="flex items-center justify-between">
+                            <span className="flex items-center gap-2 text-stone-400">
+                              <MapPin className="w-3.5 h-3.5 text-amber-400" />
+                              <span>Sanctuary Location</span>
+                            </span>
+                            <span className="text-amber-200 font-semibold uppercase">IDEA LAB</span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="flex items-center gap-2 text-stone-400">
+                              <Users className="w-3.5 h-3.5 text-amber-400" />
+                              <span>Units Installed</span>
+                            </span>
+                            <span className="text-stone-200 font-mono">{item.quantity}</span>
+                          </div>
+                          {item.pricePerHour != null && (
+                            <div className="flex items-center justify-between font-semibold pt-1">
+                              <span className="text-stone-400 font-normal">Hourly Rate</span>
+                              <span className="text-amber-300 font-mono text-sm font-bold">₹{item.pricePerHour}/hr</span>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Action Buttons */}
                         <button
                           onClick={() => handleBookNow(item)}
-                          className={`flex-1 py-2 px-4 rounded-lg font-semibold text-sm transition-colors flex items-center justify-center gap-2 ${item.isAvailable
-                              ? "bg-blue-600 text-white hover:bg-blue-700"
-                              : "bg-gray-200 text-gray-500 cursor-not-allowed"
-                            }`}
+                          className={`w-full py-3 px-4 rounded-xl font-sans text-xs uppercase font-bold tracking-[0.2em] transition-all flex items-center justify-center gap-2 shadow-lg ${
+                            item.isAvailable
+                              ? "bg-gradient-to-r from-amber-400 via-amber-300 to-amber-500 text-stone-950 hover:brightness-110 hover:shadow-amber-500/20 cursor-pointer"
+                              : "bg-stone-900 text-stone-600 border border-stone-800 cursor-not-allowed"
+                          }`}
                           disabled={!item.isAvailable}
                         >
                           <Calendar className="w-4 h-4" />
@@ -244,13 +260,13 @@ const Listing = ({ cart, setCart }) => {
 
             {/* No Results */}
             {!loading && filteredEquipment.length === 0 && (
-              <div className="text-center py-12">
-                <div className="text-6xl mb-4">🔍</div>
-                <h3 className="text-xl font-semibold text-gray-700 mb-2">
-                  No equipment found
+              <div className="text-center py-16 serene-glass-card rounded-2xl border border-amber-500/20">
+                <div className="text-5xl mb-4 opacity-70">🔍</div>
+                <h3 className="font-serif text-2xl text-stone-200 mb-2 uppercase tracking-wide">
+                  No Equipment Matches Your Filter
                 </h3>
-                <p className="text-gray-600">
-                  Try adjusting your filters or search query
+                <p className="text-stone-400 font-sans text-sm font-light">
+                  Try clearing your search query or selecting alternate category filters
                 </p>
               </div>
             )}

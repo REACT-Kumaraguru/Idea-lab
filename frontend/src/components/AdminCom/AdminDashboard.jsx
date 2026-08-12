@@ -14,6 +14,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { axiosInstance } from "../../lib/axios";
+import AmbientBackground from "../AmbientBackground";
 
 const RECENT_PENDING_LIMIT = 8;
 
@@ -142,25 +143,28 @@ export default function AdminDashboard() {
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center py-24">
-        <Loader2 className="w-10 h-10 text-teal-600 animate-spin mb-4" />
-        <p className="text-gray-600">Loading dashboard...</p>
+        <Loader2 className="w-10 h-10 text-amber-400 animate-spin mb-4" />
+        <p className="text-stone-400 font-sans text-xs uppercase tracking-widest font-bold">Loading Administration Console...</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-        <p className="text-gray-600 text-sm mt-0.5">
-          Overview of bookings, equipment, and quick actions.
+    <div className="space-y-8 font-sans relative">
+      <AmbientBackground height="fixed inset-0" />
+      <div className="relative z-10">
+        <h1 className="font-serif text-3xl sm:text-4xl text-stone-100 uppercase tracking-widest font-normal">
+          Admin Operations Dashboard
+        </h1>
+        <p className="text-xs font-dancing text-amber-200/90 mt-1">
+          Sanctuary Prototyping Facilities & Approval Management
         </p>
       </div>
 
       {error && (
-        <div className="flex items-center gap-3 p-4 bg-red-50 border border-red-200 rounded-lg text-red-800">
-          <AlertCircle className="w-5 h-5 flex-shrink-0" />
-          <p className="text-sm">{error}</p>
+        <div className="flex items-center gap-3 p-4 bg-rose-950/40 border border-rose-500/40 rounded-2xl text-rose-200 text-xs">
+          <AlertCircle className="w-5 h-5 flex-shrink-0 text-rose-400" />
+          <p>{error}</p>
         </div>
       )}
 
@@ -171,35 +175,38 @@ export default function AdminDashboard() {
             key={index}
             type="button"
             onClick={() => stat.href && navigate(stat.href)}
-            className={`bg-white p-6 rounded-xl shadow-sm border-b-[6px] ${stat.borderColor} border border-gray-100 flex justify-between items-center text-left hover:shadow-md transition-shadow w-full ${stat.href ? "cursor-pointer" : "cursor-default"}`}
+            className={`serene-glass-card p-6 rounded-3xl border border-amber-500/20 flex justify-between items-center text-left hover:border-amber-500/40 hover:shadow-xl transition-all w-full ${stat.href ? "cursor-pointer" : "cursor-default"}`}
           >
             <div>
-              <p className="text-gray-400 text-[10px] font-bold tracking-widest mb-2">{stat.label}</p>
-              <p className={`text-3xl font-bold ${stat.textColor}`}>{stat.count}</p>
+              <p className="text-amber-400/80 text-[10px] font-sans font-bold tracking-widest uppercase mb-2">{stat.label}</p>
+              <p className="text-3xl font-mono font-bold text-stone-100">{stat.count}</p>
             </div>
-            <div className={`p-3 rounded-xl ${stat.iconBg} ${stat.textColor}`}>{stat.icon}</div>
+            <div className="p-3 rounded-2xl bg-amber-400/10 border border-amber-400/30 text-amber-300">{stat.icon}</div>
           </button>
         ))}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Pending approval */}
-        <div className="lg:col-span-2 bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-          <div className="flex justify-between items-center px-6 py-4 border-b border-gray-100">
-            <h2 className="text-lg font-semibold text-gray-900">Pending approval</h2>
+        <div className="lg:col-span-2 serene-glass-card rounded-3xl border border-amber-500/20 shadow-2xl overflow-hidden">
+          <div className="flex justify-between items-center px-6 py-5 border-b border-amber-500/20">
+            <div>
+              <h2 className="font-serif text-xl text-stone-100 uppercase tracking-wide">Pending Reservation Approvals</h2>
+              <p className="text-[11px] font-sans text-stone-400 font-light">Hardware usage requests awaiting admin review</p>
+            </div>
             <button
               type="button"
               onClick={() => navigate("/admin/approval")}
-              className="inline-flex items-center gap-1 text-sm font-medium text-teal-600 hover:text-teal-700"
+              className="inline-flex items-center gap-1 text-xs font-sans uppercase font-bold tracking-wider text-amber-300 hover:text-amber-200 transition-colors"
             >
               View all
               <ChevronRight className="w-4 h-4" />
             </button>
           </div>
-          <div className="divide-y divide-gray-100">
+          <div className="divide-y divide-amber-500/15">
             {pendingBookings.length === 0 ? (
-              <div className="px-6 py-8 text-center text-gray-500 text-sm">
-                No pending bookings.
+              <div className="px-6 py-10 text-center text-stone-500 text-xs font-sans">
+                No pending equipment bookings require approval at this time.
               </div>
             ) : (
               pendingBookings.map((b) => (
@@ -207,15 +214,15 @@ export default function AdminDashboard() {
                   key={b.id}
                   type="button"
                   onClick={() => navigate("/admin/approval")}
-                  className="w-full px-6 py-4 flex justify-between items-center text-left hover:bg-gray-50 transition-colors"
+                  className="w-full px-6 py-4 flex justify-between items-center text-left hover:bg-amber-400/5 transition-colors"
                 >
                   <div>
-                    <p className="font-medium text-gray-900">{b.user?.fullName || "N/A"}</p>
-                    <p className="text-sm text-gray-500">{b.equipment?.equipmentName || "N/A"}</p>
+                    <p className="font-serif text-base text-stone-100 uppercase tracking-wide">{b.user?.fullName || "N/A"}</p>
+                    <p className="text-xs font-dancing text-amber-200/90">{b.equipment?.equipmentName || "N/A"}</p>
                   </div>
-                  <div className="text-right text-sm text-gray-600">
-                    <p>{formatDate(b.bookingDate)}</p>
-                    <p>{formatTime(b.bookingTime)}</p>
+                  <div className="text-right text-xs font-sans text-stone-400">
+                    <p className="font-mono text-stone-200">{formatDate(b.bookingDate)}</p>
+                    <p className="text-[11px]">{formatTime(b.bookingTime)}</p>
                   </div>
                 </button>
               ))
@@ -224,11 +231,12 @@ export default function AdminDashboard() {
         </div>
 
         {/* Quick actions */}
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-100">
-            <h2 className="text-lg font-semibold text-gray-900">Quick actions</h2>
+        <div className="serene-glass-card rounded-3xl border border-amber-500/20 shadow-2xl overflow-hidden">
+          <div className="px-6 py-5 border-b border-amber-500/20">
+            <h2 className="font-serif text-xl text-stone-100 uppercase tracking-wide">Quick Operations</h2>
+            <p className="text-[11px] font-sans text-stone-400 font-light">Shortcuts for administrative actions</p>
           </div>
-          <div className="p-4 space-y-2">
+          <div className="p-5 space-y-3 font-sans text-xs">
             {quickActions.map((action) => {
               const Icon = action.icon;
               return (
@@ -236,11 +244,11 @@ export default function AdminDashboard() {
                   key={action.path}
                   type="button"
                   onClick={() => navigate(action.path)}
-                  className="w-full flex items-center gap-3 px-4 py-3 rounded-lg bg-teal-50 text-teal-700 hover:bg-teal-100 transition-colors font-medium text-sm"
+                  className="w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl bg-stone-900/80 border border-amber-500/20 text-stone-200 hover:text-amber-300 hover:border-amber-400/50 hover:bg-stone-900 transition-all font-semibold uppercase tracking-wider cursor-pointer"
                 >
-                  <Icon className="w-5 h-5 flex-shrink-0" />
+                  <Icon className="w-4 h-4 text-amber-400 shrink-0" />
                   <span>{action.label}</span>
-                  <ChevronRight className="w-4 h-4 ml-auto flex-shrink-0" />
+                  <ChevronRight className="w-4 h-4 ml-auto shrink-0 text-stone-500" />
                 </button>
               );
             })}

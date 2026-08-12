@@ -19,7 +19,7 @@ export const ensureBookingFields = async () => {
       await queryInterface.addColumn("equipment_bookings", "purpose_of_usage", {
         type: sequelize.Sequelize.DataTypes.TEXT,
         allowNull: true,
-      });
+      }); 
       console.log("[Migration] ✓ Added purpose_of_usage column");
     }
 

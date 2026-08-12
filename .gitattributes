@@ -1,4 +1,0 @@
-# SSL certs/keys and nginx config are consumed inside a Linux container:
-# force LF in the repo and on checkout so PEM parsing / nginx never see CRLF.
-ssl/** text eol=lf
-nginx/nginx.conf text eol=lf
