@@ -106,6 +106,18 @@ import HackathonAdminWinners from "./pages/hackathon/HackathonAdminWinners";
 import HackathonAdminPaymentDetails from "./pages/hackathon/HackathonAdminPaymentDetails";
 import HackathonLayout from "./components/hackathon/HackathonLayout";
 
+import { useLocation } from "react-router-dom";
+
+function ScrollToTop() {
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+
+  return null;
+}
+
 function App() {
   const [cart, setCart] = useState([]);
   const { authUser, checkAuth, isCheckingAuth } = useAuthStore();
@@ -125,6 +137,7 @@ function App() {
 
   return (
     <BrowserRouter>
+      <ScrollToTop />
       <Routes>
         {/* Home page */}
         <Route path="/" element={<Home />} />
