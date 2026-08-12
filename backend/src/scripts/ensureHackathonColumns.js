@@ -1,7 +1,18 @@
 export async function ensureHackathonColumns({ sequelize }) {
   try {
     const dialect = sequelize.getDialect();
-    if (dialect === "sqlite") {
+    if (dialect === "postgres") {
+      await sequelize.query(`
+        ALTER TABLE "hackathon_teams" ADD COLUMN IF NOT EXISTS "hackathon_id" INTEGER DEFAULT 1;
+        ALTER TABLE "hackathon_teams" ADD COLUMN IF NOT EXISTS "theme" VARCHAR(255);
+        ALTER TABLE "hackathon_problems" ADD COLUMN IF NOT EXISTS "hackathon_id" INTEGER DEFAULT 1;
+        ALTER TABLE "hackathon_mentors" ADD COLUMN IF NOT EXISTS "hackathon_id" INTEGER;
+        ALTER TABLE "hackathon_submissions" ADD COLUMN IF NOT EXISTS "hackathon_id" INTEGER DEFAULT 1;
+        ALTER TABLE "hackathon_registrations" ADD COLUMN IF NOT EXISTS "hackathon_id" INTEGER DEFAULT 1;
+        ALTER TABLE "hackathon_logs" ADD COLUMN IF NOT EXISTS "hackathon_id" INTEGER;
+      `);
+      console.log("[db] Added missing hackathon_id columns to PostgreSQL tables");
+    } else if (dialect === "sqlite") {
       const [cols] = await sequelize.query("PRAGMA table_info(hackathons);");
       const names = (cols || []).map((c) => c.name);
       if (!names.includes("schedule")) {
@@ -45,8 +56,12 @@ export async function ensureHackathonColumns({ sequelize }) {
         await sequelize.query("ALTER TABLE hackathon_teams ADD COLUMN theme VARCHAR(255);").catch(() => {});
         console.log("[db] Added column theme to hackathon_teams");
       }
+      if (!teamColNames.includes("hackathon_id")) {
+        await sequelize.query("ALTER TABLE hackathon_teams ADD COLUMN hackathon_id INTEGER DEFAULT 1;").catch(() => {});
+      }
     }
   } catch (err) {
     console.error("Error in ensureHackathonColumns:", err.message);
   }
 }
+
