@@ -49,12 +49,12 @@ export async function ensureDummyTeam() {
         name: "IDEA LAB Hackathon 2026",
         slug: "ich2026",
         description: "National Level Student Innovation & Prototype Challenge.",
-        status: "ended",
+        status: "completed",
         schedule: defaultSchedule1,
       });
-      console.log("[dummy-team] Created default hackathon: ICH 2026 (ended)");
+      console.log("[dummy-team] Created default hackathon: ICH 2026 (completed)");
     } else {
-      await hackathon1.update({ status: "ended", schedule: defaultSchedule1 });
+      await hackathon1.update({ status: "completed", schedule: defaultSchedule1 });
     }
 
 
