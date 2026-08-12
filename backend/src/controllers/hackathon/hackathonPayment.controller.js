@@ -126,8 +126,11 @@ export const adminListPaymentDetails = async (req, res) => {
     if (Object.keys(createdAtWhere).length > 0) where.createdAt = createdAtWhere;
 
     if (hackathonId && Number.isInteger(hackathonId)) {
+      const teamWhere = hackathonId === 1
+        ? { [Op.or]: [{ hackathonId: 1 }, { hackathonId: null }] }
+        : { hackathonId };
       const hackathonTeams = await HackathonTeam.findAll({
-        where: { hackathonId },
+        where: teamWhere,
         attributes: ["id"],
       });
       const hTeamIds = hackathonTeams.map((t) => Number(t.id));
@@ -219,8 +222,11 @@ export const adminExportPaymentDetailsExcel = async (req, res) => {
     if (hackathonId && Number.isInteger(hackathonId)) {
       const found = hackathonNameById.get(hackathonId);
       if (found) hackathonTitle = found;
+      const teamWhere = hackathonId === 1
+        ? { [Op.or]: [{ hackathonId: 1 }, { hackathonId: null }] }
+        : { hackathonId };
       const hackathonTeams = await HackathonTeam.findAll({
-        where: { hackathonId },
+        where: teamWhere,
         attributes: ["id"],
       });
       const hTeamIds = hackathonTeams.map((t) => Number(t.id));
