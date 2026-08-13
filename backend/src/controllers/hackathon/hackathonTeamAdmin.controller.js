@@ -94,6 +94,12 @@ async function serializeTeamForAdmin(teamInstance) {
     }
   }
 
+  let reviewerName = null;
+  if (team.reviewerId) {
+    const revUser = await HackathonUser.findByPk(team.reviewerId, { attributes: ["fullName"] });
+    if (revUser) reviewerName = revUser.fullName;
+  }
+
   return {
     id,
     hackathonId: team.hackathonId,
@@ -101,6 +107,11 @@ async function serializeTeamForAdmin(teamInstance) {
     theme,
     topic,
     description,
+    abstractionStatus: team.abstractionStatus || "draft",
+    reviewerId: team.reviewerId || null,
+    reviewerFeedback: team.reviewerFeedback || null,
+    reviewedAt: team.reviewedAt || null,
+    reviewerName,
     inviteCode: team.inviteCode,
     status: team.status,
     leaderUserId: team.leaderUserId,
@@ -125,10 +136,13 @@ async function serializeTeamForAdmin(teamInstance) {
 
 export const adminListTeams = async (req, res) => {
   try {
-    const { hackathonId } = req.query || {};
+    const { hackathonId, reviewerStatus } = req.query || {};
     const where = {};
     if (hackathonId && Number.isInteger(Number(hackathonId))) {
       where.hackathonId = Number(hackathonId);
+    }
+    if (reviewerStatus) {
+      where.abstractionStatus = reviewerStatus;
     }
 
     const [teamsRows, allHackathons] = await Promise.all([

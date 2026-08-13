@@ -12,6 +12,7 @@ import {
   mentorNamesForProblem,
 } from "../../components/hackathon/HackathonProblemArticleCard.jsx";
 import AmbientBackground from "../../components/AmbientBackground";
+import ReviewerDashboard from "./ReviewerDashboard";
 
 const getHackathonSlugHelper = (h) => {
   if (!h) return "ich2026";
@@ -465,7 +466,7 @@ const HackathonDashboard = () => {
     ? team?.id || 1
     : selectedProblem?.problemId || team?.problemId || null;
 
-  const registrationBlocksSubmission = role === "student" && registrationClosed;
+  const isAbstractionApproved = !isCustomMode || team?.abstractionStatus === "approved";
 
   // Backend auto-activates team status on submission when needed.
   const canSubmit = Boolean(team);
@@ -476,15 +477,18 @@ const HackathonDashboard = () => {
       : registrationBlocksSubmission
         ? registrationClosedMessage ||
           "Registration is closed. PoC and submission uploads are no longer accepted."
-        : !isCustomMode && !selectedProblemId && !team?.topic
-          ? "Please select a Problem Statement under the PROBLEMS tab first."
-          : isCustomMode && !team?.theme
-            ? "Please select your Project Theme under the PROBLEMS tab first."
-            : null;
+        : isCustomMode && !isAbstractionApproved
+          ? "Your problem statement (abstraction) must be approved by your theme reviewer before unlocking submission."
+          : !isCustomMode && !selectedProblemId && !team?.topic
+            ? "Please select a Problem Statement under the PROBLEMS tab first."
+            : isCustomMode && !team?.theme
+              ? "Please select your Project Theme under the PROBLEMS tab first."
+              : null;
 
   const submitAllowed =
     role === "student" &&
     canSubmit &&
+    isAbstractionApproved &&
     (isCustomMode ? Boolean(team?.theme) : Boolean(selectedProblemId || team?.topic)) &&
     !teamHasSubmitted &&
     !registrationBlocksSubmission;
@@ -700,6 +704,10 @@ const HackathonDashboard = () => {
       toast.error(e.response?.data?.message || "Failed to approve submission");
     }
   };
+
+  if (role === "reviewer") {
+    return <ReviewerDashboard />;
+  }
 
   return (
     <div className="text-stone-100 font-sans relative z-10">
@@ -1175,12 +1183,33 @@ const HackathonDashboard = () => {
                     Select your project theme and enter your personalized problem statement title and abstraction details below.
                   </p>
                 </div>
-                {team?.topic ? (
-                  <span className="text-xs font-bold px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 uppercase tracking-wider">
-                    Saved ✓
+                {team?.abstractionStatus === "approved" ? (
+                  <span className="text-xs font-bold px-3.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 uppercase tracking-wider">
+                    Approved by Reviewer ✓
+                  </span>
+                ) : team?.abstractionStatus === "submitted" ? (
+                  <span className="text-xs font-bold px-3.5 py-1 rounded-full bg-amber-400/20 text-amber-300 border border-amber-400/30 uppercase tracking-wider animate-pulse">
+                    Pending Reviewer Approval ⏳
+                  </span>
+                ) : team?.abstractionStatus === "needs_revision" ? (
+                  <span className="text-xs font-bold px-3.5 py-1 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/30 uppercase tracking-wider">
+                    Revision Requested ⚠️
+                  </span>
+                ) : team?.topic ? (
+                  <span className="text-xs font-bold px-3 py-1 rounded-full bg-stone-800 text-stone-300 border border-stone-700 uppercase tracking-wider">
+                    Saved Draft
                   </span>
                 ) : null}
               </div>
+
+              {team?.reviewerFeedback && (
+                <div className="mb-5 p-4 rounded-2xl bg-rose-950/40 border border-rose-500/40 text-xs text-rose-200 font-sans">
+                  <strong className="block uppercase tracking-wider font-bold text-rose-300 mb-1">
+                    Reviewer Notes / Revision Feedback:
+                  </strong>
+                  <p className="italic">"{team.reviewerFeedback}"</p>
+                </div>
+              )}
 
               <form onSubmit={handleSaveCustomProblem} className="space-y-5">
                 <div>
@@ -1264,9 +1293,9 @@ const HackathonDashboard = () => {
                 <button
                   type="submit"
                   disabled={savingCustomProblem}
-                  className="w-full px-6 py-3 rounded-xl bg-gradient-to-r from-amber-400 via-amber-300 to-amber-500 text-stone-950 font-extrabold text-xs uppercase tracking-wider transition shadow-lg disabled:opacity-60 cursor-pointer border border-amber-300"
+                  className="w-full px-6 py-3.5 rounded-xl bg-gradient-to-r from-amber-400 via-amber-300 to-amber-500 text-stone-950 font-extrabold text-xs uppercase tracking-wider transition shadow-lg disabled:opacity-60 cursor-pointer border border-amber-300 flex items-center justify-center gap-2"
                 >
-                  {savingCustomProblem ? "Saving..." : team?.topic ? "Update Personalized Problem Statement" : "Save Personalized Problem Statement"}
+                  <span>{savingCustomProblem ? "SUBMITTING..." : "SUBMIT THE PROBLEM"}</span>
                 </button>
               </form>
             </div>

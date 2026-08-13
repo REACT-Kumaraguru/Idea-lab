@@ -63,6 +63,12 @@ const buildTeamSummary = async ({ team, currentUserId }) => {
     })
   );
 
+  let reviewerName = null;
+  if (team.reviewerId) {
+    const revUser = await HackathonUser.findByPk(team.reviewerId, { attributes: ["fullName"] });
+    if (revUser) reviewerName = revUser.fullName;
+  }
+
   return {
     id: team.id,
     teamName: team.teamName,
@@ -73,6 +79,11 @@ const buildTeamSummary = async ({ team, currentUserId }) => {
     topic: team.topic || null,
     description: team.description || null,
     hackathonId: team.hackathonId || null,
+    abstractionStatus: team.abstractionStatus || "draft",
+    reviewerId: team.reviewerId || null,
+    reviewerFeedback: team.reviewerFeedback || null,
+    reviewedAt: team.reviewedAt || null,
+    reviewerName,
     isLeader: team.leaderUserId === currentUserId,
     members,
   };
@@ -365,14 +376,33 @@ export const updateCustomProblem = async (req, res) => {
       return res.status(403).json({ message: "Only team leader can update personalized problem statement" });
     }
 
+    const newTheme = theme ? String(theme).trim() : team.theme;
+
+    // Find reviewers for this theme to assign
+    let reviewerId = team.reviewerId;
+    if (newTheme) {
+      const themeReviewers = await HackathonUser.findAll({
+        where: { role: "reviewer", assignedTheme: newTheme },
+      });
+      if (themeReviewers.length > 0) {
+        // Pick one reviewer for this theme
+        reviewerId = themeReviewers[Math.floor(Math.random() * themeReviewers.length)].id;
+      }
+    }
+
     await team.update({
-      theme: theme ? String(theme).trim() : team.theme,
+      theme: newTheme,
       topic: topic ? String(topic).trim() : team.topic,
       description: description ? String(description).trim() : team.description,
+      abstractionStatus: "submitted",
+      reviewerId,
     });
 
     const summary = await buildTeamSummary({ team, currentUserId: userId });
-    return res.status(200).json({ message: "Personalized problem statement saved successfully", team: summary });
+    return res.status(200).json({
+      message: "Problem statement submitted successfully! Sent to theme reviewer for approval.",
+      team: summary,
+    });
   } catch (err) {
     console.error("Error in updateCustomProblem:", err.message);
     return res.status(500).json({ message: "Internal Server Error" });
