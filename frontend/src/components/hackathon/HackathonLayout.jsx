@@ -200,11 +200,9 @@ const HackathonLayout = ({ children }) => {
   }, [location.pathname, selectedHackathonObj, cleanSelectedHackathonId]);
 
   const showResults = selectedHackathonObj?.showResults === true;
-  const isTeamApproved = teamAbstractionStatus === "approved";
 
   const studentNav = useMemo(() => {
-    const isUnlockedCustom = showResults && isTeamApproved;
-    const isLockedCustom = isCustomHackathonMode && !isUnlockedCustom;
+    const isLockedCustom = isCustomHackathonMode && !showResults;
 
     if (isLockedCustom) {
       return [
@@ -222,7 +220,7 @@ const HackathonLayout = ({ children }) => {
     const submitItem = { to: makeUrl("/dashboard/submit"), label: "Submit", tabKey: "submit", icon: UploadCloud };
     const statusItem = { to: makeUrl("/dashboard/status"), label: "Status", tabKey: "status", icon: Activity };
     return teamHasSubmitted ? [...base, statusItem] : [...base, submitItem, statusItem];
-  }, [currentSlug, teamHasSubmitted, isCustomHackathonMode, showResults, isTeamApproved]);
+  }, [currentSlug, teamHasSubmitted, isCustomHackathonMode, showResults]);
 
   const mentorNav = useMemo(
     () => {
