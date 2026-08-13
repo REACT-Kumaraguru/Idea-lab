@@ -143,12 +143,19 @@ const HackathonLayout = ({ children }) => {
 
   const makeUrl = (subPath) => {
     const cleanSubPath = (subPath || "").split("?")[0];
-    const rawId = selectedHackathonId || (currentSlug === "smart-city-2026" ? "2" : currentSlug === "Ai" ? "5" : "2");
-    const activeId = String(rawId).split("?")[0].split("&")[0];
-    if (!currentSlug || currentSlug.toLowerCase() === "ich2026") {
-      return `/Hackathon${cleanSubPath}?hackathonId=${activeId}`;
+    const searchId = new URLSearchParams(location.search).get("hackathonId");
+    const activeId = searchId || selectedHackathonId;
+    if (!activeId) {
+      if (!currentSlug || currentSlug.toLowerCase() === "ich2026") {
+        return `/Hackathon${cleanSubPath}`;
+      }
+      return `/Hackathon/${currentSlug}${cleanSubPath}`;
     }
-    return `/Hackathon/${currentSlug}${cleanSubPath}?hackathonId=${activeId}`;
+    const cleanId = String(activeId).split("?")[0].split("&")[0];
+    if (!currentSlug || currentSlug.toLowerCase() === "ich2026") {
+      return `/Hackathon${cleanSubPath}?hackathonId=${cleanId}`;
+    }
+    return `/Hackathon/${currentSlug}${cleanSubPath}?hackathonId=${cleanId}`;
   };
 
   const studentNav = useMemo(() => {
@@ -175,9 +182,11 @@ const HackathonLayout = ({ children }) => {
   );
 
   const cleanSelectedHackathonId = useMemo(() => {
-    const raw = selectedHackathonId || (currentSlug === "smart-city-2026" ? "2" : currentSlug === "Ai" ? "5" : "2");
-    return String(raw).split("?")[0].split("&")[0];
-  }, [selectedHackathonId, currentSlug]);
+    const searchId = new URLSearchParams(location.search).get("hackathonId");
+    if (searchId) return String(searchId).split("?")[0].split("&")[0];
+    if (selectedHackathonId) return String(selectedHackathonId).split("?")[0].split("&")[0];
+    return null;
+  }, [location.search, selectedHackathonId]);
 
   const selectedHackathonObj = useMemo(() => {
     if (!cleanSelectedHackathonId) return null;
@@ -185,11 +194,12 @@ const HackathonLayout = ({ children }) => {
   }, [hackathonsList, cleanSelectedHackathonId]);
 
   const isCustomHackathonMode = useMemo(() => {
-    if (selectedHackathonObj?.problemStatementType === "custom") return true;
-    if (cleanSelectedHackathonId === "2" || cleanSelectedHackathonId === "6") return true;
-    if (currentSlug === "2" || currentSlug === "6" || currentSlug === "smart-city-2026") return true;
-    return false;
-  }, [selectedHackathonObj, cleanSelectedHackathonId, currentSlug]);
+    if (!cleanSelectedHackathonId) return false;
+    if (selectedHackathonObj) {
+      return selectedHackathonObj.problemStatementType === "custom";
+    }
+    return cleanSelectedHackathonId === "2" || cleanSelectedHackathonId === "6";
+  }, [selectedHackathonObj, cleanSelectedHackathonId]);
 
   useEffect(() => {
     if (
