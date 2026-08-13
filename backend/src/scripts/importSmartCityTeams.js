@@ -47,6 +47,32 @@ async function getUniquePhoneNumber(rawPhone, userEmail) {
   return `900${String(phoneCounter).padStart(7, "0")}`;
 }
 
+function normalizeTheme(raw, problem = "") {
+  const combined = (String(raw || "") + " " + String(problem || "")).toLowerCase().strip ? (String(raw || "") + " " + String(problem || "")).toLowerCase().trim() : "";
+  if (combined.includes("disaster") || combined.includes("flood") || combined.includes("earthquake")) {
+    return "Disaster Resilience";
+  }
+  if (combined.includes("waste") || combined.includes("recycl") || combined.includes("garbage")) {
+    return "Waste Management";
+  }
+  if (combined.includes("energy") || combined.includes("power") || combined.includes("grid") || combined.includes("battery") || combined.includes("electricity")) {
+    return "Energy Solutions";
+  }
+  if (combined.includes("agri") || combined.includes("farm") || combined.includes("crop") || combined.includes("weed") || combined.includes("rodent") || combined.includes("coffee")) {
+    return "Smart Agriculture";
+  }
+  if (combined.includes("pollut") || combined.includes("air quality") || combined.includes("ecopulse") || combined.includes("climate") || combined.includes("environment")) {
+    return "Pollution Control";
+  }
+  if (combined.includes("health") || combined.includes("medic") || combined.includes("wound") || combined.includes("drip") || combined.includes("hospital") || combined.includes("disease") || combined.includes("doctor") || combined.includes("hemoglobin")) {
+    return "Smart Healthcare";
+  }
+  if (combined.includes("mobil") || combined.includes("park") || combined.includes("traffic") || combined.includes("transport") || combined.includes("bus") || combined.includes("rail") || combined.includes("vehicle") || combined.includes("road") || combined.includes("helmet") || combined.includes("crane") || combined.includes("navigate")) {
+    return "Smart Mobility & Parking";
+  }
+  return "Smart Mobility & Parking";
+}
+
 function getCleanEmail(val) {
   if (!val) return "";
   return String(val).trim().toLowerCase();
@@ -59,12 +85,12 @@ function getEmailPrefix(email) {
 }
 
 function generateInviteCode(teamName, idx) {
-  const prefix = String(teamName || "TEAM")
+  const prefix = String(teamName || "SCT")
     .replace(/[^A-Z0-9]/gi, "")
     .substring(0, 4)
     .toUpperCase();
   const num = String(idx).padStart(4, "0");
-  return `${prefix || "TEAM"}${num}`;
+  return `${prefix || "SCT"}${num}`;
 }
 
 function parseCSVLine(text) {
@@ -145,6 +171,8 @@ async function runImport() {
     },
   });
 
+  await HackathonTeam.destroy({ where: { hackathonId: HACKATHON_ID } });
+
   const allRows = parseCSVFile(RESOLVED_CSV_PATH);
   if (allRows.length < 2) {
     console.error("No data rows found in CSV.");
@@ -215,35 +243,22 @@ async function runImport() {
       where: { userId: leadUser.id, hackathonId: HACKATHON_ID },
     });
 
-    // 2. Create or Find Team Entry
+    // 2. Create distinct Team Entry for every CSV row
+    const canonicalTheme = normalizeTheme(theme, problemStatement);
+    const safeTeamName = rawTeamName ? String(rawTeamName).substring(0, 245) : "Team";
     const inviteCode = generateInviteCode(rawTeamName, i + 1);
 
-    let team = await HackathonTeam.findOne({
-      where: { leaderUserId: leadUser.id, hackathonId: HACKATHON_ID },
+    const team = await HackathonTeam.create({
+      teamName: safeTeamName,
+      inviteCode,
+      leaderUserId: leadUser.id,
+      status: "approved",
+      hackathonId: HACKATHON_ID,
+      theme: canonicalTheme,
+      description: problemStatement,
+      topic: problemStatement ? problemStatement.substring(0, 100) : null,
     });
-
-    const safeTheme = theme ? String(theme).substring(0, 245) : "Smart City";
-    const safeTeamName = rawTeamName ? String(rawTeamName).substring(0, 245) : "Team";
-
-    if (!team) {
-      team = await HackathonTeam.create({
-        teamName: safeTeamName,
-        inviteCode,
-        leaderUserId: leadUser.id,
-        status: "approved",
-        hackathonId: HACKATHON_ID,
-        theme: safeTheme,
-        description: problemStatement,
-        topic: problemStatement ? problemStatement.substring(0, 100) : null,
-      });
-      teamsCreated++;
-    } else {
-      await team.update({
-        teamName: safeTeamName,
-        theme: safeTheme,
-        description: problemStatement || team.description,
-      });
-    }
+    teamsCreated++;
 
     const existingLeaderMember = await HackathonTeamMember.findOne({ where: { userId: leadUser.id } });
     if (!existingLeaderMember) {
