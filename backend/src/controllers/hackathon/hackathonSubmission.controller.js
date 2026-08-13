@@ -417,11 +417,14 @@ export const mentorSetSubmissionApproval = async (req, res) => {
 // Admin: list all submissions
 export const adminListSubmissions = async (req, res) => {
   try {
-    const { hackathonId } = req.query || {};
+    const rawId = req.query?.hackathonId;
+    const cleanIdStr = rawId ? String(rawId).split("?")[0].split("&")[0] : null;
+    const hackathonIdNum = cleanIdStr ? parseInt(cleanIdStr, 10) : null;
+
     const where = {};
-    if (hackathonId && Number.isInteger(Number(hackathonId))) {
+    if (hackathonIdNum && !isNaN(hackathonIdNum)) {
       const hackathonTeams = await HackathonTeam.findAll({
-        where: { hackathonId: Number(hackathonId) },
+        where: { hackathonId: hackathonIdNum },
         attributes: ["id"],
       });
       const hTeamIds = hackathonTeams.map((t) => Number(t.id));

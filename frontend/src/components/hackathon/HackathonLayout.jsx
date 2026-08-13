@@ -152,7 +152,9 @@ const HackathonLayout = ({ children }) => {
   const makeUrl = (subPath) => {
     const cleanSubPath = (subPath || "").split("?")[0];
     const searchId = new URLSearchParams(location.search).get("hackathonId");
-    const activeId = searchId || selectedHackathonId;
+    const rawActiveId = searchId || selectedHackathonId;
+    const activeId = rawActiveId ? String(rawActiveId).split("?")[0].split("&")[0] : null;
+
     if (!activeId) {
       if (!currentSlug || currentSlug.toLowerCase() === "ich2026") {
         return `/Hackathon${cleanSubPath}`;
