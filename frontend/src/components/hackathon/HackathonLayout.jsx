@@ -141,10 +141,11 @@ const HackathonLayout = ({ children }) => {
   }, [location.pathname, location.search]);
 
   const makeUrl = (subPath) => {
+    const activeId = selectedHackathonId || (currentSlug === "smart-city-2026" ? "2" : currentSlug === "Ai" ? "5" : "2");
     if (!currentSlug || currentSlug.toLowerCase() === "ich2026") {
-      return `/Hackathon${subPath}`;
+      return `/Hackathon${subPath}?hackathonId=${activeId}`;
     }
-    return `/Hackathon/${currentSlug}${subPath}`;
+    return `/Hackathon/${currentSlug}${subPath}?hackathonId=${activeId}`;
   };
 
   const studentNav = useMemo(() => {
