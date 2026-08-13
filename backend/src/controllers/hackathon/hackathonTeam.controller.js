@@ -63,6 +63,28 @@ const buildTeamSummary = async ({ team, currentUserId }) => {
     })
   );
 
+  if (members.length === 0 && team.leaderUserId) {
+    const leaderUser = await HackathonUser.findByPk(team.leaderUserId, {
+      attributes: { exclude: ["password"] },
+    });
+    if (leaderUser) {
+      members = [
+        {
+          id: null,
+          userId: team.leaderUserId,
+          isLeader: true,
+          member: {
+            id: leaderUser.id,
+            fullName: leaderUser.fullName,
+            email: leaderUser.email,
+            phoneNumber: leaderUser.phoneNumber,
+            role: leaderUser.role,
+          },
+        },
+      ];
+    }
+  }
+
   let reviewerName = null;
   if (team.reviewerId) {
     const revUser = await HackathonUser.findByPk(team.reviewerId, { attributes: ["fullName"] });

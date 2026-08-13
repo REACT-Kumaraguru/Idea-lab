@@ -31,7 +31,7 @@ export const getReviewerTeams = async (req, res) => {
     const detailedTeams = await Promise.all(
       teams.map(async (t) => {
         const memberRows = await HackathonTeamMember.findAll({ where: { teamId: t.id } });
-        const members = await Promise.all(
+        let members = await Promise.all(
           memberRows.map(async (m) => {
             const u = await HackathonUser.findByPk(m.userId, { attributes: ["id", "fullName", "email", "phoneNumber"] });
             return {
@@ -41,6 +41,19 @@ export const getReviewerTeams = async (req, res) => {
             };
           })
         );
+
+        if (members.length === 0 && t.leaderUserId) {
+          const leaderUser = await HackathonUser.findByPk(t.leaderUserId, { attributes: ["id", "fullName", "email", "phoneNumber"] });
+          if (leaderUser) {
+            members = [
+              {
+                userId: t.leaderUserId,
+                isLeader: true,
+                user: leaderUser.toJSON(),
+              },
+            ];
+          }
+        }
         return {
           id: t.id,
           teamName: t.teamName,

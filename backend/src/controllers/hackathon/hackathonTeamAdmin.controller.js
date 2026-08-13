@@ -65,6 +65,41 @@ async function serializeTeamForAdmin(teamInstance) {
     })
   );
 
+  if (members.length === 0 && team.leaderUserId) {
+    const u = await HackathonUser.findByPk(team.leaderUserId, {
+      attributes: [
+        "id",
+        "fullName",
+        "email",
+        "phone",
+        "phoneNumber",
+        "role",
+        "degree",
+        "graduationYear",
+        "college",
+        "branch",
+      ],
+    });
+    if (u) {
+      members = [
+        {
+          id: null,
+          userId: team.leaderUserId,
+          isLeader: true,
+          fullName: u.fullName ?? null,
+          email: u.email ?? null,
+          phoneNumber: u.phoneNumber ?? null,
+          phone: u.phone ?? null,
+          role: u.role ?? null,
+          degree: u.degree ?? null,
+          graduationYear: u.graduationYear ?? null,
+          college: u.college ?? null,
+          branch: u.branch ?? null,
+        },
+      ];
+    }
+  }
+
   const submission = await HackathonSubmission.findOne({
     where: { teamId: id },
     order: [["created_at", "DESC"]],
