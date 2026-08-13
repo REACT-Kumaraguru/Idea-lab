@@ -170,7 +170,7 @@ const HackathonLayout = ({ children }) => {
     const searchId = new URLSearchParams(location.search).get("hackathonId");
     if (searchId) return String(searchId).split("?")[0].split("&")[0];
     if (selectedHackathonId) return String(selectedHackathonId).split("?")[0].split("&")[0];
-    return "2";
+    return "";
   }, [location.search, selectedHackathonId]);
 
   const selectedHackathonObj = useMemo(() => {
