@@ -313,71 +313,65 @@ const HackathonAdminTeams = () => {
           <table className="w-full text-left text-xs font-sans">
             <thead className="bg-stone-900/90 text-amber-300 font-serif uppercase tracking-wider border-b border-amber-500/20 text-[11px]">
               <tr>
-                <th className="px-3 py-3.5 whitespace-nowrap">Team</th>
-                <th className="px-3 py-3.5 whitespace-nowrap">Invite Code</th>
-                <th className="px-3 py-3.5">{isCustomMode ? "Theme" : "Problem Statement"}</th>
-                {isCustomMode && <th className="px-3 py-3.5 whitespace-nowrap">Reviewer Approval</th>}
-                <th className="px-3 py-3.5 whitespace-nowrap">Leader</th>
-                <th className="px-3 py-3.5 text-center whitespace-nowrap">Members</th>
-                <th className="px-3 py-3.5 text-center whitespace-nowrap">Status</th>
-                <th className="px-3 py-3.5 text-center whitespace-nowrap">Details</th>
+                <th className="px-4 py-3.5 whitespace-nowrap">Team</th>
+                <th className="px-4 py-3.5 whitespace-nowrap">Invite Code</th>
+                <th className="px-4 py-3.5">{isCustomMode ? "Problem Statement" : "Problem Statement"}</th>
+                <th className="px-4 py-3.5 whitespace-nowrap">Leader</th>
+                <th className="px-4 py-3.5 text-center whitespace-nowrap">Members</th>
+                <th className="px-4 py-3.5 text-center whitespace-nowrap">Status</th>
+                <th className="px-4 py-3.5 text-center whitespace-nowrap">Details</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-amber-500/10 text-stone-300">
               {filteredAndSortedTeams.map((t) => (
                 <tr key={t.id} className="hover:bg-amber-400/5 transition">
-                  <td className="px-3 py-3.5 font-serif uppercase text-stone-100 font-medium whitespace-nowrap">{t.teamName}</td>
-                  <td className="px-3 py-3.5 font-mono text-amber-300 whitespace-nowrap select-all">{t.inviteCode}</td>
-                  <td className="px-3 py-3.5">
+                  <td className="px-4 py-3.5 font-serif uppercase text-stone-100 font-medium whitespace-nowrap">{t.teamName}</td>
+                  <td className="px-4 py-3.5 font-mono text-amber-300 whitespace-nowrap select-all">{t.inviteCode}</td>
+                  <td className="px-4 py-3.5">
                     {isCustomMode ? (
-                      <span className="inline-flex px-2.5 py-1 rounded-full bg-amber-400/15 text-amber-300 border border-amber-400/30 text-[11px] font-bold">
-                        {t.theme || "—"}
-                      </span>
+                      <div className="flex flex-col gap-1 items-start">
+                        <span className="inline-flex px-2.5 py-0.5 rounded-full bg-amber-400/15 text-amber-300 border border-amber-400/30 text-[11px] font-bold">
+                          {t.theme || "—"}
+                        </span>
+                        {t.abstractionStatus === "approved" ? (
+                          <span className="text-[10px] font-bold text-emerald-400">
+                            Approved ✓ {t.reviewerName ? `(${t.reviewerName})` : ""}
+                          </span>
+                        ) : t.abstractionStatus === "submitted" ? (
+                          <span className="text-[10px] font-bold text-amber-400 animate-pulse">
+                            Pending Review ⏳
+                          </span>
+                        ) : t.abstractionStatus === "rejected" || t.abstractionStatus === "needs_revision" ? (
+                          <span className="text-[10px] font-bold text-rose-400">
+                            Rejected ❌
+                          </span>
+                        ) : (
+                          <span className="text-[10px] text-stone-500 font-sans">
+                            Draft / Not Submitted
+                          </span>
+                        )}
+                      </div>
                     ) : (
                       <span className="font-medium text-amber-300 line-clamp-2 max-w-xs">
                         {t.topic || "—"}
                       </span>
                     )}
                   </td>
-                  {isCustomMode && (
-                    <td className="px-3 py-3.5 whitespace-nowrap">
-                      {t.abstractionStatus === "approved" ? (
-                        <span className="px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-bold uppercase tracking-wider">
-                          Approved ✓
-                        </span>
-                      ) : t.abstractionStatus === "submitted" ? (
-                        <span className="px-2.5 py-1 rounded-full bg-amber-400/20 text-amber-300 border border-amber-400/30 text-[10px] font-bold uppercase tracking-wider animate-pulse">
-                          Pending Review ⏳
-                        </span>
-                      ) : t.abstractionStatus === "rejected" || t.abstractionStatus === "needs_revision" ? (
-                        <span className="px-2.5 py-1 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/30 text-[10px] font-bold uppercase tracking-wider">
-                          Rejected ❌
-                        </span>
-                      ) : (
-                        <span className="px-2.5 py-1 rounded-full bg-stone-800 text-stone-400 border border-stone-700 text-[10px] font-bold uppercase tracking-wider">
-                          Draft
-                        </span>
-                      )}
-                      {t.reviewerName && (
-                        <div className="text-[10px] text-stone-400 font-sans mt-0.5">Rev: {t.reviewerName}</div>
-                      )}
-                    </td>
-                  )}
-                  <td className="px-3 py-3.5">
+                  <td className="px-4 py-3.5">
                     <span className="font-semibold text-stone-100">{t.leader?.fullName || "—"}</span>
                     <div className="text-[11px] text-stone-400 font-mono">{t.leader?.email}</div>
                   </td>
-                  <td className="px-3 py-3.5 font-bold text-amber-300 text-center whitespace-nowrap">{t.members?.length || 0} / 4</td>
-                  <td className="px-3 py-3.5 text-center whitespace-nowrap">
+                  <td className="px-4 py-3.5 font-bold text-amber-300 text-center whitespace-nowrap">{t.members?.length || 0} / 4</td>
+                  <td className="px-4 py-3.5 text-center whitespace-nowrap">
                     <span className="px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-bold uppercase">
                       {t.status === "approved" ? "active" : t.status}
                     </span>
                   </td>
-                  <td className="px-3 py-3.5 text-center whitespace-nowrap">
+                  <td className="px-4 py-3.5 text-center whitespace-nowrap">
                     <button
                       type="button"
                       onClick={() => setSelectedTeamModal(t)}
-                      className="px-3 py-1.5 rounded-xl bg-amber-400/10 hover:bg-amber-400/20 text-amber-300 border border-amber-400/30 text-xs font-bold transition cursor-pointer inline-flex items-center gap-1.5 shadow-sm hover:scale-105 active:scale-95"
+                      className="px-3.5 py-1.5 rounded-full bg-stone-900 hover:bg-amber-400/20 text-amber-300 border border-amber-500/30 text-xs font-bold transition cursor-pointer inline-flex items-center gap-1.5 shadow-sm hover:scale-105 active:scale-95"
                     >
                       <span>👁️ View Details</span>
                     </button>
@@ -386,7 +380,7 @@ const HackathonAdminTeams = () => {
               ))}
               {filteredAndSortedTeams.length === 0 && (
                 <tr>
-                  <td colSpan={isCustomMode ? 8 : 7} className="p-6 text-center text-stone-500">
+                  <td colSpan={7} className="p-6 text-center text-stone-500">
                     No teams match the selected filter.
                   </td>
                 </tr>
