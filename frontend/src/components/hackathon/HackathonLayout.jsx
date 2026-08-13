@@ -170,8 +170,15 @@ const HackathonLayout = ({ children }) => {
     const searchId = new URLSearchParams(location.search).get("hackathonId");
     if (searchId) return String(searchId).split("?")[0].split("&")[0];
     if (selectedHackathonId) return String(selectedHackathonId).split("?")[0].split("&")[0];
+    const parts = location.pathname.split("/").filter(Boolean);
+    if (parts[0]?.toLowerCase() === "hackathon" && parts[1]) {
+      const p1 = parts[1].toLowerCase();
+      if (p1 === "2" || p1 === "smart-city-2026" || p1 === "6") return "2";
+      if (p1 === "1" || p1 === "ich2026") return "1";
+      if (p1 === "5" || p1 === "ai") return "5";
+    }
     return null;
-  }, [location.search, selectedHackathonId]);
+  }, [location.pathname, location.search, selectedHackathonId]);
 
   const selectedHackathonObj = useMemo(() => {
     if (!cleanSelectedHackathonId) return null;
@@ -179,12 +186,18 @@ const HackathonLayout = ({ children }) => {
   }, [hackathonsList, cleanSelectedHackathonId]);
 
   const isCustomHackathonMode = useMemo(() => {
-    if (!cleanSelectedHackathonId) return false;
+    const p = location.pathname.toLowerCase();
+    if (p.includes("/hackathon/2/") || p.includes("/hackathon/smart-city-2026/") || p.includes("/hackathon/6/")) {
+      return true;
+    }
     if (selectedHackathonObj) {
       return selectedHackathonObj.problemStatementType === "custom" || String(selectedHackathonObj.id) === "2" || String(selectedHackathonObj.id) === "6";
     }
-    return cleanSelectedHackathonId === "2" || cleanSelectedHackathonId === "6";
-  }, [selectedHackathonObj, cleanSelectedHackathonId]);
+    if (cleanSelectedHackathonId) {
+      return cleanSelectedHackathonId === "2" || cleanSelectedHackathonId === "6";
+    }
+    return false;
+  }, [location.pathname, selectedHackathonObj, cleanSelectedHackathonId]);
 
   const showResults = selectedHackathonObj?.showResults === true;
   const isTeamApproved = teamAbstractionStatus === "approved";
