@@ -32,7 +32,7 @@ async function serializeTeamForAdmin(teamInstance) {
     order: [["created_at", "ASC"]],
   });
 
-  const members = await Promise.all(
+  let members = await Promise.all(
     membersRows.map(async (m) => {
       const u = await HackathonUser.findByPk(m.userId, {
         attributes: [

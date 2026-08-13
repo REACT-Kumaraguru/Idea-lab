@@ -40,7 +40,7 @@ const buildTeamSummary = async ({ team, currentUserId }) => {
     order: [["created_at", "ASC"]],
   });
 
-  const members = await Promise.all(
+  let members = await Promise.all(
     membersRows.map(async (m) => {
       const memberUser = await HackathonUser.findByPk(m.userId, {
         attributes: { exclude: ["password"] },
