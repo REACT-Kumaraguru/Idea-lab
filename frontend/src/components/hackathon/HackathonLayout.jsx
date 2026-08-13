@@ -67,19 +67,27 @@ const HackathonLayout = ({ children }) => {
   const role = hackathonUser?.role;
 
   const [teamHasSubmitted, setTeamHasSubmitted] = useState(false);
+  const [teamAbstractionStatus, setTeamAbstractionStatus] = useState("draft");
 
   useEffect(() => {
     if (role !== "student") {
       setTeamHasSubmitted(false);
+      setTeamAbstractionStatus("draft");
       return;
     }
     let cancelled = false;
     (async () => {
       try {
         const res = await axiosInstance.get("/ich2026/status");
-        if (!cancelled) setTeamHasSubmitted((res.data?.submissions || []).length > 0);
+        if (!cancelled) {
+          setTeamHasSubmitted((res.data?.submissions || []).length > 0);
+          setTeamAbstractionStatus(res.data?.team?.abstractionStatus || "draft");
+        }
       } catch {
-        if (!cancelled) setTeamHasSubmitted(false);
+        if (!cancelled) {
+          setTeamHasSubmitted(false);
+          setTeamAbstractionStatus("draft");
+        }
       }
     })();
     return () => {
@@ -158,10 +166,32 @@ const HackathonLayout = ({ children }) => {
     return `/Hackathon/${currentSlug}${cleanSubPath}?hackathonId=${cleanId}`;
   };
 
+  const cleanSelectedHackathonId = useMemo(() => {
+    const searchId = new URLSearchParams(location.search).get("hackathonId");
+    if (searchId) return String(searchId).split("?")[0].split("&")[0];
+    if (selectedHackathonId) return String(selectedHackathonId).split("?")[0].split("&")[0];
+    return "2";
+  }, [location.search, selectedHackathonId]);
+
+  const selectedHackathonObj = useMemo(() => {
+    if (!cleanSelectedHackathonId) return null;
+    return hackathonsList.find((h) => String(h.id) === String(cleanSelectedHackathonId)) || null;
+  }, [hackathonsList, cleanSelectedHackathonId]);
+
+  const isCustomHackathonMode = useMemo(() => {
+    if (selectedHackathonObj) {
+      return selectedHackathonObj.problemStatementType === "custom" || String(selectedHackathonObj.id) === "2" || String(selectedHackathonObj.id) === "6";
+    }
+    return cleanSelectedHackathonId === "2" || cleanSelectedHackathonId === "6";
+  }, [selectedHackathonObj, cleanSelectedHackathonId]);
+
   const showResults = selectedHackathonObj?.showResults === true;
+  const isTeamApproved = teamAbstractionStatus === "approved";
 
   const studentNav = useMemo(() => {
-    const isLockedCustom = isCustomHackathonMode && !showResults;
+    const isUnlockedCustom = showResults && isTeamApproved;
+    const isLockedCustom = isCustomHackathonMode && !isUnlockedCustom;
+
     if (isLockedCustom) {
       return [
         { to: makeUrl("/dashboard"), label: "Dashboard", tabKey: "dashboard", icon: LayoutDashboard },
@@ -178,7 +208,7 @@ const HackathonLayout = ({ children }) => {
     const submitItem = { to: makeUrl("/dashboard/submit"), label: "Submit", tabKey: "submit", icon: UploadCloud };
     const statusItem = { to: makeUrl("/dashboard/status"), label: "Status", tabKey: "status", icon: Activity };
     return teamHasSubmitted ? [...base, statusItem] : [...base, submitItem, statusItem];
-  }, [currentSlug, teamHasSubmitted, isCustomHackathonMode, showResults]);
+  }, [currentSlug, teamHasSubmitted, isCustomHackathonMode, showResults, isTeamApproved]);
 
   const mentorNav = useMemo(
     () => {
@@ -190,26 +220,6 @@ const HackathonLayout = ({ children }) => {
     },
     [currentSlug]
   );
-
-  const cleanSelectedHackathonId = useMemo(() => {
-    const searchId = new URLSearchParams(location.search).get("hackathonId");
-    if (searchId) return String(searchId).split("?")[0].split("&")[0];
-    if (selectedHackathonId) return String(selectedHackathonId).split("?")[0].split("&")[0];
-    return null;
-  }, [location.search, selectedHackathonId]);
-
-  const selectedHackathonObj = useMemo(() => {
-    if (!cleanSelectedHackathonId) return null;
-    return hackathonsList.find((h) => String(h.id) === String(cleanSelectedHackathonId)) || null;
-  }, [hackathonsList, cleanSelectedHackathonId]);
-
-  const isCustomHackathonMode = useMemo(() => {
-    if (!cleanSelectedHackathonId) return false;
-    if (selectedHackathonObj) {
-      return selectedHackathonObj.problemStatementType === "custom";
-    }
-    return cleanSelectedHackathonId === "2" || cleanSelectedHackathonId === "6";
-  }, [selectedHackathonObj, cleanSelectedHackathonId]);
 
   useEffect(() => {
     if (
