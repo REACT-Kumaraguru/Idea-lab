@@ -48,6 +48,12 @@ const Hackathon = sequelize.define(
       allowNull: true,
       field: "registration_closed_message",
     },
+    showResults: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+      field: "show_results",
+    },
     schedule: {
       type: DataTypes.TEXT,
       allowNull: true,
