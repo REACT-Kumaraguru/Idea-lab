@@ -32,11 +32,17 @@ const OUTPUT_JSON_PATH = process.platform === "win32"
 
 let phoneCounter = 10000;
 
-function getUniquePhone(rawPhone) {
+async function getUniquePhoneNumber(rawPhone, userEmail) {
   const digits = String(rawPhone || "").replace(/\D/g, "");
-  if (digits.length >= 10 && digits !== "0000000000") {
-    return digits.substring(0, 15);
+  let candidate = digits.length >= 10 && digits !== "0000000000" ? digits.substring(0, 15) : null;
+
+  if (candidate) {
+    const existing = await HackathonUser.findOne({ where: { phoneNumber: candidate } });
+    if (!existing || existing.email === userEmail) {
+      return candidate;
+    }
   }
+
   phoneCounter++;
   return `900${String(phoneCounter).padStart(7, "0")}`;
 }
@@ -185,7 +191,7 @@ async function runImport() {
     const leadPasswordPlain = getEmailPrefix(rawLeadEmail);
     const leadPasswordHash = await getHashedPassword(leadPasswordPlain);
 
-    const leadPhone = getUniquePhone(rawLeadPhone);
+    const leadPhone = await getUniquePhoneNumber(rawLeadPhone, rawLeadEmail);
 
     let [leadUser, createdLead] = await HackathonUser.findOrCreate({
       where: { email: rawLeadEmail },
@@ -277,7 +283,7 @@ async function runImport() {
       const mPasswordPlain = getEmailPrefix(mEmail);
       const mPasswordHash = await getHashedPassword(mPasswordPlain);
 
-      const mPhone = getUniquePhone("");
+      const mPhone = await getUniquePhoneNumber("", mEmail);
 
       let [mUser, createdM] = await HackathonUser.findOrCreate({
         where: { email: mEmail },
