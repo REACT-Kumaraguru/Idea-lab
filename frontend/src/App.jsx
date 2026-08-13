@@ -26,6 +26,7 @@ import ProblemSubmissionInfo from "./components/ProblemCom/ProblemSubmissionInfo
 import ProjectForm from "./components/ProblemCom/ProjectForm";
 import MySubmissions from "./components/ProblemCom/MySubmissions";
 import AmbientBackground from "./components/AmbientBackground";
+import ErrorBoundary from "./components/ErrorBoundary";
 
 function Home() {
   return (
@@ -179,63 +180,63 @@ function App() {
         <Route path="/hackathon/admin/winners" element={<HackathonLayout><HackathonAdminWinners /></HackathonLayout>} />
 
         {/* Standalone Hackathon Dashboard Routes */}
-        <Route path="/Hackathon/dashboard" element={<HackathonLayout><HackathonDashboard /></HackathonLayout>} />
-        <Route path="/hackathon/dashboard" element={<HackathonLayout><HackathonDashboard /></HackathonLayout>} />
-        <Route path="/Hackathon/dashboard/:tab" element={<HackathonLayout><HackathonDashboard /></HackathonLayout>} />
-        <Route path="/hackathon/dashboard/:tab" element={<HackathonLayout><HackathonDashboard /></HackathonLayout>} />
-        <Route path="/Hackathon/dashboard/:tab/:hackathonSlug" element={<HackathonLayout><HackathonDashboard /></HackathonLayout>} />
-        <Route path="/hackathon/dashboard/:tab/:hackathonSlug" element={<HackathonLayout><HackathonDashboard /></HackathonLayout>} />
-        <Route path="/Hackathon/create-team" element={<HackathonLayout><HackathonCreateTeam /></HackathonLayout>} />
-        <Route path="/hackathon/create-team" element={<HackathonLayout><HackathonCreateTeam /></HackathonLayout>} />
-        <Route path="/Hackathon/join-team" element={<HackathonLayout><HackathonJoinTeam /></HackathonLayout>} />
-        <Route path="/hackathon/join-team" element={<HackathonLayout><HackathonJoinTeam /></HackathonLayout>} />
-        <Route path="/Hackathon/payment-details" element={<HackathonLayout><HackathonPaymentDetails /></HackathonLayout>} />
-        <Route path="/hackathon/payment-details" element={<HackathonLayout><HackathonPaymentDetails /></HackathonLayout>} />
-        <Route path="/Hackathon/submit" element={<HackathonLayout><HackathonSubmit /></HackathonLayout>} />
-        <Route path="/hackathon/submit" element={<HackathonLayout><HackathonSubmit /></HackathonLayout>} />
-        <Route path="/Hackathon/problems" element={<HackathonLayout><HackathonProblems /></HackathonLayout>} />
-        <Route path="/hackathon/problems" element={<HackathonLayout><HackathonProblems /></HackathonLayout>} />
-        <Route path="/Hackathon/status" element={<HackathonLayout><HackathonStatus /></HackathonLayout>} />
-        <Route path="/hackathon/status" element={<HackathonLayout><HackathonStatus /></HackathonLayout>} />
+        <Route path="/Hackathon/dashboard" element={<ErrorBoundary><HackathonLayout><HackathonDashboard /></HackathonLayout></ErrorBoundary>} />
+        <Route path="/hackathon/dashboard" element={<ErrorBoundary><HackathonLayout><HackathonDashboard /></HackathonLayout></ErrorBoundary>} />
+        <Route path="/Hackathon/dashboard/:tab" element={<ErrorBoundary><HackathonLayout><HackathonDashboard /></HackathonLayout></ErrorBoundary>} />
+        <Route path="/hackathon/dashboard/:tab" element={<ErrorBoundary><HackathonLayout><HackathonDashboard /></HackathonLayout></ErrorBoundary>} />
+        <Route path="/Hackathon/dashboard/:tab/:hackathonSlug" element={<ErrorBoundary><HackathonLayout><HackathonDashboard /></HackathonLayout></ErrorBoundary>} />
+        <Route path="/hackathon/dashboard/:tab/:hackathonSlug" element={<ErrorBoundary><HackathonLayout><HackathonDashboard /></HackathonLayout></ErrorBoundary>} />
+        <Route path="/Hackathon/create-team" element={<ErrorBoundary><HackathonLayout><HackathonCreateTeam /></HackathonLayout></ErrorBoundary>} />
+        <Route path="/hackathon/create-team" element={<ErrorBoundary><HackathonLayout><HackathonCreateTeam /></HackathonLayout></ErrorBoundary>} />
+        <Route path="/Hackathon/join-team" element={<ErrorBoundary><HackathonLayout><HackathonJoinTeam /></HackathonLayout></ErrorBoundary>} />
+        <Route path="/hackathon/join-team" element={<ErrorBoundary><HackathonLayout><HackathonJoinTeam /></HackathonLayout></ErrorBoundary>} />
+        <Route path="/Hackathon/payment-details" element={<ErrorBoundary><HackathonLayout><HackathonPaymentDetails /></HackathonLayout></ErrorBoundary>} />
+        <Route path="/hackathon/payment-details" element={<ErrorBoundary><HackathonLayout><HackathonPaymentDetails /></HackathonLayout></ErrorBoundary>} />
+        <Route path="/Hackathon/submit" element={<ErrorBoundary><HackathonLayout><HackathonSubmit /></HackathonLayout></ErrorBoundary>} />
+        <Route path="/hackathon/submit" element={<ErrorBoundary><HackathonLayout><HackathonSubmit /></HackathonLayout></ErrorBoundary>} />
+        <Route path="/Hackathon/problems" element={<ErrorBoundary><HackathonLayout><HackathonProblems /></HackathonLayout></ErrorBoundary>} />
+        <Route path="/hackathon/problems" element={<ErrorBoundary><HackathonLayout><HackathonProblems /></HackathonLayout></ErrorBoundary>} />
+        <Route path="/Hackathon/status" element={<ErrorBoundary><HackathonLayout><HackathonStatus /></HackathonLayout></ErrorBoundary>} />
+        <Route path="/hackathon/status" element={<ErrorBoundary><HackathonLayout><HackathonStatus /></HackathonLayout></ErrorBoundary>} />
 
         {/* Event Slug Specific Admin & Dashboard Routes */}
-        <Route path="/Hackathon/:hackathonSlug/admin" element={<HackathonLayout><HackathonAdminHome /></HackathonLayout>} />
-        <Route path="/hackathon/:hackathonSlug/admin" element={<HackathonLayout><HackathonAdminHome /></HackathonLayout>} />
-        <Route path="/Hackathon/:hackathonSlug/admin/problems" element={<HackathonLayout><HackathonAdminProblems /></HackathonLayout>} />
-        <Route path="/hackathon/:hackathonSlug/admin/problems" element={<HackathonLayout><HackathonAdminProblems /></HackathonLayout>} />
-        <Route path="/Hackathon/:hackathonSlug/admin/themes" element={<HackathonLayout><HackathonAdminThemes /></HackathonLayout>} />
-        <Route path="/hackathon/:hackathonSlug/admin/themes" element={<HackathonLayout><HackathonAdminThemes /></HackathonLayout>} />
-        <Route path="/Hackathon/:hackathonSlug/admin/submissions" element={<HackathonLayout><HackathonAdminSubmissions /></HackathonLayout>} />
-        <Route path="/hackathon/:hackathonSlug/admin/submissions" element={<HackathonLayout><HackathonAdminSubmissions /></HackathonLayout>} />
-        <Route path="/Hackathon/:hackathonSlug/admin/teams" element={<HackathonLayout><HackathonAdminTeams /></HackathonLayout>} />
-        <Route path="/hackathon/:hackathonSlug/admin/teams" element={<HackathonLayout><HackathonAdminTeams /></HackathonLayout>} />
-        <Route path="/Hackathon/:hackathonSlug/admin/users" element={<HackathonLayout><HackathonAdminUsers /></HackathonLayout>} />
-        <Route path="/hackathon/:hackathonSlug/admin/users" element={<HackathonLayout><HackathonAdminUsers /></HackathonLayout>} />
-        <Route path="/Hackathon/:hackathonSlug/admin/mentors" element={<HackathonLayout><HackathonAdminMentors /></HackathonLayout>} />
-        <Route path="/hackathon/:hackathonSlug/admin/mentors" element={<HackathonLayout><HackathonAdminMentors /></HackathonLayout>} />
-        <Route path="/Hackathon/:hackathonSlug/admin/send-mail" element={<HackathonLayout><HackathonAdminSendMail /></HackathonLayout>} />
-        <Route path="/hackathon/:hackathonSlug/admin/send-mail" element={<HackathonLayout><HackathonAdminSendMail /></HackathonLayout>} />
-        <Route path="/Hackathon/:hackathonSlug/admin/payment-details" element={<HackathonLayout><HackathonAdminPaymentDetails /></HackathonLayout>} />
-        <Route path="/hackathon/:hackathonSlug/admin/payment-details" element={<HackathonLayout><HackathonAdminPaymentDetails /></HackathonLayout>} />
-        <Route path="/Hackathon/:hackathonSlug/admin/winners" element={<HackathonLayout><HackathonAdminWinners /></HackathonLayout>} />
-        <Route path="/hackathon/:hackathonSlug/admin/winners" element={<HackathonLayout><HackathonAdminWinners /></HackathonLayout>} />
+        <Route path="/Hackathon/:hackathonSlug/admin" element={<ErrorBoundary><HackathonLayout><HackathonAdminHome /></HackathonLayout></ErrorBoundary>} />
+        <Route path="/hackathon/:hackathonSlug/admin" element={<ErrorBoundary><HackathonLayout><HackathonAdminHome /></HackathonLayout></ErrorBoundary>} />
+        <Route path="/Hackathon/:hackathonSlug/admin/problems" element={<ErrorBoundary><HackathonLayout><HackathonAdminProblems /></HackathonLayout></ErrorBoundary>} />
+        <Route path="/hackathon/:hackathonSlug/admin/problems" element={<ErrorBoundary><HackathonLayout><HackathonAdminProblems /></HackathonLayout></ErrorBoundary>} />
+        <Route path="/Hackathon/:hackathonSlug/admin/themes" element={<ErrorBoundary><HackathonLayout><HackathonAdminThemes /></HackathonLayout></ErrorBoundary>} />
+        <Route path="/hackathon/:hackathonSlug/admin/themes" element={<ErrorBoundary><HackathonLayout><HackathonAdminThemes /></HackathonLayout></ErrorBoundary>} />
+        <Route path="/Hackathon/:hackathonSlug/admin/submissions" element={<ErrorBoundary><HackathonLayout><HackathonAdminSubmissions /></HackathonLayout></ErrorBoundary>} />
+        <Route path="/hackathon/:hackathonSlug/admin/submissions" element={<ErrorBoundary><HackathonLayout><HackathonAdminSubmissions /></HackathonLayout></ErrorBoundary>} />
+        <Route path="/Hackathon/:hackathonSlug/admin/teams" element={<ErrorBoundary><HackathonLayout><HackathonAdminTeams /></HackathonLayout></ErrorBoundary>} />
+        <Route path="/hackathon/:hackathonSlug/admin/teams" element={<ErrorBoundary><HackathonLayout><HackathonAdminTeams /></HackathonLayout></ErrorBoundary>} />
+        <Route path="/Hackathon/:hackathonSlug/admin/users" element={<ErrorBoundary><HackathonLayout><HackathonAdminUsers /></HackathonLayout></ErrorBoundary>} />
+        <Route path="/hackathon/:hackathonSlug/admin/users" element={<ErrorBoundary><HackathonLayout><HackathonAdminUsers /></HackathonLayout></ErrorBoundary>} />
+        <Route path="/Hackathon/:hackathonSlug/admin/mentors" element={<ErrorBoundary><HackathonLayout><HackathonAdminMentors /></HackathonLayout></ErrorBoundary>} />
+        <Route path="/hackathon/:hackathonSlug/admin/mentors" element={<ErrorBoundary><HackathonLayout><HackathonAdminMentors /></HackathonLayout></ErrorBoundary>} />
+        <Route path="/Hackathon/:hackathonSlug/admin/send-mail" element={<ErrorBoundary><HackathonLayout><HackathonAdminSendMail /></HackathonLayout></ErrorBoundary>} />
+        <Route path="/hackathon/:hackathonSlug/admin/send-mail" element={<ErrorBoundary><HackathonLayout><HackathonAdminSendMail /></HackathonLayout></ErrorBoundary>} />
+        <Route path="/Hackathon/:hackathonSlug/admin/payment-details" element={<ErrorBoundary><HackathonLayout><HackathonAdminPaymentDetails /></HackathonLayout></ErrorBoundary>} />
+        <Route path="/hackathon/:hackathonSlug/admin/payment-details" element={<ErrorBoundary><HackathonLayout><HackathonAdminPaymentDetails /></HackathonLayout></ErrorBoundary>} />
+        <Route path="/Hackathon/:hackathonSlug/admin/winners" element={<ErrorBoundary><HackathonLayout><HackathonAdminWinners /></HackathonLayout></ErrorBoundary>} />
+        <Route path="/hackathon/:hackathonSlug/admin/winners" element={<ErrorBoundary><HackathonLayout><HackathonAdminWinners /></HackathonLayout></ErrorBoundary>} />
 
-        <Route path="/Hackathon/:hackathonSlug/dashboard" element={<HackathonLayout><HackathonDashboard /></HackathonLayout>} />
-        <Route path="/hackathon/:hackathonSlug/dashboard" element={<HackathonLayout><HackathonDashboard /></HackathonLayout>} />
-        <Route path="/Hackathon/:hackathonSlug/dashboard/:tab" element={<HackathonLayout><HackathonDashboard /></HackathonLayout>} />
-        <Route path="/hackathon/:hackathonSlug/dashboard/:tab" element={<HackathonLayout><HackathonDashboard /></HackathonLayout>} />
-        <Route path="/Hackathon/:hackathonSlug/create-team" element={<HackathonLayout><HackathonCreateTeam /></HackathonLayout>} />
-        <Route path="/hackathon/:hackathonSlug/create-team" element={<HackathonLayout><HackathonCreateTeam /></HackathonLayout>} />
-        <Route path="/Hackathon/:hackathonSlug/join-team" element={<HackathonLayout><HackathonJoinTeam /></HackathonLayout>} />
-        <Route path="/hackathon/:hackathonSlug/join-team" element={<HackathonLayout><HackathonJoinTeam /></HackathonLayout>} />
-        <Route path="/Hackathon/:hackathonSlug/submit" element={<HackathonLayout><HackathonSubmit /></HackathonLayout>} />
-        <Route path="/hackathon/:hackathonSlug/submit" element={<HackathonLayout><HackathonSubmit /></HackathonLayout>} />
-        <Route path="/Hackathon/:hackathonSlug/problems" element={<HackathonLayout><HackathonProblems /></HackathonLayout>} />
-        <Route path="/hackathon/:hackathonSlug/problems" element={<HackathonLayout><HackathonProblems /></HackathonLayout>} />
-        <Route path="/Hackathon/:hackathonSlug/status" element={<HackathonLayout><HackathonStatus /></HackathonLayout>} />
-        <Route path="/hackathon/:hackathonSlug/status" element={<HackathonLayout><HackathonStatus /></HackathonLayout>} />
-        <Route path="/Hackathon/:hackathonSlug/payment-details" element={<HackathonLayout><HackathonPaymentDetails /></HackathonLayout>} />
-        <Route path="/hackathon/:hackathonSlug/payment-details" element={<HackathonLayout><HackathonPaymentDetails /></HackathonLayout>} />
+        <Route path="/Hackathon/:hackathonSlug/dashboard" element={<ErrorBoundary><HackathonLayout><HackathonDashboard /></HackathonLayout></ErrorBoundary>} />
+        <Route path="/hackathon/:hackathonSlug/dashboard" element={<ErrorBoundary><HackathonLayout><HackathonDashboard /></HackathonLayout></ErrorBoundary>} />
+        <Route path="/Hackathon/:hackathonSlug/dashboard/:tab" element={<ErrorBoundary><HackathonLayout><HackathonDashboard /></HackathonLayout></ErrorBoundary>} />
+        <Route path="/hackathon/:hackathonSlug/dashboard/:tab" element={<ErrorBoundary><HackathonLayout><HackathonDashboard /></HackathonLayout></ErrorBoundary>} />
+        <Route path="/Hackathon/:hackathonSlug/create-team" element={<ErrorBoundary><HackathonLayout><HackathonCreateTeam /></HackathonLayout></ErrorBoundary>} />
+        <Route path="/hackathon/:hackathonSlug/create-team" element={<ErrorBoundary><HackathonLayout><HackathonCreateTeam /></HackathonLayout></ErrorBoundary>} />
+        <Route path="/Hackathon/:hackathonSlug/join-team" element={<ErrorBoundary><HackathonLayout><HackathonJoinTeam /></HackathonLayout></ErrorBoundary>} />
+        <Route path="/hackathon/:hackathonSlug/join-team" element={<ErrorBoundary><HackathonLayout><HackathonJoinTeam /></HackathonLayout></ErrorBoundary>} />
+        <Route path="/Hackathon/:hackathonSlug/submit" element={<ErrorBoundary><HackathonLayout><HackathonSubmit /></HackathonLayout></ErrorBoundary>} />
+        <Route path="/hackathon/:hackathonSlug/submit" element={<ErrorBoundary><HackathonLayout><HackathonSubmit /></HackathonLayout></ErrorBoundary>} />
+        <Route path="/Hackathon/:hackathonSlug/problems" element={<ErrorBoundary><HackathonLayout><HackathonProblems /></HackathonLayout></ErrorBoundary>} />
+        <Route path="/hackathon/:hackathonSlug/problems" element={<ErrorBoundary><HackathonLayout><HackathonProblems /></HackathonLayout></ErrorBoundary>} />
+        <Route path="/Hackathon/:hackathonSlug/status" element={<ErrorBoundary><HackathonLayout><HackathonStatus /></HackathonLayout></ErrorBoundary>} />
+        <Route path="/hackathon/:hackathonSlug/status" element={<ErrorBoundary><HackathonLayout><HackathonStatus /></HackathonLayout></ErrorBoundary>} />
+        <Route path="/Hackathon/:hackathonSlug/payment-details" element={<ErrorBoundary><HackathonLayout><HackathonPaymentDetails /></HackathonLayout></ErrorBoundary>} />
+        <Route path="/hackathon/:hackathonSlug/payment-details" element={<ErrorBoundary><HackathonLayout><HackathonPaymentDetails /></HackathonLayout></ErrorBoundary>} />
         <Route path="/Hackathon/:hackathonSlug/register" element={<HackathonRegister />} />
         <Route path="/hackathon/:hackathonSlug/register" element={<HackathonRegister />} />
         <Route path="/Hackathon/:hackathonSlug/login" element={<HackathonLogin />} />
