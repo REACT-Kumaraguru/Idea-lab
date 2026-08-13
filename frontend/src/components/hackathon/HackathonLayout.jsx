@@ -170,7 +170,7 @@ const HackathonLayout = ({ children }) => {
     const searchId = new URLSearchParams(location.search).get("hackathonId");
     if (searchId) return String(searchId).split("?")[0].split("&")[0];
     if (selectedHackathonId) return String(selectedHackathonId).split("?")[0].split("&")[0];
-    return "";
+    return null;
   }, [location.search, selectedHackathonId]);
 
   const selectedHackathonObj = useMemo(() => {
@@ -179,6 +179,7 @@ const HackathonLayout = ({ children }) => {
   }, [hackathonsList, cleanSelectedHackathonId]);
 
   const isCustomHackathonMode = useMemo(() => {
+    if (!cleanSelectedHackathonId) return false;
     if (selectedHackathonObj) {
       return selectedHackathonObj.problemStatementType === "custom" || String(selectedHackathonObj.id) === "2" || String(selectedHackathonObj.id) === "6";
     }
