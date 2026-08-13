@@ -469,6 +469,7 @@ const HackathonDashboard = () => {
 
   const showResults = selectedStudentHackathon?.showResults === true;
   const isAbstractionApproved = !isCustomMode || (showResults && team?.abstractionStatus === "approved");
+  const registrationBlocksSubmission = Boolean(registrationClosed);
 
   // Backend auto-activates team status on submission when needed.
   const canSubmit = Boolean(team);
