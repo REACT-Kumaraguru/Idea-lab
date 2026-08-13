@@ -30,6 +30,17 @@ const OUTPUT_JSON_PATH = process.platform === "win32"
   ? "C:\\Users\\user\\Documents\\Idea-lab\\students_details\\smart_city_team_credentials.json"
   : "/app/uploads/smart_city_team_credentials.json";
 
+let phoneCounter = 10000;
+
+function getUniquePhone(rawPhone) {
+  const digits = String(rawPhone || "").replace(/\D/g, "");
+  if (digits.length >= 10 && digits !== "0000000000") {
+    return digits.substring(0, 15);
+  }
+  phoneCounter++;
+  return `900${String(phoneCounter).padStart(7, "0")}`;
+}
+
 function getCleanEmail(val) {
   if (!val) return "";
   return String(val).trim().toLowerCase();
@@ -174,13 +185,15 @@ async function runImport() {
     const leadPasswordPlain = getEmailPrefix(rawLeadEmail);
     const leadPasswordHash = await getHashedPassword(leadPasswordPlain);
 
+    const leadPhone = getUniquePhone(rawLeadPhone);
+
     let [leadUser, createdLead] = await HackathonUser.findOrCreate({
       where: { email: rawLeadEmail },
       defaults: {
         fullName: rawLeadName || "Team Lead",
         name: rawLeadName || "Team Lead",
-        phoneNumber: rawLeadPhone || "0000000000",
-        phone: rawLeadPhone || "0000000000",
+        phoneNumber: leadPhone,
+        phone: leadPhone,
         degree: "UG",
         college: collegeName,
         graduationYear: 2026,
@@ -261,13 +274,15 @@ async function runImport() {
       const mPasswordPlain = getEmailPrefix(mEmail);
       const mPasswordHash = await getHashedPassword(mPasswordPlain);
 
+      const mPhone = getUniquePhone("");
+
       let [mUser, createdM] = await HackathonUser.findOrCreate({
         where: { email: mEmail },
         defaults: {
           fullName: mName,
           name: mName,
-          phoneNumber: "0000000000",
-          phone: "0000000000",
+          phoneNumber: mPhone,
+          phone: mPhone,
           degree: "UG",
           college: collegeName,
           graduationYear: 2026,
