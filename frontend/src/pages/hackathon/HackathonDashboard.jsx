@@ -532,6 +532,15 @@ const HackathonDashboard = () => {
     return !teamHasSubmissionForProblem(p.id);
   };
 
+  const resetSubmissionSteps = () => {
+    setSubmissionStep(1);
+    setWhyParticipate("");
+    setProblemToSolve("");
+    setPlannedTech("");
+    setWorkedBefore("no");
+    setAgreedTerms(false);
+  };
+
   const onSelectProblem = (p) => {
     if (teamHasSubmitted) return;
     const payload = {
@@ -551,15 +560,6 @@ const HackathonDashboard = () => {
     resetSubmissionSteps();
     setSubmitError(null);
     changeTab("submit");
-  };
-
-  const resetSubmissionSteps = () => {
-    setSubmissionStep(1);
-    setWhyParticipate("");
-    setProblemToSolve("");
-    setPlannedTech("");
-    setWorkedBefore("no");
-    setAgreedTerms(false);
   };
 
   const onSubmit = async (e) => {
