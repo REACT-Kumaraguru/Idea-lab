@@ -142,11 +142,13 @@ const HackathonLayout = ({ children }) => {
   }, [location.pathname, location.search]);
 
   const makeUrl = (subPath) => {
-    const activeId = selectedHackathonId || (currentSlug === "smart-city-2026" ? "2" : currentSlug === "Ai" ? "5" : "2");
+    const cleanSubPath = (subPath || "").split("?")[0];
+    const rawId = selectedHackathonId || (currentSlug === "smart-city-2026" ? "2" : currentSlug === "Ai" ? "5" : "2");
+    const activeId = String(rawId).split("?")[0].split("&")[0];
     if (!currentSlug || currentSlug.toLowerCase() === "ich2026") {
-      return `/Hackathon${subPath}?hackathonId=${activeId}`;
+      return `/Hackathon${cleanSubPath}?hackathonId=${activeId}`;
     }
-    return `/Hackathon/${currentSlug}${subPath}?hackathonId=${activeId}`;
+    return `/Hackathon/${currentSlug}${cleanSubPath}?hackathonId=${activeId}`;
   };
 
   const studentNav = useMemo(() => {
@@ -172,20 +174,32 @@ const HackathonLayout = ({ children }) => {
     [currentSlug]
   );
 
+  const cleanSelectedHackathonId = useMemo(() => {
+    const raw = selectedHackathonId || (currentSlug === "smart-city-2026" ? "2" : currentSlug === "Ai" ? "5" : "2");
+    return String(raw).split("?")[0].split("&")[0];
+  }, [selectedHackathonId, currentSlug]);
+
   const selectedHackathonObj = useMemo(() => {
-    if (!selectedHackathonId) return null;
-    return hackathonsList.find((h) => String(h.id) === String(selectedHackathonId)) || null;
-  }, [hackathonsList, selectedHackathonId]);
+    if (!cleanSelectedHackathonId) return null;
+    return hackathonsList.find((h) => String(h.id) === String(cleanSelectedHackathonId)) || null;
+  }, [hackathonsList, cleanSelectedHackathonId]);
+
+  const isCustomHackathonMode = useMemo(() => {
+    if (selectedHackathonObj?.problemStatementType === "custom") return true;
+    if (cleanSelectedHackathonId === "2" || cleanSelectedHackathonId === "6") return true;
+    if (currentSlug === "2" || currentSlug === "6" || currentSlug === "smart-city-2026") return true;
+    return false;
+  }, [selectedHackathonObj, cleanSelectedHackathonId, currentSlug]);
 
   useEffect(() => {
     if (
       role === "admin" &&
-      selectedHackathonObj?.problemStatementType === "custom" &&
+      isCustomHackathonMode &&
       location.pathname.includes("/admin/problems")
     ) {
       navigate(makeUrl("/admin"), { replace: true });
     }
-  }, [role, selectedHackathonObj, location.pathname, currentSlug, navigate]);
+  }, [role, isCustomHackathonMode, location.pathname, currentSlug, navigate]);
 
   const adminNav = useMemo(
     () => {
@@ -199,7 +213,7 @@ const HackathonLayout = ({ children }) => {
         { to: makeUrl("/admin/send-mail"), label: "Send Mail", icon: Mail },
         { to: makeUrl("/admin/users"), label: "Admins", icon: Users },
       ];
-      if (selectedHackathonObj?.problemStatementType === "custom") {
+      if (isCustomHackathonMode) {
         return items.map((i) =>
           i.to.includes("/admin/problems")
             ? { to: makeUrl("/admin/themes"), label: "Themes & Reviewers", icon: Tag }
@@ -208,7 +222,7 @@ const HackathonLayout = ({ children }) => {
       }
       return items;
     },
-    [currentSlug, selectedHackathonObj]
+    [currentSlug, isCustomHackathonMode]
   );
 
   const reviewerNav = useMemo(
@@ -222,7 +236,7 @@ const HackathonLayout = ({ children }) => {
 
   const checkIsActive = (item) => {
     const currentPath = location.pathname.toLowerCase();
-    const itemPath = item.to.toLowerCase();
+    const itemPath = item.to.split("?")[0].toLowerCase();
     if (role === "admin") {
       const isAdminHome = itemPath.endsWith("/admin") || itemPath === "/hackathon/admin";
       if (isAdminHome) {
