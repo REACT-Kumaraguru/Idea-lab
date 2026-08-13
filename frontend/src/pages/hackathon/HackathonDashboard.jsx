@@ -425,9 +425,11 @@ const HackathonDashboard = () => {
     String(selectedStudentHackathonId) === "6";
 
   const showResults = selectedStudentHackathon?.showResults === true;
+  const isAbstractionApproved = team?.abstractionStatus === "approved";
+  const isUnlockedCustom = showResults && isAbstractionApproved;
 
   const studentTabs = useMemo(() => {
-    if (isCustomMode && !showResults) {
+    if (isCustomMode && !isUnlockedCustom) {
       return [
         { key: "team", label: "Team" },
         { key: "problems", label: "Problems" },
@@ -439,7 +441,7 @@ const HackathonDashboard = () => {
       { key: "submit", label: "Submit" },
       { key: "status", label: "Status" },
     ];
-  }, [isCustomMode, showResults]);
+  }, [isCustomMode, isUnlockedCustom]);
 
   const mentorTabs = [
     { key: "team", label: "Team" },
@@ -449,12 +451,12 @@ const HackathonDashboard = () => {
   const tabs = role === "mentor" ? mentorTabs : studentTabs;
 
   useEffect(() => {
-    if (role === "student" && isCustomMode && !showResults) {
+    if (role === "student" && isCustomMode && !isUnlockedCustom) {
       if (activeTab === "submit" || activeTab === "status" || activeTab === "payment") {
         changeTab("team");
       }
     }
-  }, [role, isCustomMode, showResults, activeTab]);
+  }, [role, isCustomMode, isUnlockedCustom, activeTab]);
 
   const formatProblemStatementDisplay = (s) => {
     if (!s) return { title: "—", isPersonalized: false, theme: null };
@@ -483,7 +485,6 @@ const HackathonDashboard = () => {
     ? team?.id || 1
     : selectedProblem?.problemId || team?.problemId || null;
 
-  const isAbstractionApproved = !isCustomMode || (showResults && team?.abstractionStatus === "approved");
   const registrationBlocksSubmission = Boolean(registrationClosed);
 
   // Backend auto-activates team status on submission when needed.
