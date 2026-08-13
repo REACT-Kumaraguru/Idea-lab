@@ -456,12 +456,14 @@ const HackathonDashboard = () => {
 
   const tabs = role === "mentor" ? mentorTabs : studentTabs;
 
-  const isCustomMode = selectedStudentHackathon?.problemStatementType === "custom";
+  const isCustomMode =
+    selectedStudentHackathon?.problemStatementType === "custom" ||
+    String(selectedStudentHackathonId) === "2" ||
+    String(selectedStudentHackathonId) === "6";
 
-  const selectedProblemId =
-    selectedProblem?.problemId ||
-    team?.problemId ||
-    (isCustomMode ? team?.id || 1 : null);
+  const selectedProblemId = isCustomMode
+    ? team?.id || 1
+    : selectedProblem?.problemId || team?.problemId || null;
 
   const registrationBlocksSubmission = role === "student" && registrationClosed;
 
@@ -476,12 +478,14 @@ const HackathonDashboard = () => {
           "Registration is closed. PoC and submission uploads are no longer accepted."
         : !isCustomMode && !selectedProblemId && !team?.topic
           ? "Please select a Problem Statement under the PROBLEMS tab first."
-          : null;
+          : isCustomMode && !team?.theme
+            ? "Please select your Project Theme under the PROBLEMS tab first."
+            : null;
 
   const submitAllowed =
     role === "student" &&
     canSubmit &&
-    (isCustomMode || !!selectedProblemId || !!team?.topic) &&
+    (isCustomMode ? Boolean(team?.theme) : Boolean(selectedProblemId || team?.topic)) &&
     !teamHasSubmitted &&
     !registrationBlocksSubmission;
 
@@ -1125,9 +1129,21 @@ const HackathonDashboard = () => {
               </div>
 
               <div className="mt-6 font-sans">
-                <div className="font-serif text-lg uppercase tracking-wider text-amber-300 font-normal">Selected Problem</div>
+                <div className="font-serif text-lg uppercase tracking-wider text-amber-300 font-normal">
+                  {isCustomMode ? "Project Theme & Topic" : "Selected Problem"}
+                </div>
                 <div className="mt-2 text-stone-200 font-sans text-sm">
-                  {selectedProblem ? selectedProblem.title : team?.topic ? team.topic : "Not selected yet"}
+                  {isCustomMode
+                    ? team?.topic
+                      ? `${team.topic} (${team.theme || "No Theme"})`
+                      : team?.theme
+                        ? `Theme: ${team.theme}`
+                        : "Not configured yet"
+                    : selectedProblem
+                      ? selectedProblem.title
+                      : team?.topic
+                        ? team.topic
+                        : "Not selected yet"}
                 </div>
               </div>
             </div>
@@ -1479,23 +1495,19 @@ const HackathonDashboard = () => {
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                           <label className="block text-xs font-serif uppercase tracking-wider text-amber-300 mb-1.5 font-normal">
-                            Selected Problem Statement
+                            {isCustomMode ? "Personalized Problem Topic / Theme" : "Selected Problem Statement"}
                           </label>
                           <input
                             type="text"
                             readOnly
                             value={
-                              selectedProblem
-                                ? selectedProblem.title
-                                : team?.topic
-                                  ? team.topic
-                                  : isCustomMode
-                                    ? "Personalized Problem Statement"
-                                    : "Selected Problem Statement"
+                              isCustomMode
+                                ? (team?.topic || team?.theme || "Personalized Problem Statement")
+                                : (selectedProblem ? selectedProblem.title : team?.topic || "Selected Problem Statement")
                             }
                             className="w-full rounded-xl border border-amber-500/20 bg-stone-950/80 px-4 py-3 text-xs text-stone-300 font-sans cursor-not-allowed font-semibold"
                           />
-                          {selectedProblem && (
+                          {!isCustomMode && selectedProblem && (
                             <div className="mt-1.5 text-[11px] text-stone-400 font-sans">Mentors: {mentorNamesForProblem(selectedProblem)}</div>
                           )}
                         </div>
