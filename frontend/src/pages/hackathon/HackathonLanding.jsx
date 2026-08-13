@@ -471,35 +471,33 @@ const HackathonLanding = () => {
               )}
             </div>
 
-            {!isExpired ? (
-              <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center items-center w-full sm:w-auto font-sans text-xs">
+            <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center items-center w-full sm:w-auto font-sans text-xs">
+              {isUserRegistered ? (
                 <button
                   type="button"
                   onClick={handleRegisterClick}
                   className="inline-flex items-center justify-center px-8 py-4 rounded-full bg-gradient-to-r from-amber-400 via-amber-300 to-amber-500 text-stone-950 font-bold uppercase tracking-[0.2em] transition-all shadow-xl hover:shadow-amber-500/20 hover:scale-[1.03] cursor-pointer"
                 >
-                  {isUserRegistered ? "Go to Workspace" : "Register Now"}
+                  Go to Workspace
                 </button>
-                {selectedHackathon?.problemStatementType === "custom" ? (
-                  <div className="inline-flex items-center gap-2 px-6 py-3.5 rounded-full bg-stone-900/90 border border-amber-500/30 text-amber-300 font-sans font-bold text-xs uppercase tracking-[0.2em]">
-                    Personalized Problem Statements
-                  </div>
-                ) : (
-                  <button
-                    onClick={() => scrollToId("problem-statements-list")}
-                    className="inline-flex items-center gap-2 px-6 py-3.5 rounded-full bg-stone-900/90 border border-amber-500/30 text-stone-200 hover:text-amber-300 hover:border-amber-400/50 font-sans font-bold text-xs uppercase tracking-[0.2em] transition-all shadow-lg cursor-pointer"
-                  >
-                    <span>View Problem Statements</span> <ArrowRight className="w-4 h-4 text-amber-400" />
-                  </button>
-                )}
-              </div>
-            ) : (
-              <div className="mt-8">
-                {selectedHackathon?.problemStatementType === "custom"
-                  ? "⚠️ Registration for this event is now closed. Personalized Problem Statements are submitted by participants."
-                  : "⚠️ Registration for this event is now closed. View Problem Statements below:"}
-              </div>
-            )}
+              ) : (
+                <div className="inline-flex items-center justify-center px-8 py-3.5 rounded-full bg-rose-500/20 border border-rose-500/40 text-rose-300 font-bold uppercase tracking-[0.2em] shadow-xl text-xs">
+                  ⚠️ Registration Closed
+                </div>
+              )}
+              {selectedHackathon?.problemStatementType === "custom" ? (
+                <div className="inline-flex items-center gap-2 px-6 py-3.5 rounded-full bg-stone-900/90 border border-amber-500/30 text-amber-300 font-sans font-bold text-xs uppercase tracking-[0.2em]">
+                  Personalized Problem Statements
+                </div>
+              ) : (
+                <button
+                  onClick={() => scrollToId("problem-statements-list")}
+                  className="inline-flex items-center gap-2 px-6 py-3.5 rounded-full bg-stone-900/90 border border-amber-500/30 text-stone-200 hover:text-amber-300 hover:border-amber-400/50 font-sans font-bold text-xs uppercase tracking-[0.2em] transition-all shadow-lg cursor-pointer"
+                >
+                  <span>View Problem Statements</span> <ArrowRight className="w-4 h-4 text-amber-400" />
+                </button>
+              )}
+            </div>
 
             <div className="mt-10 w-full max-w-4xl">
               {!isExpired && (
