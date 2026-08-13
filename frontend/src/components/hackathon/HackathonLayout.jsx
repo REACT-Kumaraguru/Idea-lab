@@ -150,6 +150,10 @@ const HackathonLayout = ({ children }) => {
     const searchId = new URLSearchParams(location.search).get("hackathonId");
     if (searchId) return String(searchId).split("?")[0].split("&")[0];
     if (selectedHackathonId) return String(selectedHackathonId).split("?")[0].split("&")[0];
+
+    const localStoreId = localStorage.getItem("studentSelectedHackathonId");
+    if (localStoreId) return String(localStoreId).split("?")[0].split("&")[0];
+
     const parts = location.pathname.split("/").filter(Boolean);
     if (parts[0]?.toLowerCase() === "hackathon" && parts[1]) {
       const p1 = parts[1].toLowerCase();
@@ -159,13 +163,17 @@ const HackathonLayout = ({ children }) => {
         if (p1 === "5" || p1 === "ai") return "5";
       }
     }
+    if (role === "student" || location.pathname.toLowerCase().includes("/dashboard")) {
+      return "2";
+    }
     return null;
-  }, [location.pathname, location.search, selectedHackathonId]);
+  }, [location.pathname, location.search, selectedHackathonId, role]);
 
   const selectedHackathonObj = useMemo(() => {
-    if (!cleanSelectedHackathonId) return null;
-    return hackathonsList.find((h) => String(h.id) === String(cleanSelectedHackathonId)) || null;
-  }, [hackathonsList, cleanSelectedHackathonId]);
+    const targetId = cleanSelectedHackathonId || (role === "student" ? "2" : null);
+    if (!targetId) return null;
+    return hackathonsList.find((h) => String(h.id) === String(targetId)) || null;
+  }, [hackathonsList, cleanSelectedHackathonId, role]);
 
   const isCustomHackathonMode = useMemo(() => {
     const p = location.pathname.toLowerCase();
