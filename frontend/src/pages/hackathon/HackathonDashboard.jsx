@@ -1414,11 +1414,13 @@ const HackathonDashboard = () => {
                     {submissionBlockedReason || "You are not part of any team yet. Create or join a team first."}
                   </AlertCard>
                 </div>
-              ) : team?.status === "pending" ? (
+              ) : (
                 <div className="mb-5">
-                  <AlertCard tone="warning">Team approval is automatic. You can submit now.</AlertCard>
+                  <AlertCard tone="success">
+                    Reviewer Approved ✓. Complete the questions below and submit your proposal for Faculty Mentor review.
+                  </AlertCard>
                 </div>
-              ) : null}
+              )}
 
               <div className="serene-glass-card rounded-3xl border border-amber-500/25 p-6 md:p-8 shadow-2xl text-stone-100 font-sans" aria-disabled={!submitAllowed}>
                 

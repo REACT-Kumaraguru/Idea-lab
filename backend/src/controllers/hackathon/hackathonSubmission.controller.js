@@ -462,8 +462,8 @@ export const adminSetSubmissionStatus = async (req, res) => {
     }
 
     // Only allow final decision after the team itself is approved.
-    const team = await HackathonTeam.findByPk(submission.teamId, { attributes: ["id", "status"] });
-    if (!team || team.status !== "approved") {
+    const team = await HackathonTeam.findByPk(submission.teamId, { attributes: ["id", "status", "abstractionStatus"] });
+    if (!team || (team.status !== "approved" && team.status !== "active" && team.abstractionStatus !== "approved")) {
       return res.status(400).json({ message: "Team must be approved before reviewing submissions" });
     }
 
