@@ -20,6 +20,7 @@ const HackathonAdminTeams = () => {
   const [mentorsList, setMentorsList] = useState([]);
   const [assigningTeamId, setAssigningTeamId] = useState(null);
   const [selectedDescModal, setSelectedDescModal] = useState(null);
+  const [selectedTeamModal, setSelectedTeamModal] = useState(null);
   const [themeFilter, setThemeFilter] = useState("all");
   const [reviewerFilter, setReviewerFilter] = useState("all");
   const [sortBy, setSortBy] = useState("name");
@@ -307,27 +308,27 @@ const HackathonAdminTeams = () => {
         </div>
       ) : null}
 
-      <div className="mt-6 overflow-x-auto">
-        <div className="serene-glass-card rounded-3xl border border-amber-500/25 p-4 shadow-2xl">
+      <div className="mt-6 w-full serene-glass-card rounded-3xl border border-amber-500/25 p-4 sm:p-6 shadow-2xl overflow-hidden">
+        <div className="overflow-x-auto w-full">
           <table className="w-full text-left text-xs font-sans">
             <thead className="bg-stone-900/90 text-amber-300 font-serif uppercase tracking-wider border-b border-amber-500/20 text-[11px]">
               <tr>
-                <th className="px-4 py-3.5 whitespace-nowrap">Team</th>
-                <th className="px-4 py-3.5 whitespace-nowrap">Invite Code</th>
-                <th className="px-4 py-3.5">{isCustomMode ? "Theme" : "Problem Statement"}</th>
-                {isCustomMode && <th className="px-4 py-3.5 whitespace-nowrap">Reviewer Approval</th>}
-                <th className="px-4 py-3.5 whitespace-nowrap">Leader</th>
-                <th className="px-4 py-3.5 text-center whitespace-nowrap">Members</th>
-                <th className="px-4 py-3.5 text-center whitespace-nowrap">Status</th>
-                <th className="px-4 py-3.5 min-w-[150px] whitespace-nowrap">Details</th>
+                <th className="px-3 py-3.5 whitespace-nowrap">Team</th>
+                <th className="px-3 py-3.5 whitespace-nowrap">Invite Code</th>
+                <th className="px-3 py-3.5">{isCustomMode ? "Theme" : "Problem Statement"}</th>
+                {isCustomMode && <th className="px-3 py-3.5 whitespace-nowrap">Reviewer Approval</th>}
+                <th className="px-3 py-3.5 whitespace-nowrap">Leader</th>
+                <th className="px-3 py-3.5 text-center whitespace-nowrap">Members</th>
+                <th className="px-3 py-3.5 text-center whitespace-nowrap">Status</th>
+                <th className="px-3 py-3.5 text-center whitespace-nowrap">Details</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-amber-500/10 text-stone-300">
               {filteredAndSortedTeams.map((t) => (
                 <tr key={t.id} className="hover:bg-amber-400/5 transition">
-                  <td className="px-4 py-3.5 font-serif uppercase text-stone-100 font-medium whitespace-nowrap">{t.teamName}</td>
-                  <td className="px-4 py-3.5 font-mono text-amber-300 whitespace-nowrap">{t.inviteCode}</td>
-                  <td className="px-4 py-3.5">
+                  <td className="px-3 py-3.5 font-serif uppercase text-stone-100 font-medium whitespace-nowrap">{t.teamName}</td>
+                  <td className="px-3 py-3.5 font-mono text-amber-300 whitespace-nowrap select-all">{t.inviteCode}</td>
+                  <td className="px-3 py-3.5">
                     {isCustomMode ? (
                       <span className="inline-flex px-2.5 py-1 rounded-full bg-amber-400/15 text-amber-300 border border-amber-400/30 text-[11px] font-bold">
                         {t.theme || "—"}
@@ -339,7 +340,7 @@ const HackathonAdminTeams = () => {
                     )}
                   </td>
                   {isCustomMode && (
-                    <td className="px-4 py-3.5 whitespace-nowrap">
+                    <td className="px-3 py-3.5 whitespace-nowrap">
                       {t.abstractionStatus === "approved" ? (
                         <span className="px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-bold uppercase tracking-wider">
                           Approved ✓
@@ -362,98 +363,24 @@ const HackathonAdminTeams = () => {
                       )}
                     </td>
                   )}
-                  <td className="px-4 py-3.5">
+                  <td className="px-3 py-3.5">
                     <span className="font-semibold text-stone-100">{t.leader?.fullName || "—"}</span>
                     <div className="text-[11px] text-stone-400 font-mono">{t.leader?.email}</div>
                   </td>
-                  <td className="px-4 py-3.5 font-bold text-amber-300 text-center whitespace-nowrap">{t.members?.length || 0} / 4</td>
-                  <td className="px-4 py-3.5 text-center whitespace-nowrap">
+                  <td className="px-3 py-3.5 font-bold text-amber-300 text-center whitespace-nowrap">{t.members?.length || 0} / 4</td>
+                  <td className="px-3 py-3.5 text-center whitespace-nowrap">
                     <span className="px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-bold uppercase">
                       {t.status === "approved" ? "active" : t.status}
                     </span>
                   </td>
-                  <td className="px-4 py-3.5 align-top">
-                    <details className="max-w-xs">
-                      <summary className="cursor-pointer text-amber-300 text-xs font-bold hover:underline">
-                        ▼ View team details
-                      </summary>
-                      <div className="mt-2 pl-3 border-l-2 border-amber-500/40 text-xs text-stone-300 space-y-2 bg-stone-900/90 p-3 rounded-xl border border-amber-500/20">
-                        <div>
-                          <span className="font-bold text-amber-200">Hackathon:</span>{" "}
-                          <span className="font-serif uppercase text-stone-100">{t.hackathonName || currentHackathonName}</span>
-                        </div>
-                        <div>
-                          <span className="font-bold text-amber-200">Team name:</span> <span className="text-stone-100">{t.teamName}</span>
-                        </div>
-                        <div>
-                          <span className="font-bold text-amber-200">Selected Theme:</span>{" "}
-                          <span className="font-semibold text-amber-300">{t.theme || "—"}</span>
-                        </div>
-                        <div>
-                          <span className="font-bold text-amber-200">Invite code:</span>{" "}
-                          <span className="font-mono text-amber-300">{t.inviteCode}</span>
-                        </div>
-                        <div>
-                          <span className="font-bold text-amber-200">Status:</span> <span className="text-stone-100">{t.status}</span>
-                        </div>
-                        <div>
-                          <span className="font-bold text-amber-200">Topic:</span>{" "}
-                          <span className="font-medium text-amber-300">{t.topic || "—"}</span>
-                        </div>
-                        {t.description && t.description !== "—" ? (
-                          <div>
-                            <button
-                              type="button"
-                              onClick={() => setSelectedDescModal({ title: t.topic || t.teamName, theme: t.theme, desc: t.description })}
-                              className="mt-1 px-2.5 py-1 rounded-lg bg-amber-400/10 hover:bg-amber-400/20 text-amber-300 font-bold text-[11px] border border-amber-400/30 transition cursor-pointer"
-                            >
-                              📄 View Description
-                            </button>
-                          </div>
-                        ) : null}
-                        <div className="font-serif uppercase text-amber-300 pt-1 border-t border-amber-500/20">Members</div>
-                        <ul className="space-y-2">
-                          {(t.members || []).map((m) => (
-                            <li key={m.id} className="border-b border-amber-500/10 pb-2 last:border-0">
-                              <div className="text-stone-100 font-medium">
-                                {m.fullName || "—"}
-                                {m.isLeader ? (
-                                  <span className="ml-1.5 text-[9px] uppercase px-1.5 py-0.5 rounded bg-amber-400/20 text-amber-300 border border-amber-400/30 font-bold">Leader</span>
-                                ) : null}
-                              </div>
-                              <div className="text-stone-400 text-[11px] font-mono">{m.email || "—"}</div>
-                              {m.phoneNumber ? <div className="text-stone-400 text-[11px]">{m.phoneNumber}</div> : null}
-                            </li>
-                          ))}
-                        </ul>
-
-                        <div className="font-serif uppercase text-amber-300 pt-2 border-t border-amber-500/20 mt-2">
-                          Assigned Mentor
-                        </div>
-                        <div className="space-y-1">
-                          <select
-                            value={t.assignedMentor?.userId || ""}
-                            onChange={(e) => handleAssignMentor(t.id, e.target.value)}
-                            disabled={assigningTeamId === t.id}
-                            className="w-full text-xs rounded-xl border border-amber-500/30 bg-stone-950 px-2.5 py-1.5 font-medium text-stone-100 focus:outline-none focus:border-amber-400 transition cursor-pointer"
-                          >
-                            <option value="" className="bg-stone-950 text-stone-400">-- Assign Mentor --</option>
-                            {mentorsList.map((m) => (
-                              <option key={m.id} value={m.userId} className="bg-stone-950 text-stone-100">
-                                {m.user?.fullName || "Mentor"} ({m.user?.email})
-                              </option>
-                            ))}
-                          </select>
-                          {assigningTeamId === t.id ? (
-                            <div className="text-[10px] text-amber-300 font-bold animate-pulse">Saving assignment...</div>
-                          ) : t.assignedMentor ? (
-                            <div className="flex items-center gap-1 mt-1">
-                              <span className="text-[9px] font-extrabold text-emerald-400 uppercase">Assigned ✓</span>
-                            </div>
-                          ) : null}
-                        </div>
-                      </div>
-                    </details>
+                  <td className="px-3 py-3.5 text-center whitespace-nowrap">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedTeamModal(t)}
+                      className="px-3 py-1.5 rounded-xl bg-amber-400/10 hover:bg-amber-400/20 text-amber-300 border border-amber-400/30 text-xs font-bold transition cursor-pointer inline-flex items-center gap-1.5 shadow-sm hover:scale-105 active:scale-95"
+                    >
+                      <span>👁️ View Details</span>
+                    </button>
                   </td>
                 </tr>
               ))}
@@ -468,6 +395,130 @@ const HackathonAdminTeams = () => {
           </table>
         </div>
       </div>
+
+      {/* View Full Team Details Modal */}
+      {selectedTeamModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-950/80 backdrop-blur-md animate-fadeIn overflow-y-auto">
+          <div className="serene-glass-card rounded-3xl p-6 md:p-8 w-full max-w-xl shadow-2xl border border-amber-500/30 text-stone-100 font-sans my-8 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between gap-2 border-b border-amber-500/20 pb-3 mb-4">
+              <div>
+                <span className="px-2.5 py-0.5 rounded-full bg-amber-400/20 text-amber-300 border border-amber-400/30 text-[10px] font-bold uppercase">
+                  Invite Code: <span className="font-mono">{selectedTeamModal.inviteCode}</span>
+                </span>
+                <h3 className="font-serif text-xl uppercase tracking-widest text-stone-100 font-bold mt-1">{selectedTeamModal.teamName}</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedTeamModal(null)}
+                className="text-stone-400 hover:text-stone-100 text-lg font-bold px-2 py-1 cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-4 text-xs text-stone-200">
+              <div className="grid grid-cols-2 gap-3 bg-stone-900/60 p-4 rounded-2xl border border-amber-500/10">
+                <div>
+                  <span className="text-amber-300 font-bold uppercase text-[10px] block">Event Name</span>
+                  <span className="font-semibold text-stone-100">{selectedTeamModal.hackathonName || currentHackathonName}</span>
+                </div>
+                <div>
+                  <span className="text-amber-300 font-bold uppercase text-[10px] block">Selected Theme</span>
+                  <span className="font-semibold text-amber-200">{selectedTeamModal.theme || "—"}</span>
+                </div>
+                <div>
+                  <span className="text-amber-300 font-bold uppercase text-[10px] block">Team Status</span>
+                  <span className="uppercase font-bold text-emerald-400">{selectedTeamModal.status}</span>
+                </div>
+                <div>
+                  <span className="text-amber-300 font-bold uppercase text-[10px] block">Reviewer Status</span>
+                  <span className="uppercase font-bold text-amber-300">{selectedTeamModal.abstractionStatus || "Draft"}</span>
+                </div>
+              </div>
+
+              {selectedTeamModal.topic && (
+                <div className="bg-stone-900/60 p-4 rounded-2xl border border-amber-500/10">
+                  <span className="text-amber-300 font-bold uppercase text-[10px] block mb-1">Problem Topic / Title</span>
+                  <span className="font-semibold text-stone-100">{selectedTeamModal.topic}</span>
+                </div>
+              )}
+
+              {selectedTeamModal.description && selectedTeamModal.description !== "—" && (
+                <div className="bg-stone-900/60 p-4 rounded-2xl border border-amber-500/10">
+                  <span className="text-amber-300 font-bold uppercase text-[10px] block mb-1">Problem Description / Abstraction</span>
+                  <p className="text-stone-300 whitespace-pre-wrap leading-relaxed max-h-40 overflow-y-auto">{selectedTeamModal.description}</p>
+                </div>
+              )}
+
+              <div className="bg-stone-900/60 p-4 rounded-2xl border border-amber-500/10 space-y-3">
+                <span className="text-amber-300 font-serif uppercase font-bold text-sm block border-b border-amber-500/20 pb-2">
+                  Team Members Roster ({selectedTeamModal.members?.length || 0} / 4)
+                </span>
+                <ul className="space-y-2.5">
+                  {(selectedTeamModal.members || []).map((m) => (
+                    <li key={m.id || m.userId} className="flex items-center justify-between border-b border-amber-500/10 pb-2 last:border-0">
+                      <div>
+                        <div className="font-semibold text-stone-100 flex items-center gap-2">
+                          <span>{m.fullName || "—"}</span>
+                          {m.isLeader && (
+                            <span className="px-2 py-0.5 rounded bg-amber-400/20 text-amber-300 border border-amber-400/30 text-[9px] font-bold uppercase">
+                              Leader
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-stone-400 font-mono text-[11px]">{m.email || "—"}</div>
+                      </div>
+                      {m.phoneNumber && <div className="text-stone-400 text-xs font-mono">{m.phoneNumber}</div>}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="bg-stone-900/60 p-4 rounded-2xl border border-amber-500/10 space-y-2">
+                <span className="text-amber-300 font-serif uppercase font-bold text-sm block">Assign Faculty Mentor</span>
+                <select
+                  value={selectedTeamModal.assignedMentor?.userId || ""}
+                  onChange={(e) => {
+                    handleAssignMentor(selectedTeamModal.id, e.target.value);
+                    setSelectedTeamModal((prev) =>
+                      prev
+                        ? {
+                            ...prev,
+                            assignedMentor: e.target.value
+                              ? { userId: e.target.value }
+                              : null,
+                          }
+                        : null
+                    );
+                  }}
+                  disabled={assigningTeamId === selectedTeamModal.id}
+                  className="w-full text-xs rounded-xl border border-amber-500/30 bg-stone-950 px-3 py-2 font-medium text-stone-100 focus:outline-none focus:border-amber-400 transition cursor-pointer"
+                >
+                  <option value="" className="bg-stone-950 text-stone-400">-- Select Faculty Mentor --</option>
+                  {mentorsList.map((m) => (
+                    <option key={m.id} value={m.userId} className="bg-stone-950 text-stone-100">
+                      {m.user?.fullName || "Mentor"} ({m.user?.email})
+                    </option>
+                  ))}
+                </select>
+                {assigningTeamId === selectedTeamModal.id && (
+                  <div className="text-[10px] text-amber-300 font-bold animate-pulse">Saving mentor assignment...</div>
+                )}
+              </div>
+            </div>
+
+            <div className="mt-6 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setSelectedTeamModal(null)}
+                className="px-5 py-2 rounded-xl bg-gradient-to-r from-amber-400 via-amber-300 to-amber-500 text-stone-950 text-xs font-sans uppercase font-bold tracking-wider hover:brightness-110 transition cursor-pointer shadow-lg"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* View Description Modal */}
       {selectedDescModal && (
