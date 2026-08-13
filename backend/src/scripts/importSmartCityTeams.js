@@ -48,7 +48,7 @@ async function getUniquePhoneNumber(rawPhone, userEmail) {
 }
 
 function normalizeTheme(raw, problem = "") {
-  const combined = (String(raw || "") + " " + String(problem || "")).toLowerCase().strip ? (String(raw || "") + " " + String(problem || "")).toLowerCase().trim() : "";
+  const combined = `${String(raw || "")} ${String(problem || "")}`.toLowerCase().trim();
   if (combined.includes("disaster") || combined.includes("flood") || combined.includes("earthquake")) {
     return "Disaster Resilience";
   }
