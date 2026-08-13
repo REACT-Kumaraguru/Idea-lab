@@ -36,29 +36,7 @@ const HackathonDashboard = () => {
     return s;
   };
 
-  const formatProblemStatementDisplay = (s) => {
-    if (!s) return { title: "—", isPersonalized: false, theme: null };
-    const teamTopic = s.team?.topic;
-    const teamTheme = s.team?.theme;
-    const subTitle = s.title;
-    const isCustomHackathon = selectedStudentHackathon?.problemStatementType === "custom";
 
-    const isPersonalized = isCustomHackathon || Boolean(teamTopic && teamTheme);
-
-    if (isPersonalized) {
-      return {
-        title: teamTopic || subTitle || "Personalized Problem Statement",
-        theme: teamTheme || null,
-        isPersonalized: true,
-      };
-    }
-
-    return {
-      title: s.problem?.title || subTitle || "—",
-      theme: s.team?.theme || null,
-      isPersonalized: false,
-    };
-  };
 
   const role = hackathonUser?.role;
 
@@ -461,6 +439,29 @@ const HackathonDashboard = () => {
     selectedStudentHackathon?.problemStatementType === "custom" ||
     String(selectedStudentHackathonId) === "2" ||
     String(selectedStudentHackathonId) === "6";
+
+  const formatProblemStatementDisplay = (s) => {
+    if (!s) return { title: "—", isPersonalized: false, theme: null };
+    const teamTopic = s.team?.topic;
+    const teamTheme = s.team?.theme;
+    const subTitle = s.title;
+
+    const isPersonalized = isCustomMode || Boolean(teamTopic && teamTheme);
+
+    if (isPersonalized) {
+      return {
+        title: teamTopic || subTitle || "Personalized Problem Statement",
+        theme: teamTheme || null,
+        isPersonalized: true,
+      };
+    }
+
+    return {
+      title: s.problem?.title || subTitle || "—",
+      theme: s.team?.theme || null,
+      isPersonalized: false,
+    };
+  };
 
   const selectedProblemId = isCustomMode
     ? team?.id || 1
