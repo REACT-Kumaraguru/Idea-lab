@@ -18,6 +18,14 @@ async function main() {
 
   // Add missing columns safely if not present
   const dialect = sequelize.getDialect();
+  if (dialect === "postgres") {
+    try {
+      await sequelize.query(`ALTER TYPE enum_hackathon_users_role ADD VALUE IF NOT EXISTS 'reviewer';`);
+    } catch (e) {
+      console.log("Postgres enum add value note:", e.message);
+    }
+  }
+
   const alterCol = async (table, col, def) => {
     try {
       if (dialect === "postgres") {
