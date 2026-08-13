@@ -37,13 +37,6 @@ const EquipmentBooking = ({ equipment, isOpen, onClose, onBookingSuccess }) => {
     createBooking,
   } = useBookingStore();
 
-  useEffect(() => {
-    if (isOpen && equipment) {
-      fetchEquipmentBookings(equipment.id);
-      resetForm();
-    }
-  }, [isOpen, equipment]);
-
   const resetForm = () => {
     setBookingData({
       bookingDate: "",
@@ -56,6 +49,13 @@ const EquipmentBooking = ({ equipment, isOpen, onClose, onBookingSuccess }) => {
     });
     setError("");
   };
+
+  useEffect(() => {
+    if (isOpen && equipment) {
+      fetchEquipmentBookings(equipment.id);
+      resetForm();
+    }
+  }, [isOpen, equipment]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
