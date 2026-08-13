@@ -47,6 +47,27 @@ const HackathonTeam = sequelize.define(
       type: DataTypes.TEXT,
       allowNull: true,
     },
+    abstractionStatus: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      defaultValue: "draft",
+      field: "abstraction_status",
+    },
+    reviewerId: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      field: "reviewer_id",
+    },
+    reviewerFeedback: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+      field: "reviewer_feedback",
+    },
+    reviewedAt: {
+      type: DataTypes.DATE,
+      allowNull: true,
+      field: "reviewed_at",
+    },
   },
   {
     tableName: "hackathon_teams",

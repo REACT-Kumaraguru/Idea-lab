@@ -55,11 +55,15 @@ const HackathonUser = sequelize.define(
       type: DataTypes.STRING,
       allowNull: false,
     },
-    // Hackathon module roles (separate from the core app roles)
     role: {
-      type: DataTypes.ENUM("student", "mentor", "admin"),
+      type: DataTypes.STRING,
       allowNull: false,
       defaultValue: "student",
+    },
+    assignedTheme: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      field: "assigned_theme",
     },
   },
   {

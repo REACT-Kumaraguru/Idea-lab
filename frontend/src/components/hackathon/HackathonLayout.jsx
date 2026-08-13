@@ -206,7 +206,14 @@ const HackathonLayout = ({ children }) => {
     [currentSlug, selectedHackathonObj]
   );
 
-  const nav = role === "admin" ? adminNav : role === "mentor" ? mentorNav : studentNav;
+  const reviewerNav = useMemo(
+    () => [
+      { to: makeUrl("/dashboard"), label: "Reviewer Workspace", tabKey: "dashboard", icon: Shield },
+    ],
+    [currentSlug]
+  );
+
+  const nav = role === "admin" ? adminNav : role === "mentor" ? mentorNav : role === "reviewer" ? reviewerNav : studentNav;
 
   const checkIsActive = (item) => {
     const currentPath = location.pathname.toLowerCase();

@@ -222,5 +222,10 @@ router.post("/admin/mentors/assign", protectHackathonRoute, requireHackathonAdmi
 
 router.post("/admin/winners/select", protectHackathonRoute, requireHackathonAdminRole, adminSelectWinner);
 
+// Reviewer workspace endpoints
+import { getReviewerTeams, reviewAbstraction } from "../../controllers/hackathon/hackathonReviewer.controller.js";
+router.get("/reviewer/teams", protectHackathonRoute, getReviewerTeams);
+router.post("/reviewer/review-abstraction", protectHackathonRoute, reviewAbstraction);
+
 export default router;
 

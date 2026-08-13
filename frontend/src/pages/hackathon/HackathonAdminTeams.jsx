@@ -21,6 +21,7 @@ const HackathonAdminTeams = () => {
   const [assigningTeamId, setAssigningTeamId] = useState(null);
   const [selectedDescModal, setSelectedDescModal] = useState(null);
   const [themeFilter, setThemeFilter] = useState("all");
+  const [reviewerFilter, setReviewerFilter] = useState("all");
   const [sortBy, setSortBy] = useState("name");
 
   const [problems, setProblems] = useState([]);
@@ -138,6 +139,9 @@ const HackathonAdminTeams = () => {
         list = list.filter((t) => (t.topic || "").toLowerCase() === themeFilter.toLowerCase());
       }
     }
+    if (reviewerFilter !== "all") {
+      list = list.filter((t) => (t.abstractionStatus || "draft") === reviewerFilter);
+    }
     if (sortBy === "theme" || sortBy === "problem") {
       if (isCustomMode) {
         list.sort((a, b) => (a.theme || "zzz").localeCompare(b.theme || "zzz"));
@@ -146,11 +150,13 @@ const HackathonAdminTeams = () => {
       }
     } else if (sortBy === "members") {
       list.sort((a, b) => (b.members?.length || 0) - (a.members?.length || 0));
+    } else if (sortBy === "reviewerStatus") {
+      list.sort((a, b) => (a.abstractionStatus || "draft").localeCompare(b.abstractionStatus || "draft"));
     } else {
       list.sort((a, b) => (a.teamName || "").localeCompare(b.teamName || ""));
     }
     return list;
-  }, [teams, hackathonId, themeFilter, isCustomMode, sortBy]);
+  }, [teams, hackathonId, themeFilter, reviewerFilter, isCustomMode, sortBy]);
 
   const activeTeamsCount = filteredAndSortedTeams.filter((t) => {
     const members = t.members?.length || 0;
@@ -259,6 +265,25 @@ const HackathonAdminTeams = () => {
               </select>
             </div>
 
+            {isCustomMode && (
+              <div>
+                <label className="block text-[10px] font-sans uppercase font-bold tracking-widest text-amber-300 mb-1">
+                  Reviewer Approval Status
+                </label>
+                <select
+                  value={reviewerFilter}
+                  onChange={(e) => setReviewerFilter(e.target.value)}
+                  className="rounded-xl border border-amber-500/30 bg-stone-950 px-3.5 py-2 text-xs text-stone-100 focus:outline-none focus:border-amber-400 transition cursor-pointer"
+                >
+                  <option value="all">All Reviewer Statuses</option>
+                  <option value="approved">Approved by Reviewer ✓</option>
+                  <option value="submitted">Pending Reviewer Approval ⏳</option>
+                  <option value="needs_revision">Needs Revision ⚠️</option>
+                  <option value="draft">Draft / Not Submitted</option>
+                </select>
+              </div>
+            )}
+
             <div>
               <label className="block text-[10px] font-sans uppercase font-bold tracking-widest text-amber-300 mb-1">
                 Sort Teams By
@@ -270,6 +295,7 @@ const HackathonAdminTeams = () => {
               >
                 <option value="name">Team Name (A-Z)</option>
                 <option value="theme">{isCustomMode ? "Selected Theme (A-Z)" : "Problem Statement (A-Z)"}</option>
+                {isCustomMode && <option value="reviewerStatus">Reviewer Approval Status</option>}
                 <option value="members">Member Count (High to Low)</option>
               </select>
             </div>
@@ -289,6 +315,7 @@ const HackathonAdminTeams = () => {
                 <th className="p-3">Team</th>
                 <th className="p-3">Invite Code</th>
                 <th className="p-3">{isCustomMode ? "Theme" : "Problem Statement"}</th>
+                {isCustomMode && <th className="p-3">Reviewer Approval</th>}
                 <th className="p-3">Leader</th>
                 <th className="p-3">Members</th>
                 <th className="p-3">Status</th>
@@ -312,6 +339,30 @@ const HackathonAdminTeams = () => {
                       </span>
                     )}
                   </td>
+                  {isCustomMode && (
+                    <td className="p-3">
+                      {t.abstractionStatus === "approved" ? (
+                        <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-bold uppercase tracking-wider">
+                          Approved ✓
+                        </span>
+                      ) : t.abstractionStatus === "submitted" ? (
+                        <span className="px-2.5 py-0.5 rounded-full bg-amber-400/20 text-amber-300 border border-amber-400/30 text-[10px] font-bold uppercase tracking-wider animate-pulse">
+                          Pending Review ⏳
+                        </span>
+                      ) : t.abstractionStatus === "needs_revision" ? (
+                        <span className="px-2.5 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/30 text-[10px] font-bold uppercase tracking-wider">
+                          Needs Revision ⚠️
+                        </span>
+                      ) : (
+                        <span className="px-2.5 py-0.5 rounded-full bg-stone-800 text-stone-400 border border-stone-700 text-[10px] font-bold uppercase tracking-wider">
+                          Draft
+                        </span>
+                      )}
+                      {t.reviewerName && (
+                        <div className="text-[10px] text-stone-400 font-sans mt-0.5">Rev: {t.reviewerName}</div>
+                      )}
+                    </td>
+                  )}
                   <td className="p-3">
                     <span className="font-semibold text-stone-100">{t.leader?.fullName || "—"}</span>
                     <div className="text-[11px] text-stone-400 font-mono">{t.leader?.email}</div>
