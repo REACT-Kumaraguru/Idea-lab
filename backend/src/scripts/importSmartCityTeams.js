@@ -216,22 +216,25 @@ async function runImport() {
       where: { leaderUserId: leadUser.id, hackathonId: HACKATHON_ID },
     });
 
+    const safeTheme = theme ? String(theme).substring(0, 245) : "Smart City";
+    const safeTeamName = rawTeamName ? String(rawTeamName).substring(0, 245) : "Team";
+
     if (!team) {
       team = await HackathonTeam.create({
-        teamName: rawTeamName,
+        teamName: safeTeamName,
         inviteCode,
         leaderUserId: leadUser.id,
         status: "approved",
         hackathonId: HACKATHON_ID,
-        theme: theme || "Smart City",
+        theme: safeTheme,
         description: problemStatement,
         topic: problemStatement ? problemStatement.substring(0, 100) : null,
       });
       teamsCreated++;
     } else {
       await team.update({
-        teamName: rawTeamName,
-        theme: theme || team.theme,
+        teamName: safeTeamName,
+        theme: safeTheme,
         description: problemStatement || team.description,
       });
     }
