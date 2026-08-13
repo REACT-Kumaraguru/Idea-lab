@@ -158,7 +158,17 @@ const HackathonLayout = ({ children }) => {
     return `/Hackathon/${currentSlug}${cleanSubPath}?hackathonId=${cleanId}`;
   };
 
+  const showResults = selectedHackathonObj?.showResults === true;
+
   const studentNav = useMemo(() => {
+    const isLockedCustom = isCustomHackathonMode && !showResults;
+    if (isLockedCustom) {
+      return [
+        { to: makeUrl("/dashboard"), label: "Dashboard", tabKey: "dashboard", icon: LayoutDashboard },
+        { to: makeUrl("/dashboard/team"), label: "Team", tabKey: "team", icon: Users },
+        { to: makeUrl("/dashboard/problems"), label: "Problems", tabKey: "problems", icon: ClipboardList },
+      ];
+    }
     const base = [
       { to: makeUrl("/dashboard"), label: "Dashboard", tabKey: "dashboard", icon: LayoutDashboard },
       { to: makeUrl("/dashboard/team"), label: "Team", tabKey: "team", icon: Users },
@@ -168,7 +178,7 @@ const HackathonLayout = ({ children }) => {
     const submitItem = { to: makeUrl("/dashboard/submit"), label: "Submit", tabKey: "submit", icon: UploadCloud };
     const statusItem = { to: makeUrl("/dashboard/status"), label: "Status", tabKey: "status", icon: Activity };
     return teamHasSubmitted ? [...base, statusItem] : [...base, submitItem, statusItem];
-  }, [currentSlug, teamHasSubmitted]);
+  }, [currentSlug, teamHasSubmitted, isCustomHackathonMode, showResults]);
 
   const mentorNav = useMemo(
     () => {
