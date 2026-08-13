@@ -141,10 +141,10 @@ const HackathonDashboard = () => {
     if (paramSlug) {
       if (paramSlug === "Ai" || paramSlug === "5") return "5";
       if (paramSlug === "ich2026" || paramSlug === "1") return "1";
-      if (paramSlug === "smart-city-2026" || paramSlug === "6") return "6";
+      if (paramSlug === "smart-city-2026" || paramSlug === "2" || paramSlug === "6") return "2";
       return paramSlug;
     }
-    return localStorage.getItem("studentSelectedHackathonId") || "6";
+    return localStorage.getItem("studentSelectedHackathonId") || "2";
   });
 
   useEffect(() => {
@@ -156,7 +156,7 @@ const HackathonDashboard = () => {
       let resolvedId = null;
       if (paramSlug === "Ai" || paramSlug === "5") resolvedId = "5";
       else if (paramSlug === "ich2026" || paramSlug === "1") resolvedId = "1";
-      else if (paramSlug === "smart-city-2026" || paramSlug === "6") resolvedId = "6";
+      else if (paramSlug === "smart-city-2026" || paramSlug === "2" || paramSlug === "6") resolvedId = "2";
       else {
         const found = studentHackathons.find((h) => String(h.slug).toLowerCase() === paramSlug.toLowerCase() || String(h.id) === paramSlug);
         if (found) resolvedId = String(found.id);
