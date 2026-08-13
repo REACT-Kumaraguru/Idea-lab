@@ -16,12 +16,21 @@ function passwordFromEmail(email) {
   return normalized.slice(0, idx);
 }
 
+import { Op } from "sequelize";
+
 export const adminListMentors = async (req, res) => {
   try {
-    const { hackathonId } = req.query || {};
+    const rawId = req.query?.hackathonId;
+    const cleanIdStr = rawId ? String(rawId).split("?")[0].split("&")[0] : null;
+    const hackathonIdNum = cleanIdStr ? parseInt(cleanIdStr, 10) : null;
+
     const where = {};
-    if (hackathonId && Number.isInteger(Number(hackathonId))) {
-      where.hackathonId = Number(hackathonId);
+    if (hackathonIdNum && !isNaN(hackathonIdNum)) {
+      if (hackathonIdNum === 1) {
+        where[Op.or] = [{ hackathonId: 1 }, { hackathonId: null }];
+      } else {
+        where.hackathonId = hackathonIdNum;
+      }
     }
 
     const mentors = await HackathonMentor.findAll({
