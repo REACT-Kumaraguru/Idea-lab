@@ -21,7 +21,7 @@ const HackathonSession = sequelize.define(
       field: "user_id",
     },
     role: {
-      type: DataTypes.ENUM("student", "mentor", "admin"),
+      type: DataTypes.ENUM("student", "mentor", "admin", "reviewer"),
       allowNull: false,
     },
   },
