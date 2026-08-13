@@ -42,28 +42,6 @@ const HackathonLayout = ({ children }) => {
     }
   }, [isCheckingAuth, hackathonUser, location.pathname, navigate]);
 
-  if (isCheckingAuth) {
-    return (
-      <div className="min-h-screen bg-[#F5F7FB] flex items-center justify-center">
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-8 h-8 border-4 border-[#2563EB] border-t-transparent rounded-full animate-spin" />
-          <p className="text-sm font-semibold text-gray-600">Loading Hackathon Portal...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!hackathonUser) {
-    return (
-      <div className="min-h-screen bg-[#F5F7FB] flex items-center justify-center">
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-8 h-8 border-4 border-[#2563EB] border-t-transparent rounded-full animate-spin" />
-          <p className="text-sm font-semibold text-gray-600">Redirecting to login...</p>
-        </div>
-      </div>
-    );
-  }
-
   const role = hackathonUser?.role;
 
   const [teamHasSubmitted, setTeamHasSubmitted] = useState(false);
@@ -483,6 +461,28 @@ const HackathonLayout = ({ children }) => {
       window.location.href = "/Hackathon/login";
     }
   };
+
+  if (isCheckingAuth) {
+    return (
+      <div className="min-h-screen bg-[#0a0809] flex items-center justify-center text-amber-300 font-sans">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-8 h-8 border-4 border-amber-400 border-t-transparent rounded-full animate-spin" />
+          <p className="text-xs font-semibold tracking-wider uppercase">Loading Hackathon Portal...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!hackathonUser) {
+    return (
+      <div className="min-h-screen bg-[#0a0809] flex items-center justify-center text-amber-300 font-sans">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-8 h-8 border-4 border-amber-400 border-t-transparent rounded-full animate-spin" />
+          <p className="text-xs font-semibold tracking-wider uppercase">Redirecting to login...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#0a0809] text-stone-100 font-sans selection:bg-amber-400 selection:text-stone-950 relative overflow-x-hidden">
