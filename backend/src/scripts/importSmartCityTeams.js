@@ -1,6 +1,7 @@
 import fs from "fs";
 import bcrypt from "bcryptjs";
 import { sequelize } from "../lib/db.js";
+import Hackathon from "../models/hackathon/HackathonModel.js";
 import HackathonUser from "../models/hackathon/HackathonUserModel.js";
 import HackathonTeam from "../models/hackathon/HackathonTeamModel.js";
 import HackathonTeamMember from "../models/hackathon/HackathonTeamMemberModel.js";
@@ -10,9 +11,24 @@ import { setupHackathonAssociations } from "../models/hackathon/associations.js"
 setupHackathonAssociations();
 
 const HACKATHON_ID = 2; // Smart City Hackathon 2026
-const CSV_FILE_PATH = "C:\\Users\\user\\Documents\\Idea-lab\\students_details\\Registration - SMART CITY HACKATHON.csv";
-const OUTPUT_CSV_PATH = "C:\\Users\\user\\Documents\\Idea-lab\\students_details\\smart_city_team_credentials.csv";
-const OUTPUT_JSON_PATH = "C:\\Users\\user\\Documents\\Idea-lab\\students_details\\smart_city_team_credentials.json";
+
+const CSV_CANDIDATES = [
+  process.env.CSV_PATH,
+  "C:\\Users\\user\\Documents\\Idea-lab\\students_details\\Registration - SMART CITY HACKATHON.csv",
+  "/opt/Idea-lab/Registration_SMART_CITY_HACKATHON.csv",
+  "/app/Registration_SMART_CITY_HACKATHON.csv",
+  "/app/uploads/Registration_SMART_CITY_HACKATHON.csv",
+  "./Registration_SMART_CITY_HACKATHON.csv",
+].filter(Boolean);
+
+const RESOLVED_CSV_PATH = CSV_CANDIDATES.find((p) => fs.existsSync(p));
+
+const OUTPUT_CSV_PATH = process.platform === "win32"
+  ? "C:\\Users\\user\\Documents\\Idea-lab\\students_details\\smart_city_team_credentials.csv"
+  : "/app/uploads/smart_city_team_credentials.csv";
+const OUTPUT_JSON_PATH = process.platform === "win32"
+  ? "C:\\Users\\user\\Documents\\Idea-lab\\students_details\\smart_city_team_credentials.json"
+  : "/app/uploads/smart_city_team_credentials.json";
 
 function getCleanEmail(val) {
   if (!val) return "";
@@ -89,10 +105,30 @@ function parseCSVFile(filePath) {
 
 async function runImport() {
   console.log("=== STARTING SMART CITY HACKATHON TEAMS & ACCOUNTS IMPORT ===");
+  if (!RESOLVED_CSV_PATH) {
+    console.error("CSV file not found in candidates:", CSV_CANDIDATES);
+    return;
+  }
+  console.log("Using CSV File:", RESOLVED_CSV_PATH);
   await sequelize.authenticate();
   await sequelize.sync();
 
-  const allRows = parseCSVFile(CSV_FILE_PATH);
+  await Hackathon.findOrCreate({
+    where: { id: HACKATHON_ID },
+    defaults: {
+      id: HACKATHON_ID,
+      name: "Smart City Hackathon 2026",
+      slug: "smart-city-2026",
+      organizedBy: "AICTE IDEA Lab, KCT & IEEE Smart Cities",
+      tagline: "An Initiative under IEEE Smart Cities Ambassadors Program",
+      venue: "MGATE, KCT, COIMBATORE",
+      status: "completed",
+      prizes: "₹ 15,000",
+      description: "Solving Local Urban Challenges — Build Innovative Solutions for Smarter, Sustainable Cities.",
+    },
+  });
+
+  const allRows = parseCSVFile(RESOLVED_CSV_PATH);
   if (allRows.length < 2) {
     console.error("No data rows found in CSV.");
     return;
@@ -106,8 +142,21 @@ async function runImport() {
   let usersCreated = 0;
   let membersLinked = 0;
   const credentialsExport = [];
+  const passwordHashCache = new Map();
+
+  async function getHashedPassword(plainText) {
+    if (passwordHashCache.has(plainText)) {
+      return passwordHashCache.get(plainText);
+    }
+    const hash = await bcrypt.hash(plainText, 8);
+    passwordHashCache.set(plainText, hash);
+    return hash;
+  }
 
   for (let i = 0; i < dataRows.length; i++) {
+    if (i % 20 === 0 || i === dataRows.length - 1) {
+      console.log(`[Import Progress] Processing team ${i + 1}/${dataRows.length}...`);
+    }
     const row = dataRows[i];
     if (row.length < 5) continue;
 
@@ -123,7 +172,7 @@ async function runImport() {
 
     // 1. Create or Find Team Leader Account
     const leadPasswordPlain = getEmailPrefix(rawLeadEmail);
-    const leadPasswordHash = await bcrypt.hash(leadPasswordPlain, 10);
+    const leadPasswordHash = await getHashedPassword(leadPasswordPlain);
 
     let [leadUser, createdLead] = await HackathonUser.findOrCreate({
       where: { email: rawLeadEmail },
@@ -210,7 +259,7 @@ async function runImport() {
       const mEmail = memberEmails[mIdx];
       const mName = memberNames[mIdx] || `Member ${mIdx + 1}`;
       const mPasswordPlain = getEmailPrefix(mEmail);
-      const mPasswordHash = await bcrypt.hash(mPasswordPlain, 10);
+      const mPasswordHash = await getHashedPassword(mPasswordPlain);
 
       let [mUser, createdM] = await HackathonUser.findOrCreate({
         where: { email: mEmail },
