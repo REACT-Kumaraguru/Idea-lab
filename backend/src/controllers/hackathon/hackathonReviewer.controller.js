@@ -90,13 +90,13 @@ export const reviewAbstraction = async (req, res) => {
     }
 
     if (!teamId || !["approve", "reject", "needs_revision"].includes(action)) {
-      return res.status(400).json({ message: "Valid teamId and action (approve / needs_revision) are required." });
+      return res.status(400).json({ message: "Valid teamId and action (approve / reject) are required." });
     }
 
     const team = await HackathonTeam.findByPk(teamId);
     if (!team) return res.status(404).json({ message: "Team not found." });
 
-    const newStatus = action === "approve" ? "approved" : "needs_revision";
+    const newStatus = action === "approve" ? "approved" : "rejected";
 
     await team.update({
       abstractionStatus: newStatus,
@@ -106,7 +106,7 @@ export const reviewAbstraction = async (req, res) => {
     });
 
     return res.status(200).json({
-      message: `Abstraction successfully ${newStatus === "approved" ? "Approved ✓" : "marked for revision"}!`,
+      message: `Abstraction successfully ${newStatus === "approved" ? "Approved ✓" : "Rejected"}!`,
       teamId: team.id,
       abstractionStatus: newStatus,
     });

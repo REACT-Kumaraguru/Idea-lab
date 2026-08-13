@@ -52,7 +52,7 @@ export default function ReviewerDashboard() {
   const filteredTeams = teams.filter((t) => {
     if (filterStatus === "pending") return t.abstractionStatus === "submitted";
     if (filterStatus === "approved") return t.abstractionStatus === "approved";
-    if (filterStatus === "needs_revision") return t.abstractionStatus === "needs_revision";
+    if (filterStatus === "rejected") return t.abstractionStatus === "rejected" || t.abstractionStatus === "needs_revision";
     return true;
   });
 
@@ -68,7 +68,7 @@ export default function ReviewerDashboard() {
             </h2>
           </div>
           <p className="text-xs text-stone-400 mt-1 font-sans">
-            Review student problem abstractions (~300 words), approve entries, or request revisions.
+            Review student problem abstractions (~300 words), approve entries, or reject.
           </p>
           <div className="mt-3 inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-400/15 border border-amber-400/30 text-amber-300 text-xs font-bold uppercase tracking-wider">
             <span>Assigned Theme:</span>
@@ -103,7 +103,7 @@ export default function ReviewerDashboard() {
           { key: "all", label: `All Teams (${teams.length})` },
           { key: "pending", label: `Pending Review (${teams.filter((t) => t.abstractionStatus === "submitted").length})` },
           { key: "approved", label: `Approved (${teams.filter((t) => t.abstractionStatus === "approved").length})` },
-          { key: "needs_revision", label: `Needs Revision (${teams.filter((t) => t.abstractionStatus === "needs_revision").length})` },
+          { key: "rejected", label: `Rejected (${teams.filter((t) => t.abstractionStatus === "rejected" || t.abstractionStatus === "needs_revision").length})` },
         ].map((tab) => (
           <button
             key={tab.key}
@@ -135,7 +135,7 @@ export default function ReviewerDashboard() {
           {filteredTeams.map((t) => {
             const isApproved = t.abstractionStatus === "approved";
             const isPending = t.abstractionStatus === "submitted";
-            const isNeedsRevision = t.abstractionStatus === "needs_revision";
+            const isRejected = t.abstractionStatus === "rejected" || t.abstractionStatus === "needs_revision";
 
             return (
               <div
@@ -171,9 +171,9 @@ export default function ReviewerDashboard() {
                       <span className="px-4 py-1.5 rounded-full bg-amber-400/20 text-amber-300 border border-amber-400/30 text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 animate-pulse">
                         <Clock className="w-4 h-4" /> Pending Review ⏳
                       </span>
-                    ) : isNeedsRevision ? (
+                    ) : isRejected ? (
                       <span className="px-4 py-1.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/30 text-xs font-bold uppercase tracking-wider flex items-center gap-1.5">
-                        <AlertCircle className="w-4 h-4" /> Needs Revision ⚠️
+                        <AlertCircle className="w-4 h-4" /> Rejected ❌
                       </span>
                     ) : (
                       <span className="px-4 py-1.5 rounded-full bg-stone-800 text-stone-400 border border-stone-700 text-xs font-bold uppercase tracking-wider">
@@ -261,17 +261,17 @@ export default function ReviewerDashboard() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
           <div className="serene-glass-card rounded-3xl border border-amber-500/30 p-6 sm:p-8 max-w-lg w-full shadow-2xl space-y-4">
             <h3 className="font-serif text-xl uppercase tracking-wider text-rose-300 font-normal">
-              Request Revision for {feedbackModalTeam.teamName}
+              Reject Abstraction for {feedbackModalTeam.teamName}
             </h3>
             <p className="text-xs text-stone-400">
-              Provide feedback detailing what the team needs to refine in their problem statement abstraction before approval.
+              Provide feedback detailing why this team problem abstraction is being rejected.
             </p>
 
             <textarea
               rows={4}
               value={feedbackText}
               onChange={(e) => setFeedbackText(e.target.value)}
-              placeholder="e.g. Please clarify your proposed technology stack and elaborate on expected outcomes..."
+              placeholder="e.g. Abstraction details do not meet the domain scope..."
               className="w-full p-3.5 rounded-xl border border-amber-500/30 bg-stone-900 text-xs text-stone-100 placeholder-stone-600 focus:outline-none focus:border-amber-400 font-sans"
             />
 
@@ -285,10 +285,10 @@ export default function ReviewerDashboard() {
               </button>
               <button
                 type="button"
-                onClick={() => handleReview(feedbackModalTeam.id, "needs_revision", feedbackText)}
+                onClick={() => handleReview(feedbackModalTeam.id, "reject", feedbackText)}
                 className="px-5 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-stone-100 text-xs font-bold uppercase tracking-wider transition shadow-lg cursor-pointer"
               >
-                Submit Revision Request
+                Confirm Rejection
               </button>
             </div>
           </div>

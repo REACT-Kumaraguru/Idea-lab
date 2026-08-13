@@ -278,7 +278,7 @@ const HackathonAdminTeams = () => {
                   <option value="all">All Reviewer Statuses</option>
                   <option value="approved">Approved by Reviewer ✓</option>
                   <option value="submitted">Pending Reviewer Approval ⏳</option>
-                  <option value="needs_revision">Needs Revision ⚠️</option>
+                  <option value="rejected">Rejected ❌</option>
                   <option value="draft">Draft / Not Submitted</option>
                 </select>
               </div>
@@ -349,9 +349,9 @@ const HackathonAdminTeams = () => {
                         <span className="px-2.5 py-0.5 rounded-full bg-amber-400/20 text-amber-300 border border-amber-400/30 text-[10px] font-bold uppercase tracking-wider animate-pulse">
                           Pending Review ⏳
                         </span>
-                      ) : t.abstractionStatus === "needs_revision" ? (
+                      ) : t.abstractionStatus === "rejected" || t.abstractionStatus === "needs_revision" ? (
                         <span className="px-2.5 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/30 text-[10px] font-bold uppercase tracking-wider">
-                          Needs Revision ⚠️
+                          Rejected ❌
                         </span>
                       ) : (
                         <span className="px-2.5 py-0.5 rounded-full bg-stone-800 text-stone-400 border border-stone-700 text-[10px] font-bold uppercase tracking-wider">
