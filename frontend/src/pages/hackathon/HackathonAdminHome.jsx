@@ -40,6 +40,9 @@ const HackathonAdminHome = () => {
   const [editShowResults, setEditShowResults] = useState(false);
   const [editLoading, setEditLoading] = useState(false);
 
+  const selectedHackathonObj = hackathons.find((h) => String(h.id) === String(hackathonId)) || null;
+  const isCustomMode = selectedHackathonObj?.problemStatementType === "custom";
+
   const loadData = async () => {
     setLoading(true);
     setErrorMsg("");
@@ -325,10 +328,17 @@ const HackathonAdminHome = () => {
           <div className="font-serif text-lg text-stone-100 uppercase tracking-wider group-hover:text-amber-300 transition-colors">Teams</div>
           <div className="text-stone-400 mt-1.5 text-xs font-sans">Monitor participant-created teams and membership.</div>
         </Link>
-        <Link to={`/Hackathon/admin/problems${querySuffix}`} className="serene-glass-card rounded-2xl border border-amber-500/25 p-6 shadow-xl hover:border-amber-400/60 hover:shadow-amber-500/10 transition group">
-          <div className="font-serif text-lg text-stone-100 uppercase tracking-wider group-hover:text-amber-300 transition-colors">Problems</div>
-          <div className="text-stone-400 mt-1.5 text-xs font-sans">Add, search, and remove industry problems.</div>
-        </Link>
+        {isCustomMode ? (
+          <Link to={`/Hackathon/admin/themes${querySuffix}`} className="serene-glass-card rounded-2xl border border-amber-500/25 p-6 shadow-xl hover:border-amber-400/60 hover:shadow-amber-500/10 transition group">
+            <div className="font-serif text-lg text-stone-100 uppercase tracking-wider group-hover:text-amber-300 transition-colors">Themes & Reviewers</div>
+            <div className="text-stone-400 mt-1.5 text-xs font-sans">Manage hackathon themes and monitor the 14 assigned theme reviewers.</div>
+          </Link>
+        ) : (
+          <Link to={`/Hackathon/admin/problems${querySuffix}`} className="serene-glass-card rounded-2xl border border-amber-500/25 p-6 shadow-xl hover:border-amber-400/60 hover:shadow-amber-500/10 transition group">
+            <div className="font-serif text-lg text-stone-100 uppercase tracking-wider group-hover:text-amber-300 transition-colors">Problems</div>
+            <div className="text-stone-400 mt-1.5 text-xs font-sans">Add, search, and remove industry problems.</div>
+          </Link>
+        )}
         <Link to={`/Hackathon/admin/mentors${querySuffix}`} className="serene-glass-card rounded-2xl border border-amber-500/25 p-6 shadow-xl hover:border-amber-400/60 hover:shadow-amber-500/10 transition group">
           <div className="font-serif text-lg text-stone-100 uppercase tracking-wider group-hover:text-amber-300 transition-colors">Mentors</div>
           <div className="text-stone-400 mt-1.5 text-xs font-sans">Manually create mentor accounts and assign teams.</div>

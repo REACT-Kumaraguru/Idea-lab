@@ -104,6 +104,7 @@ import HackathonAdminMentors from "./pages/hackathon/HackathonAdminMentors";
 import HackathonAdminSendMail from "./pages/hackathon/HackathonAdminSendMail";
 import HackathonAdminWinners from "./pages/hackathon/HackathonAdminWinners";
 import HackathonAdminPaymentDetails from "./pages/hackathon/HackathonAdminPaymentDetails";
+import HackathonAdminThemes from "./pages/hackathon/HackathonAdminThemes";
 import HackathonLayout from "./components/hackathon/HackathonLayout";
 
 import { useLocation } from "react-router-dom";
@@ -160,6 +161,8 @@ function App() {
         <Route path="/hackathon/admin" element={<HackathonLayout><HackathonAdminHome /></HackathonLayout>} />
         <Route path="/Hackathon/admin/problems" element={<HackathonLayout><HackathonAdminProblems /></HackathonLayout>} />
         <Route path="/hackathon/admin/problems" element={<HackathonLayout><HackathonAdminProblems /></HackathonLayout>} />
+        <Route path="/Hackathon/admin/themes" element={<HackathonLayout><HackathonAdminThemes /></HackathonLayout>} />
+        <Route path="/hackathon/admin/themes" element={<HackathonLayout><HackathonAdminThemes /></HackathonLayout>} />
         <Route path="/Hackathon/admin/submissions" element={<HackathonLayout><HackathonAdminSubmissions /></HackathonLayout>} />
         <Route path="/hackathon/admin/submissions" element={<HackathonLayout><HackathonAdminSubmissions /></HackathonLayout>} />
         <Route path="/Hackathon/admin/teams" element={<HackathonLayout><HackathonAdminTeams /></HackathonLayout>} />
@@ -200,6 +203,8 @@ function App() {
         <Route path="/hackathon/:hackathonSlug/admin" element={<HackathonLayout><HackathonAdminHome /></HackathonLayout>} />
         <Route path="/Hackathon/:hackathonSlug/admin/problems" element={<HackathonLayout><HackathonAdminProblems /></HackathonLayout>} />
         <Route path="/hackathon/:hackathonSlug/admin/problems" element={<HackathonLayout><HackathonAdminProblems /></HackathonLayout>} />
+        <Route path="/Hackathon/:hackathonSlug/admin/themes" element={<HackathonLayout><HackathonAdminThemes /></HackathonLayout>} />
+        <Route path="/hackathon/:hackathonSlug/admin/themes" element={<HackathonLayout><HackathonAdminThemes /></HackathonLayout>} />
         <Route path="/Hackathon/:hackathonSlug/admin/submissions" element={<HackathonLayout><HackathonAdminSubmissions /></HackathonLayout>} />
         <Route path="/hackathon/:hackathonSlug/admin/submissions" element={<HackathonLayout><HackathonAdminSubmissions /></HackathonLayout>} />
         <Route path="/Hackathon/:hackathonSlug/admin/teams" element={<HackathonLayout><HackathonAdminTeams /></HackathonLayout>} />

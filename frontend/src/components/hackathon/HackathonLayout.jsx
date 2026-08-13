@@ -12,6 +12,7 @@ import {
   Mail,
   Menu,
   Shield,
+  Tag,
   UploadCloud,
   Users,
 } from "lucide-react";
@@ -199,7 +200,11 @@ const HackathonLayout = ({ children }) => {
         { to: makeUrl("/admin/users"), label: "Admins", icon: Users },
       ];
       if (selectedHackathonObj?.problemStatementType === "custom") {
-        return items.filter((i) => !i.to.includes("/admin/problems"));
+        return items.map((i) =>
+          i.to.includes("/admin/problems")
+            ? { to: makeUrl("/admin/themes"), label: "Themes & Reviewers", icon: Tag }
+            : i
+        );
       }
       return items;
     },
