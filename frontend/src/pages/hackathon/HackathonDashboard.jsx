@@ -419,14 +419,27 @@ const HackathonDashboard = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectionKey, team?.id]);
 
+  const isCustomMode =
+    selectedStudentHackathon?.problemStatementType === "custom" ||
+    String(selectedStudentHackathonId) === "2" ||
+    String(selectedStudentHackathonId) === "6";
+
+  const showResults = selectedStudentHackathon?.showResults === true;
+
   const studentTabs = useMemo(() => {
+    if (isCustomMode && !showResults) {
+      return [
+        { key: "team", label: "Team" },
+        { key: "problems", label: "Problems" },
+      ];
+    }
     return [
       { key: "team", label: "Team" },
       { key: "problems", label: "Problems" },
       { key: "submit", label: "Submit" },
       { key: "status", label: "Status" },
     ];
-  }, []);
+  }, [isCustomMode, showResults]);
 
   const mentorTabs = [
     { key: "team", label: "Team" },
@@ -435,10 +448,13 @@ const HackathonDashboard = () => {
 
   const tabs = role === "mentor" ? mentorTabs : studentTabs;
 
-  const isCustomMode =
-    selectedStudentHackathon?.problemStatementType === "custom" ||
-    String(selectedStudentHackathonId) === "2" ||
-    String(selectedStudentHackathonId) === "6";
+  useEffect(() => {
+    if (role === "student" && isCustomMode && !showResults) {
+      if (activeTab === "submit" || activeTab === "status" || activeTab === "payment") {
+        changeTab("team");
+      }
+    }
+  }, [role, isCustomMode, showResults, activeTab]);
 
   const formatProblemStatementDisplay = (s) => {
     if (!s) return { title: "—", isPersonalized: false, theme: null };
@@ -467,7 +483,6 @@ const HackathonDashboard = () => {
     ? team?.id || 1
     : selectedProblem?.problemId || team?.problemId || null;
 
-  const showResults = selectedStudentHackathon?.showResults === true;
   const isAbstractionApproved = !isCustomMode || (showResults && team?.abstractionStatus === "approved");
   const registrationBlocksSubmission = Boolean(registrationClosed);
 
