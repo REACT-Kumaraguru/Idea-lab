@@ -153,9 +153,11 @@ const HackathonLayout = ({ children }) => {
     const parts = location.pathname.split("/").filter(Boolean);
     if (parts[0]?.toLowerCase() === "hackathon" && parts[1]) {
       const p1 = parts[1].toLowerCase();
-      if (p1 === "2" || p1 === "smart-city-2026" || p1 === "6") return "2";
-      if (p1 === "1" || p1 === "ich2026") return "1";
-      if (p1 === "5" || p1 === "ai") return "5";
+      if (!["admin", "dashboard", "login", "register", "create-team", "join-team", "payment-details", "submit", "problems", "status"].includes(p1)) {
+        if (p1 === "2" || p1 === "smart-city-2026" || p1 === "6") return "2";
+        if (p1 === "1" || p1 === "ich2026") return "1";
+        if (p1 === "5" || p1 === "ai") return "5";
+      }
     }
     return null;
   }, [location.pathname, location.search, selectedHackathonId]);
@@ -349,7 +351,17 @@ const HackathonLayout = ({ children }) => {
       if (val) searchParams.set("hackathonId", val);
       else searchParams.delete("hackathonId");
       const q = searchParams.toString();
-      navigate(q ? `${location.pathname}?${q}` : location.pathname);
+
+      let basePath = location.pathname;
+      const parts = location.pathname.split("/").filter(Boolean);
+      if (parts.length >= 2 && parts[0].toLowerCase() === "hackathon") {
+        if (["2", "smart-city-2026", "ich2026", "ai", "1", "5", "6"].includes(parts[1].toLowerCase())) {
+          parts.splice(1, 1);
+          basePath = "/" + parts.join("/");
+        }
+      }
+
+      navigate(q ? `${basePath}?${q}` : basePath);
     } else if (targetIdOrSlug) {
       navigate(`/Hackathon/${targetIdOrSlug}/dashboard`);
     }
