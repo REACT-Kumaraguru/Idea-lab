@@ -307,30 +307,29 @@ const HackathonAdminTeams = () => {
         </div>
       ) : null}
 
-      <div className="mt-6 overflow-x-auto rounded-3xl border border-amber-500/25 shadow-2xl">
-        <div className="serene-glass-card p-4 sm:p-6 min-w-full">
-          <table className="w-full text-left text-xs font-sans border-collapse">
-            <thead className="bg-stone-900/90 text-amber-300 font-serif uppercase tracking-wider border-b border-amber-500/20">
+      <div className="mt-6 overflow-x-auto">
+        <div className="serene-glass-card rounded-3xl border border-amber-500/25 p-4 shadow-2xl">
+          <table className="w-full text-left text-xs font-sans">
+            <thead className="bg-stone-900/90 text-amber-300 font-serif uppercase tracking-wider border-b border-amber-500/20 text-[11px]">
               <tr>
-                <th className="p-3.5 whitespace-nowrap min-w-[130px]">Team</th>
-                <th className="p-3.5 whitespace-nowrap min-w-[100px]">Invite Code</th>
-                <th className="p-3.5 min-w-[160px]">{isCustomMode ? "Theme" : "Problem Statement"}</th>
-                {isCustomMode && <th className="p-3.5 whitespace-nowrap min-w-[150px]">Reviewer Approval</th>}
-                <th className="p-3.5 whitespace-nowrap min-w-[180px]">Leader</th>
-                <th className="p-3.5 whitespace-nowrap min-w-[90px] text-center">Members</th>
-                <th className="p-3.5 whitespace-nowrap min-w-[90px] text-center">Status</th>
-                <th className="p-3.5 whitespace-nowrap min-w-[160px]">Details</th>
-                <th className="p-3.5 whitespace-nowrap min-w-[130px]">Activation</th>
+                <th className="px-4 py-3.5 whitespace-nowrap">Team</th>
+                <th className="px-4 py-3.5 whitespace-nowrap">Invite Code</th>
+                <th className="px-4 py-3.5">{isCustomMode ? "Theme" : "Problem Statement"}</th>
+                {isCustomMode && <th className="px-4 py-3.5 whitespace-nowrap">Reviewer Approval</th>}
+                <th className="px-4 py-3.5 whitespace-nowrap">Leader</th>
+                <th className="px-4 py-3.5 text-center whitespace-nowrap">Members</th>
+                <th className="px-4 py-3.5 text-center whitespace-nowrap">Status</th>
+                <th className="px-4 py-3.5 min-w-[150px] whitespace-nowrap">Details</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-amber-500/10 text-stone-300">
               {filteredAndSortedTeams.map((t) => (
                 <tr key={t.id} className="hover:bg-amber-400/5 transition">
-                  <td className="p-3.5 font-serif uppercase text-stone-100 font-medium align-middle whitespace-nowrap">{t.teamName}</td>
-                  <td className="p-3.5 font-mono text-amber-300 align-middle whitespace-nowrap">{t.inviteCode}</td>
-                  <td className="p-3.5 align-middle">
+                  <td className="px-4 py-3.5 font-serif uppercase text-stone-100 font-medium whitespace-nowrap">{t.teamName}</td>
+                  <td className="px-4 py-3.5 font-mono text-amber-300 whitespace-nowrap">{t.inviteCode}</td>
+                  <td className="px-4 py-3.5">
                     {isCustomMode ? (
-                      <span className="inline-flex px-2.5 py-1 rounded-full bg-amber-400/15 text-amber-300 border border-amber-400/30 text-[10px] font-bold">
+                      <span className="inline-flex px-2.5 py-1 rounded-full bg-amber-400/15 text-amber-300 border border-amber-400/30 text-[11px] font-bold">
                         {t.theme || "—"}
                       </span>
                     ) : (
@@ -340,7 +339,7 @@ const HackathonAdminTeams = () => {
                     )}
                   </td>
                   {isCustomMode && (
-                    <td className="p-3.5 align-middle whitespace-nowrap">
+                    <td className="px-4 py-3.5 whitespace-nowrap">
                       {t.abstractionStatus === "approved" ? (
                         <span className="px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-bold uppercase tracking-wider">
                           Approved ✓
@@ -363,17 +362,17 @@ const HackathonAdminTeams = () => {
                       )}
                     </td>
                   )}
-                  <td className="p-3.5 align-middle">
-                    <span className="font-semibold text-stone-100 block">{t.leader?.fullName || "—"}</span>
+                  <td className="px-4 py-3.5">
+                    <span className="font-semibold text-stone-100">{t.leader?.fullName || "—"}</span>
                     <div className="text-[11px] text-stone-400 font-mono">{t.leader?.email}</div>
                   </td>
-                  <td className="p-3.5 font-bold text-amber-300 align-middle text-center whitespace-nowrap">{t.members?.length || 0} / 4</td>
-                  <td className="p-3.5 align-middle text-center whitespace-nowrap">
+                  <td className="px-4 py-3.5 font-bold text-amber-300 text-center whitespace-nowrap">{t.members?.length || 0} / 4</td>
+                  <td className="px-4 py-3.5 text-center whitespace-nowrap">
                     <span className="px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-bold uppercase">
                       {t.status === "approved" ? "active" : t.status}
                     </span>
                   </td>
-                  <td className="p-3.5 align-top">
+                  <td className="px-4 py-3.5 align-top">
                     <details className="max-w-xs">
                       <summary className="cursor-pointer text-amber-300 text-xs font-bold hover:underline">
                         ▼ View team details
@@ -456,19 +455,11 @@ const HackathonAdminTeams = () => {
                       </div>
                     </details>
                   </td>
-                  <td className="p-3.5 align-middle whitespace-nowrap">
-                    <div className="text-xs font-semibold text-stone-200">
-                      {t.members?.length || 0} / 4 Members
-                    </div>
-                    <div className="text-[10px] text-stone-400 font-sans">
-                      {(t.members?.length || 0) >= 1 ? "Active" : "Waiting"}
-                    </div>
-                  </td>
                 </tr>
               ))}
               {filteredAndSortedTeams.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="p-6 text-center text-stone-500">
+                  <td colSpan={isCustomMode ? 8 : 7} className="p-6 text-center text-stone-500">
                     No teams match the selected filter.
                   </td>
                 </tr>
