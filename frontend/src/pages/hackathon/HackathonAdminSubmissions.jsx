@@ -107,7 +107,18 @@ function SubmissionCard({ s, adminNotes, setAdminNotes, updateStatus }) {
 const HackathonAdminSubmissions = () => {
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
-  const hackathonId = searchParams.get("hackathonId") || "";
+  const rawHackathonId = searchParams.get("hackathonId") || "";
+  const hackathonId = useMemo(() => {
+    if (rawHackathonId) return String(rawHackathonId).split("?")[0].split("&")[0];
+    const parts = location.pathname.split("/").filter(Boolean);
+    if (parts[0]?.toLowerCase() === "hackathon" && parts[1]) {
+      const p1 = parts[1].toLowerCase();
+      if (p1 === "2" || p1 === "smart-city-2026" || p1 === "6") return "2";
+      if (p1 === "1" || p1 === "ich2026") return "1";
+      if (p1 === "5" || p1 === "ai") return "5";
+    }
+    return "";
+  }, [location.pathname, rawHackathonId]);
 
   const [submissions, setSubmissions] = useState([]);
   const [hackathons, setHackathons] = useState([]);
