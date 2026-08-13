@@ -569,7 +569,7 @@ const HackathonLayout = ({ children }) => {
                       SELECT EVENT:
                     </span>
                     <select
-                      value={selectedHackathonId !== undefined ? selectedHackathonId : (currentSlug === "Ai" ? "5" : currentSlug === "ich2026" ? "1" : "6")}
+                      value={cleanSelectedHackathonId || ""}
                       onChange={handleHackathonChange}
                       className="bg-transparent text-amber-300 text-xs font-sans font-bold focus:outline-none cursor-pointer max-w-[210px] truncate"
                     >
