@@ -1221,12 +1221,12 @@ const HackathonDashboard = () => {
 
                 <div>
                   <label className="block text-xs font-serif uppercase tracking-wider text-amber-300 mb-1.5 font-normal">
-                    Project Description (Abstraction) *
+                    Project Description (Abstraction) (in ~300 words) *
                   </label>
                   <textarea
-                    rows={4}
+                    rows={6}
                     required
-                    placeholder="Describe the problem, key objectives, proposed technology stack, and expected outcomes..."
+                    placeholder="Describe the problem, key objectives, proposed technology stack, and expected outcomes in about 300 words..."
                     value={customDesc}
                     onChange={(e) => setCustomDesc(e.target.value)}
                     className="w-full px-4 py-2.5 rounded-xl border border-amber-500/30 bg-stone-900/90 text-xs text-stone-100 placeholder-stone-600 focus:outline-none focus:border-amber-400 font-sans"
