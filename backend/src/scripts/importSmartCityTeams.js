@@ -236,10 +236,10 @@ async function runImport() {
       });
     }
 
-    await HackathonTeamMember.findOrCreate({
-      where: { teamId: team.id, userId: leadUser.id },
-      defaults: { isLeader: true },
-    });
+    const existingLeaderMember = await HackathonTeamMember.findOne({ where: { userId: leadUser.id } });
+    if (!existingLeaderMember) {
+      await HackathonTeamMember.create({ teamId: team.id, userId: leadUser.id, isLeader: true });
+    }
 
     const teamCredentialsRecord = {
       sNo: i + 1,
@@ -298,11 +298,11 @@ async function runImport() {
         where: { userId: mUser.id, hackathonId: HACKATHON_ID },
       });
 
-      await HackathonTeamMember.findOrCreate({
-        where: { teamId: team.id, userId: mUser.id },
-        defaults: { isLeader: false },
-      });
-      membersLinked++;
+      const existingMember = await HackathonTeamMember.findOne({ where: { userId: mUser.id } });
+      if (!existingMember) {
+        await HackathonTeamMember.create({ teamId: team.id, userId: mUser.id, isLeader: false });
+        membersLinked++;
+      }
 
       teamCredentialsRecord.members.push({
         name: mUser.fullName,
