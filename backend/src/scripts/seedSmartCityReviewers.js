@@ -21,6 +21,7 @@ async function main() {
   if (dialect === "postgres") {
     try {
       await sequelize.query(`ALTER TYPE enum_hackathon_users_role ADD VALUE IF NOT EXISTS 'reviewer';`);
+      await sequelize.query(`ALTER TYPE enum_hackathon_sessions_role ADD VALUE IF NOT EXISTS 'reviewer';`);
     } catch (e) {
       console.log("Postgres enum add value note:", e.message);
     }
