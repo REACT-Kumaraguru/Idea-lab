@@ -255,8 +255,8 @@ async function runImport() {
       status: "approved",
       hackathonId: HACKATHON_ID,
       theme: canonicalTheme,
-      description: problemStatement,
-      topic: problemStatement ? problemStatement.substring(0, 100) : null,
+      description: null,
+      topic: problemStatement ? problemStatement.substring(0, 245) : null,
     });
     teamsCreated++;
 
@@ -371,7 +371,7 @@ async function runImport() {
       status: "approved",
       hackathonId: HACKATHON_ID,
       theme: "Smart Mobility & Parking",
-      description: "Intelligent Urban Mobility & Smart City Infrastructure System.",
+      description: null,
       topic: "Intelligent Urban Mobility & Smart City Infrastructure System.",
     });
     teamsCreated++;
