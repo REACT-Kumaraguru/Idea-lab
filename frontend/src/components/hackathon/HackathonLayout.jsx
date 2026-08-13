@@ -525,8 +525,8 @@ const HackathonLayout = ({ children }) => {
               </div>
 
               <div className="flex items-center gap-2 sm:gap-3 flex-wrap justify-end">
-                {/* Event Selector Dropdown - LOCKED IN TOPBAR HEADER */}
-                {hackathonsList.length > 0 && (
+                {/* Event Selector Dropdown - ADMIN ONLY */}
+                {role === "admin" && hackathonsList.length > 0 && (
                   <div className="flex items-center gap-2 bg-stone-900/90 border border-amber-500/30 rounded-xl px-3 py-1.5 shadow-md font-sans shrink-0">
                     <span className="text-[11px] font-serif uppercase tracking-wider text-amber-300 font-bold hidden sm:inline">
                       SELECT EVENT:
@@ -536,7 +536,7 @@ const HackathonLayout = ({ children }) => {
                       onChange={handleHackathonChange}
                       className="bg-transparent text-amber-300 text-xs font-sans font-bold focus:outline-none cursor-pointer max-w-[210px] truncate"
                     >
-                      {role === "admin" && <option value="" className="bg-stone-950 text-stone-200">All Hackathons</option>}
+                      <option value="" className="bg-stone-950 text-stone-200">All Hackathons</option>
                       {hackathonsList.map((h) => (
                         <option key={h.id} value={h.id} className="bg-stone-950 text-stone-100 font-sans">
                           🏆 {h.name}
