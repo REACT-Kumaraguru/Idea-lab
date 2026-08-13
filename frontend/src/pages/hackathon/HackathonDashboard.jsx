@@ -466,7 +466,8 @@ const HackathonDashboard = () => {
     ? team?.id || 1
     : selectedProblem?.problemId || team?.problemId || null;
 
-  const isAbstractionApproved = !isCustomMode || team?.abstractionStatus === "approved";
+  const showResults = selectedStudentHackathon?.showResults === true;
+  const isAbstractionApproved = !isCustomMode || (showResults && team?.abstractionStatus === "approved");
 
   // Backend auto-activates team status on submission when needed.
   const canSubmit = Boolean(team);
@@ -477,13 +478,15 @@ const HackathonDashboard = () => {
       : registrationBlocksSubmission
         ? registrationClosedMessage ||
           "Registration is closed. PoC and submission uploads are no longer accepted."
-        : isCustomMode && !isAbstractionApproved
-          ? "Your problem statement (abstraction) must be approved by your theme reviewer before unlocking submission."
-          : !isCustomMode && !selectedProblemId && !team?.topic
-            ? "Please select a Problem Statement under the PROBLEMS tab first."
-            : isCustomMode && !team?.theme
-              ? "Please select your Project Theme under the PROBLEMS tab first."
-              : null;
+        : isCustomMode && !showResults
+          ? "The selection results have not been released yet. Submit, Status, and Payment tabs will unlock once results are announced."
+          : isCustomMode && !isAbstractionApproved
+            ? "Your problem statement (abstraction) must be approved by your theme reviewer before unlocking submission."
+            : !isCustomMode && !selectedProblemId && !team?.topic
+              ? "Please select a Problem Statement under the PROBLEMS tab first."
+              : isCustomMode && !team?.theme
+                ? "Please select your Project Theme under the PROBLEMS tab first."
+                : null;
 
   const submitAllowed =
     role === "student" &&
@@ -1183,29 +1186,29 @@ const HackathonDashboard = () => {
                     Select your project theme and enter your personalized problem statement title and abstraction details below.
                   </p>
                 </div>
-                {team?.abstractionStatus === "approved" ? (
+                {!showResults ? (
+                  <span className="text-xs font-bold px-3.5 py-1 rounded-full bg-amber-400/20 text-amber-300 border border-amber-400/30 uppercase tracking-wider animate-pulse">
+                    PENDING ⏳
+                  </span>
+                ) : team?.abstractionStatus === "approved" ? (
                   <span className="text-xs font-bold px-3.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 uppercase tracking-wider">
                     Approved by Reviewer ✓
                   </span>
-                ) : team?.abstractionStatus === "submitted" ? (
-                  <span className="text-xs font-bold px-3.5 py-1 rounded-full bg-amber-400/20 text-amber-300 border border-amber-400/30 uppercase tracking-wider animate-pulse">
-                    Pending Reviewer Approval ⏳
-                  </span>
-                ) : team?.abstractionStatus === "needs_revision" ? (
+                ) : team?.abstractionStatus === "rejected" || team?.abstractionStatus === "needs_revision" ? (
                   <span className="text-xs font-bold px-3.5 py-1 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/30 uppercase tracking-wider">
-                    Revision Requested ⚠️
+                    Not Selected ❌
                   </span>
-                ) : team?.topic ? (
-                  <span className="text-xs font-bold px-3 py-1 rounded-full bg-stone-800 text-stone-300 border border-stone-700 uppercase tracking-wider">
-                    Saved Draft
+                ) : (
+                  <span className="text-xs font-bold px-3.5 py-1 rounded-full bg-amber-400/20 text-amber-300 border border-amber-400/30 uppercase tracking-wider animate-pulse">
+                    PENDING ⏳
                   </span>
-                ) : null}
+                )}
               </div>
 
-              {team?.reviewerFeedback && (
+              {showResults && team?.reviewerFeedback && (
                 <div className="mb-5 p-4 rounded-2xl bg-rose-950/40 border border-rose-500/40 text-xs text-rose-200 font-sans">
                   <strong className="block uppercase tracking-wider font-bold text-rose-300 mb-1">
-                    Reviewer Notes / Revision Feedback:
+                    Reviewer Notes / Feedback:
                   </strong>
                   <p className="italic">"{team.reviewerFeedback}"</p>
                 </div>

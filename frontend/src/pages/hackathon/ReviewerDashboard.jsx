@@ -225,7 +225,7 @@ export default function ReviewerDashboard() {
                   </div>
                 </div>
 
-                {/* Action Buttons */}
+                {/* Action Buttons: 2 Options (Approve, Reject) */}
                 <div className="pt-3 border-t border-amber-500/15 flex items-center justify-end gap-3 flex-wrap">
                   <button
                     type="button"
@@ -234,20 +234,20 @@ export default function ReviewerDashboard() {
                       setFeedbackText(t.reviewerFeedback || "");
                     }}
                     disabled={submittingId === t.id}
-                    className="px-4 py-2.5 rounded-xl border border-rose-500/40 bg-rose-950/20 hover:bg-rose-900/40 text-rose-300 text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 transition cursor-pointer"
+                    className="px-5 py-2.5 rounded-xl border border-rose-500/40 bg-rose-950/30 hover:bg-rose-900/50 text-rose-300 text-xs font-extrabold uppercase tracking-wider flex items-center gap-1.5 transition cursor-pointer shadow-md"
                   >
-                    <MessageSquare className="w-3.5 h-3.5" />
-                    <span>Request Revision</span>
+                    <AlertCircle className="w-4 h-4" />
+                    <span>Reject</span>
                   </button>
 
                   <button
                     type="button"
                     onClick={() => handleReview(t.id, "approve", "")}
                     disabled={submittingId === t.id}
-                    className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 text-stone-950 font-extrabold text-xs uppercase tracking-wider hover:brightness-110 shadow-lg flex items-center gap-1.5 transition cursor-pointer"
+                    className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 text-stone-950 font-extrabold text-xs uppercase tracking-wider hover:brightness-110 shadow-lg flex items-center gap-1.5 transition cursor-pointer"
                   >
                     <CheckCircle2 className="w-4 h-4" />
-                    <span>{submittingId === t.id ? "Approving..." : "Approve Abstraction"}</span>
+                    <span>{submittingId === t.id ? "Approving..." : "Approve"}</span>
                   </button>
                 </div>
               </div>

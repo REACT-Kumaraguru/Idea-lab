@@ -37,6 +37,7 @@ const HackathonAdminHome = () => {
   const [editScheduleDays, setEditScheduleDays] = useState([]);
   const [editFacultyCoordinators, setEditFacultyCoordinators] = useState([]);
   const [editStudentCoordinators, setEditStudentCoordinators] = useState([]);
+  const [editShowResults, setEditShowResults] = useState(false);
   const [editLoading, setEditLoading] = useState(false);
 
   const loadData = async () => {
@@ -85,6 +86,7 @@ const HackathonAdminHome = () => {
     setEditVenue(h.venue || "Kumaraguru College of Technology");
     setEditOrganizedBy(h.organizedBy || "AICTE IDEA Lab, KCT");
     setEditProblemMode(h.problemStatementType || "predefined");
+    setEditShowResults(h.showResults === true);
     setEditTagline(h.tagline || "");
     setEditInAssociationWith(h.inAssociationWith || "");
     setEditPrizes(h.prizes || "");
@@ -186,6 +188,7 @@ const HackathonAdminHome = () => {
         venue: editVenue.trim(),
         organizedBy: editOrganizedBy.trim(),
         problemStatementType: editProblemMode,
+        showResults: editShowResults,
         coordinators: {
           facultyCoordinators: editFacultyCoordinators,
           studentCoordinators: editStudentCoordinators,
@@ -571,6 +574,31 @@ const HackathonAdminHome = () => {
                     </div>
                   </label>
                 </div>
+              </div>
+
+              <div>
+                <label className="block text-xs uppercase tracking-wider font-bold text-amber-300 mb-2">
+                  Selection Results Release Status
+                </label>
+                <label className={`flex items-center justify-between p-4 rounded-2xl border cursor-pointer transition ${editShowResults ? "border-emerald-400 bg-emerald-950/30" : "border-amber-500/20 bg-stone-900/60"}`}>
+                  <div>
+                    <div className="text-xs font-bold text-stone-100 flex items-center gap-2">
+                      <span>Release Selection Results to Students</span>
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${editShowResults ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/30" : "bg-stone-800 text-stone-400 border-stone-700"}`}>
+                        {editShowResults ? "RESULTS RELEASED ✓" : "RESULTS HIDDEN (OFF)"}
+                      </span>
+                    </div>
+                    <div className="text-[11px] text-stone-400 mt-0.5">
+                      When OFF (default), student abstraction status displays as 'PENDING' and Submit/Status/Payment tabs remain locked. When ON, approved teams unlock.
+                    </div>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={editShowResults}
+                    onChange={(e) => setEditShowResults(e.target.checked)}
+                    className="w-5 h-5 accent-amber-400 rounded cursor-pointer shrink-0"
+                  />
+                </label>
               </div>
 
               {/* Edit Schedule Days Builder */}

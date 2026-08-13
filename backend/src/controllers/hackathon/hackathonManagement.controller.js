@@ -141,6 +141,7 @@ export const adminUpdateHackathon = async (req, res) => {
     status,
     registrationClosed,
     registrationClosedMessage,
+    showResults,
     schedule,
     venue,
     organizedBy,
@@ -167,6 +168,7 @@ export const adminUpdateHackathon = async (req, res) => {
     if (endDate !== undefined) updates.endDate = endDate ? new Date(endDate) : null;
     if (status && ["draft", "active", "completed", "closed"].includes(status)) updates.status = status;
     if (typeof registrationClosed === "boolean") updates.registrationClosed = registrationClosed;
+    if (typeof showResults === "boolean") updates.showResults = showResults;
     if (registrationClosedMessage !== undefined) updates.registrationClosedMessage = registrationClosedMessage;
     if (Array.isArray(schedule)) updates.schedule = schedule;
     if (venue !== undefined) updates.venue = venue?.trim() || "Kumaraguru College of Technology";

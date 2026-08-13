@@ -43,6 +43,7 @@ async function main() {
   await alterCol("hackathon_teams", "reviewer_id", "INTEGER");
   await alterCol("hackathon_teams", "reviewer_feedback", "TEXT");
   await alterCol("hackathon_teams", "reviewed_at", "TIMESTAMP");
+  await alterCol("hackathons", "show_results", "BOOLEAN DEFAULT FALSE");
 
   const credentialsList = [];
 
