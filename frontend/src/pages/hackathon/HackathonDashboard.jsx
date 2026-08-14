@@ -947,11 +947,11 @@ const HackathonDashboard = () => {
                                 Problem Statement Status
                               </div>
                               <div className={`mt-1 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider border ${
-                                (s.team?.topic || s.team?.abstractText || s.problemId)
+                                (s.team?.abstractionStatus === "submitted" || s.team?.abstractionStatus === "approved")
                                   ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/30"
                                   : "bg-amber-500/20 text-amber-300 border-amber-500/30"
                               }`}>
-                                {(s.team?.topic || s.team?.abstractText || s.problemId) ? "Submitted ✓" : "Pending ⏳"}
+                                {(s.team?.abstractionStatus === "submitted" || s.team?.abstractionStatus === "approved") ? "Submitted ✓" : "Not Submitted Yet"}
                               </div>
                             </div>
 
@@ -1151,11 +1151,11 @@ const HackathonDashboard = () => {
                     <div className="text-xs text-stone-400 mt-0.5 font-medium">Abstraction Submission</div>
                   </div>
                   <div className={`px-4 py-1.5 rounded-full text-xs font-extrabold uppercase tracking-wider border shadow-sm ${
-                    (team?.topic || team?.abstractText || selectedProblemId || team?.problemId)
+                    (team?.abstractionStatus === "submitted" || team?.abstractionStatus === "approved")
                       ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/40"
                       : "bg-amber-500/20 text-amber-300 border-amber-500/40"
                   }`}>
-                    {(team?.topic || team?.abstractText || selectedProblemId || team?.problemId) ? "Submitted ✓" : "Pending ⏳"}
+                    {(team?.abstractionStatus === "submitted" || team?.abstractionStatus === "approved") ? "Submitted ✓" : "Not Submitted Yet"}
                   </div>
                 </div>
 
