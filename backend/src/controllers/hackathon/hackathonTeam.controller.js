@@ -383,7 +383,7 @@ export const getMyTeam = async (req, res) => {
 };
 
 export const updateCustomProblem = async (req, res) => {
-  const { topic, description, theme } = req.body || {};
+  const { topic, description, theme, abstractText } = req.body || {};
   try {
     const userId = getUserIdFromSession(req);
     const teamMember = await HackathonTeamMember.findOne({ where: { userId } });
@@ -399,6 +399,8 @@ export const updateCustomProblem = async (req, res) => {
     }
 
     const newTheme = theme ? String(theme).trim() : team.theme;
+    const resolvedTopic = topic ? String(topic).trim() : team.topic;
+    const resolvedDesc = description || abstractText ? String(description || abstractText).trim() : team.description;
 
     // Find reviewers for this theme to assign
     let reviewerId = team.reviewerId;
@@ -407,15 +409,15 @@ export const updateCustomProblem = async (req, res) => {
         where: { role: "reviewer", assignedTheme: newTheme },
       });
       if (themeReviewers.length > 0) {
-        // Pick one reviewer for this theme
         reviewerId = themeReviewers[Math.floor(Math.random() * themeReviewers.length)].id;
       }
     }
 
     await team.update({
       theme: newTheme,
-      topic: topic ? String(topic).trim() : team.topic,
-      description: description ? String(description).trim() : team.description,
+      topic: resolvedTopic,
+      description: resolvedDesc,
+      abstractText: resolvedDesc,
       abstractionStatus: "submitted",
       reviewerId,
     });
@@ -427,7 +429,7 @@ export const updateCustomProblem = async (req, res) => {
     });
   } catch (err) {
     console.error("Error in updateCustomProblem:", err.message);
-    return res.status(500).json({ message: "Internal Server Error" });
+    return res.status(500).json({ message: err.message || "Internal Server Error" });
   }
 };
 
