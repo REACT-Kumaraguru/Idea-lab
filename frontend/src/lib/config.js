@@ -5,22 +5,18 @@
  * Fall back to http://localhost:5003 only during local development.
  */
 const getApiBase = () => {
+  if (typeof window !== "undefined") {
+    const { hostname, origin } = window.location;
+    const isLocalHost = hostname === "localhost" || hostname === "127.0.0.1" || hostname === "0.0.0.0";
+    if (!isLocalHost) {
+      return origin;
+    }
+  }
   const envUrl = import.meta.env.VITE_API_URL;
-  if (envUrl && String(envUrl).trim() && !String(envUrl).includes("undefined")) {
+  if (envUrl && String(envUrl).trim() && !String(envUrl).includes("undefined") && !String(envUrl).includes("localhost")) {
     return String(envUrl).replace(/\/$/, "");
   }
-  if (typeof window !== "undefined") {
-    const { hostname, port, origin } = window.location;
-    const isLocalDevPort = ["5173", "5174", "5175", "5176", "5205", "3000", "5000"].includes(port);
-    const isLocalHost = hostname === "localhost" || hostname === "127.0.0.1" || hostname === "0.0.0.0";
-    if (!isLocalHost || (isLocalHost && !isLocalDevPort && port !== "")) {
-      return origin;
-    }
-    if (!isLocalDevPort && port === "") {
-      return origin;
-    }
-  }
-  return "http://localhost:5003";
+  return typeof window !== "undefined" ? window.location.origin : "http://localhost:5003";
 };
 
 export const API_BASE = getApiBase();
