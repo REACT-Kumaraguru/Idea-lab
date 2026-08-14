@@ -49,7 +49,7 @@ const buildTeamSummary = async ({ team, currentUserId }) => {
       return {
         id: m.id,
         userId: m.userId,
-        isLeader: m.isLeader === true,
+        isLeader: m.isLeader === true || (team?.leaderUserId && Number(m.userId) === Number(team.leaderUserId)),
         member: memberUser
           ? {
               id: memberUser.id,
