@@ -148,13 +148,12 @@ const HackathonLayout = ({ children }) => {
 
   const cleanSelectedHackathonId = useMemo(() => {
     const searchId = new URLSearchParams(location.search).get("hackathonId");
-    if (searchId) return String(searchId).split("?")[0].split("&")[0];
 
     if (role === "admin") {
-      if (selectedHackathonId) return String(selectedHackathonId).split("?")[0].split("&")[0];
-      return null;
+      return searchId ? String(searchId).split("?")[0].split("&")[0] : "";
     }
 
+    if (searchId) return String(searchId).split("?")[0].split("&")[0];
     if (selectedHackathonId) return String(selectedHackathonId).split("?")[0].split("&")[0];
 
     const localStoreId = localStorage.getItem("studentSelectedHackathonId");
@@ -172,7 +171,7 @@ const HackathonLayout = ({ children }) => {
     if (role === "student" || location.pathname.toLowerCase().includes("/dashboard")) {
       return "2";
     }
-    return null;
+    return "";
   }, [location.pathname, location.search, selectedHackathonId, role]);
 
   const selectedHackathonObj = useMemo(() => {
