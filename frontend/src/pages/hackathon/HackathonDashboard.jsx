@@ -1097,13 +1097,33 @@ const HackathonDashboard = () => {
                     </button>
                   </div>
                 </div>
-                <div className="flex flex-col items-end gap-2.5 font-sans">
-                  <div className="text-right">
-                    <div className="text-xs uppercase font-bold tracking-wider text-stone-400">Submission Status</div>
-                    <div className={`mt-1 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider border ${formatSubmissionStatus(latestSubmission).color}`}>
-                      {formatSubmissionStatus(latestSubmission).label}
+                <div className="flex flex-col items-end gap-3 font-sans">
+                  <div className="flex items-center gap-4 flex-wrap justify-end">
+                    {/* Problem Statement (Abstraction) Submission Status */}
+                    <div className="text-right">
+                      <div className="text-[10px] uppercase font-extrabold tracking-wider text-stone-400">
+                        Problem Statement Status
+                      </div>
+                      <div className={`mt-1 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider border ${
+                        (team?.topic || team?.abstractText || selectedProblemId || team?.problemId)
+                          ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/30"
+                          : "bg-amber-500/20 text-amber-300 border-amber-500/30"
+                      }`}>
+                        {(team?.topic || team?.abstractText || selectedProblemId || team?.problemId) ? "Submitted ✓" : "Pending ⏳"}
+                      </div>
+                    </div>
+
+                    {/* Final PoC Submission Status */}
+                    <div className="text-right">
+                      <div className="text-[10px] uppercase font-extrabold tracking-wider text-stone-400">
+                        Final PoC Submission Status
+                      </div>
+                      <div className={`mt-1 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider border ${formatSubmissionStatus(latestSubmission).color}`}>
+                        {formatSubmissionStatus(latestSubmission).label}
+                      </div>
                     </div>
                   </div>
+
                   {!isSubmissionApproved && role === "student" && (
                     <div className="flex items-center gap-2 flex-wrap justify-end">
                       {team?.isLeader && (
