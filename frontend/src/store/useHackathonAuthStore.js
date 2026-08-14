@@ -63,7 +63,12 @@ export const useHackathonAuthStore = create((set, get) => ({
       toast.success("Logged in successfully");
       return res.data;
     } catch (error) {
-      toast.error(error.response?.data?.message || "Error logging in");
+      const msg =
+        error.response?.data?.message ||
+        (typeof error.response?.data === "string" && error.response.data.length < 200 ? error.response.data : null) ||
+        error.message ||
+        "Error logging in";
+      toast.error(msg);
       throw error;
     } finally {
       set({ isLoggingIn: false });
