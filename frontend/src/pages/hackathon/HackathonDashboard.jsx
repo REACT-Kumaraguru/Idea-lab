@@ -1114,57 +1114,61 @@ const HackathonDashboard = () => {
                     </button>
                   </div>
                 </div>
-                <div className="flex flex-col items-end gap-3 font-sans">
-                  <div className="flex items-center gap-4 flex-wrap justify-end">
-                    {/* Problem Statement (Abstraction) Submission Status */}
-                    <div className="text-right">
-                      <div className="text-[10px] uppercase font-extrabold tracking-wider text-stone-400">
-                        Problem Statement Status
-                      </div>
-                      <div className={`mt-1 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider border ${
-                        (team?.topic || team?.abstractText || selectedProblemId || team?.problemId)
-                          ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/30"
-                          : "bg-amber-500/20 text-amber-300 border-amber-500/30"
-                      }`}>
-                        {(team?.topic || team?.abstractText || selectedProblemId || team?.problemId) ? "Submitted ✓" : "Pending ⏳"}
-                      </div>
-                    </div>
 
-                    {/* Final PoC Submission Status */}
-                    <div className="text-right">
-                      <div className="text-[10px] uppercase font-extrabold tracking-wider text-stone-400">
-                        Final PoC Submission Status
-                      </div>
-                      <div className={`mt-1 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider border ${formatSubmissionStatus(latestSubmission).color}`}>
-                        {formatSubmissionStatus(latestSubmission).label}
-                      </div>
-                    </div>
-                  </div>
-
-                  {!isSubmissionApproved && role === "student" && (
-                    <div className="flex items-center gap-2 flex-wrap justify-end">
-                      {team?.isLeader && (
-                        <button
-                          type="button"
-                          disabled={dismantlingTeam}
-                          onClick={handleDismantleTeam}
-                          className="px-3.5 py-1.5 rounded-xl border border-rose-500/30 bg-rose-600/20 text-rose-300 text-xs font-bold uppercase tracking-wider hover:bg-rose-600/30 transition disabled:opacity-60 shadow-sm flex items-center gap-1.5 cursor-pointer"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                          <span>{dismantlingTeam ? "Dismantling..." : "Dismantle Team"}</span>
-                        </button>
-                      )}
+                {!isSubmissionApproved && role === "student" && (
+                  <div className="flex items-center gap-2 flex-wrap justify-end">
+                    {team?.isLeader && (
                       <button
                         type="button"
-                        disabled={leavingTeam}
-                        onClick={handleLeaveTeam}
-                        className="px-3.5 py-1.5 rounded-xl border border-rose-500/30 bg-rose-600/10 text-rose-300 text-xs font-bold uppercase tracking-wider hover:bg-rose-600/20 transition disabled:opacity-60 shadow-sm flex items-center gap-1.5 cursor-pointer"
+                        disabled={dismantlingTeam}
+                        onClick={handleDismantleTeam}
+                        className="px-3.5 py-1.5 rounded-xl border border-rose-500/30 bg-rose-600/20 text-rose-300 text-xs font-bold uppercase tracking-wider hover:bg-rose-600/30 transition disabled:opacity-60 shadow-sm flex items-center gap-1.5 cursor-pointer"
                       >
-                        <LogOut className="w-3.5 h-3.5" />
-                        <span>{leavingTeam ? "Leaving..." : "Leave Team"}</span>
+                        <Trash2 className="w-3.5 h-3.5" />
+                        <span>{dismantlingTeam ? "Dismantling..." : "Dismantle Team"}</span>
                       </button>
+                    )}
+                    <button
+                      type="button"
+                      disabled={leavingTeam}
+                      onClick={handleLeaveTeam}
+                      className="px-3.5 py-1.5 rounded-xl border border-rose-500/30 bg-stone-900/80 hover:bg-rose-500/10 text-rose-300 text-xs font-bold uppercase tracking-wider transition disabled:opacity-60 shadow-sm flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <LogOut className="w-3.5 h-3.5 text-rose-400" />
+                      <span>{leavingTeam ? "Leaving..." : "Leave Team"}</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Status Section Grid directly under Invite Code */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-amber-500/20 font-sans">
+                <div className="p-4 rounded-2xl bg-stone-900/80 border border-amber-500/20 flex items-center justify-between gap-4">
+                  <div>
+                    <div className="text-[11px] uppercase font-extrabold tracking-wider text-amber-300/90">
+                      Problem Statement Status
                     </div>
-                  )}
+                    <div className="text-xs text-stone-400 mt-0.5 font-medium">Abstraction Submission</div>
+                  </div>
+                  <div className={`px-4 py-1.5 rounded-full text-xs font-extrabold uppercase tracking-wider border shadow-sm ${
+                    (team?.topic || team?.abstractText || selectedProblemId || team?.problemId)
+                      ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/40"
+                      : "bg-amber-500/20 text-amber-300 border-amber-500/40"
+                  }`}>
+                    {(team?.topic || team?.abstractText || selectedProblemId || team?.problemId) ? "Submitted ✓" : "Pending ⏳"}
+                  </div>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-stone-900/80 border border-amber-500/20 flex items-center justify-between gap-4">
+                  <div>
+                    <div className="text-[11px] uppercase font-extrabold tracking-wider text-amber-300/90">
+                      Final PoC Submission Status
+                    </div>
+                    <div className="text-xs text-stone-400 mt-0.5 font-medium">Prototype & Presentation</div>
+                  </div>
+                  <div className={`px-4 py-1.5 rounded-full text-xs font-extrabold uppercase tracking-wider border shadow-sm ${formatSubmissionStatus(latestSubmission).color}`}>
+                    {formatSubmissionStatus(latestSubmission).label}
+                  </div>
                 </div>
               </div>
 
