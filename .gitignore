@@ -39,3 +39,12 @@ Thumbs.db
 *.njsproj
 *.sln
 *.sw?
+
+# Sensitive Credentials and Certificates
+SERVER_CONNECTIVITY_AND_CREDENTIALS.md
+*.pem
+*.key
+
+# Backups
+backend/backups/
+

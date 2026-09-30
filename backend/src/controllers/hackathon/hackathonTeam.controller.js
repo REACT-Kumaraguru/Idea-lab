@@ -1,3 +1,4 @@
+import crypto from "crypto";
 import { Op } from "sequelize";
 import HackathonUser from "../../models/hackathon/HackathonUserModel.js";
 import HackathonTeam from "../../models/hackathon/HackathonTeamModel.js";
@@ -7,16 +8,18 @@ import HackathonTeamMentor from "../../models/hackathon/HackathonTeamMentorModel
 
 import HackathonSubmission from "../../models/hackathon/HackathonSubmissionModel.js";
 import HackathonPaymentDetail from "../../models/hackathon/HackathonPaymentDetailModel.js";
+import Hackathon from "../../models/hackathon/HackathonModel.js";
+import { sequelize } from "../../lib/db.js";
 
 const generateInviteCode = () => {
   const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   let out = "";
-  for (let i = 0; i < 8; i++) out += alphabet[Math.floor(Math.random() * alphabet.length)];
+  for (let i = 0; i < 8; i++) out += alphabet[crypto.randomInt(0, alphabet.length)];
   return out;
 };
 
 const getUserIdFromSession = (req) => {
-  const id = req.hackathonUser?.id ?? req.session?.user?.id;
+  const id = req.hackathonUser?.id ?? req.session?.hackathonUser?.id ?? req.session?.user?.id;
   return Number(id);
 };
 
@@ -146,16 +149,27 @@ export const createTeam = async (req, res) => {
   try {
     if (!teamName?.trim()) return res.status(400).json({ message: "Team name is required" });
 
-    const existingTeams = await HackathonTeam.findAll({ attributes: ["id", "teamName"] });
-    const nameTaken = existingTeams.some(
-      (t) => t.teamName && t.teamName.trim().toLowerCase() === teamName.trim().toLowerCase()
-    );
+    const normalizedName = teamName.trim().toLowerCase();
+    const nameTaken = await HackathonTeam.findOne({
+      where: sequelize.where(
+        sequelize.fn("LOWER", sequelize.col("team_name")),
+        normalizedName
+      ),
+      attributes: ["id"],
+    });
     if (nameTaken) {
       return res.status(400).json({ message: "This team name is already taken" });
     }
 
     const userId = getUserIdFromSession(req);
     const targetHackathonId = hackathonId ? Number(hackathonId) : null;
+
+    if (targetHackathonId) {
+      const hackathon = await Hackathon.findByPk(targetHackathonId);
+      if (hackathon?.isRegistrationLocked) {
+        return res.status(403).json({ message: "Team registrations are currently locked for this hackathon by administrators." });
+      }
+    }
 
     const userMemberships = await HackathonTeamMember.findAll({ where: { userId } });
     const userTeamIds = userMemberships.map((m) => m.teamId);
@@ -214,6 +228,13 @@ export const joinTeam = async (req, res) => {
     const team = await HackathonTeam.findOne({ where: { inviteCode: inviteCode.trim() } });
     if (!team) return res.status(404).json({ message: "Invalid invite code" });
 
+    if (team.hackathonId) {
+      const hackathon = await Hackathon.findByPk(team.hackathonId);
+      if (hackathon?.isRegistrationLocked) {
+        return res.status(403).json({ message: "Team registrations and memberships are currently locked for this hackathon by administrators." });
+      }
+    }
+
     if (!["pending", "approved"].includes(team.status)) {
       return res.status(400).json({ message: "This team is not open for joining" });
     }
@@ -232,23 +253,34 @@ export const joinTeam = async (req, res) => {
       }
     }
 
-    const memberCount = await HackathonTeamMember.count({ where: { teamId: team.id } });
-    if (memberCount >= 4) return res.status(400).json({ message: "Team is full (max 4 members)" });
+    // ACID Transaction: Atomic count & insert to prevent concurrency race conditions
+    await sequelize.transaction(async (t) => {
+      const memberCount = await HackathonTeamMember.count({ where: { teamId: team.id }, transaction: t });
+      if (memberCount >= 4) {
+        throw new Error("TEAM_FULL");
+      }
 
-    await HackathonTeamMember.create({
-      teamId: team.id,
-      userId,
-      isLeader: false,
+      await HackathonTeamMember.create(
+        {
+          teamId: team.id,
+          userId,
+          isLeader: false,
+        },
+        { transaction: t }
+      );
+
+      const finalMemberCount = await HackathonTeamMember.count({ where: { teamId: team.id }, transaction: t });
+      if (finalMemberCount >= 1 && team.status !== "approved") {
+        await team.update({ status: "approved" }, { transaction: t });
+      }
     });
-
-    const finalMemberCount = await HackathonTeamMember.count({ where: { teamId: team.id } });
-    if (finalMemberCount >= 1 && team.status !== "approved") {
-      await team.update({ status: "approved" });
-    }
 
     const teamSummary = await buildTeamSummary({ team, currentUserId: userId });
     return res.status(201).json(teamSummary);
   } catch (error) {
+    if (error.message === "TEAM_FULL") {
+      return res.status(400).json({ message: "Team is full (max 4 members)" });
+    }
     console.log("Error in joinTeam:", error.message);
     return res.status(500).json({ message: "Internal Server Error" });
   }
@@ -295,8 +327,8 @@ export const leaveTeam = async (req, res) => {
     });
     const remaining = allMembers.filter((m) => m.userId !== userId);
 
-    if (remaining.length === 0 || role === "admin") {
-      // Last member leaving or Admin operation: dismantle team & submissions completely
+    if (remaining.length === 0) {
+      // Last member leaving: dismantle team & submissions completely
       await deleteTeamCascade(team.id);
     } else {
       // If leaving user was leader, transfer leadership to next member
@@ -364,7 +396,7 @@ export const dismantleTeam = async (req, res) => {
 export const getMyTeam = async (req, res) => {
   try {
     const userId = getUserIdFromSession(req);
-    const role = req.hackathonUser?.role;
+    const role = req.hackathonUser?.role || req.session?.hackathonUser?.role || "student";
     const { hackathonId } = req.query || {};
     let teamSummary = null;
 
@@ -386,15 +418,26 @@ export const updateCustomProblem = async (req, res) => {
   const { topic, description, theme, abstractText } = req.body || {};
   try {
     const userId = getUserIdFromSession(req);
+    const role = req.hackathonUser?.role;
     const teamMember = await HackathonTeamMember.findOne({ where: { userId } });
     const team = teamMember?.teamId
       ? await HackathonTeam.findByPk(teamMember.teamId)
       : await HackathonTeam.findOne({ where: { leaderUserId: userId } });
 
-    if (!team) return res.status(400).json({ message: "You must be part of a team" });
+    if (!team) {
+      return res.status(400).json({ message: "You must belong to a team to submit or update a problem statement." });
+    }
+
+    const isAlreadySubmitted = team.abstractionStatus === "submitted" || team.abstractionStatus === "approved";
+    if (team.hackathonId) {
+      const hackathon = await Hackathon.findByPk(team.hackathonId);
+      if (hackathon?.isProblemStatementLocked && role !== "admin") {
+        return res.status(403).json({ message: "Problem statement changes are currently locked for this hackathon by administrators." });
+      }
+    }
 
     const isLeader = teamMember ? teamMember.isLeader === true : team.leaderUserId === userId;
-    if (!isLeader) {
+    if (!isLeader && role !== "admin") {
       return res.status(403).json({ message: "Only team leader can update personalized problem statement" });
     }
 
@@ -413,14 +456,19 @@ export const updateCustomProblem = async (req, res) => {
       }
     }
 
-    await team.update({
+    const updatePayload = {
       theme: newTheme,
       topic: resolvedTopic,
       description: resolvedDesc,
       abstractText: resolvedDesc,
       abstractionStatus: "submitted",
-      reviewerId,
-    });
+    };
+
+    if (reviewerId) {
+      updatePayload.reviewerId = reviewerId;
+    }
+
+    await team.update(updatePayload);
 
     const summary = await buildTeamSummary({ team, currentUserId: userId });
     return res.status(200).json({

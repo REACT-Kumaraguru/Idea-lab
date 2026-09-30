@@ -4,11 +4,15 @@ import Sidebar from "../Sidebar";
 import EquipmentBooking from "../bookingCom/EquipmentBooking";
 import { Calendar, Users, MapPin, AlertCircle } from "lucide-react";
 import { toast } from "react-hot-toast";
-import { getImageUrl as getImageUrlFromConfig } from "../../lib/config.js";
+import { getImageUrl as getImageUrlFromConfig, getEquipmentFallbackSvg } from "../../lib/config.js";
 import { axiosInstance } from "../../lib/axios.js";
 import AmbientBackground from "../AmbientBackground";
+import { useAuthStore } from "../../store/useAuthStore.js";
 
 const Listing = ({ cart, setCart }) => {
+  const authUser = useAuthStore((state) => state.authUser);
+  const userEmail = String(authUser?.email || "").trim().toLowerCase();
+  const isKct = userEmail.endsWith("@kct.ac.in") || userEmail.endsWith(".kct.ac.in");
 
   // State
   const [searchQuery, setSearchQuery] = useState("");
@@ -50,24 +54,70 @@ const Listing = ({ cart, setCart }) => {
 
   const getImageUrl = getImageUrlFromConfig;
 
+  // Safe fallback category resolver
+  const getEquipmentCategory = (item) => {
+    if (item.category) return item.category;
+    const id = item.id;
+    const computingIds = [49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,111,135,136,137,138,139,140,141,142,143,144,145,147,148,149,158,159,160,161,162,163,164,165,166,169];
+    const electronicIds = [12,13,22,23,24,25,26,40,44,46,47,48,146,150,151,152,153,154,155,156,157];
+    const mechanicalIds = [29,30,31,32,33,34,35,36,37,38,39,41,42,43,45,167,168];
+    if (computingIds.includes(id)) return "Computing";
+    if (electronicIds.includes(id) || (id >= 67 && id <= 110) || (id >= 112 && id <= 134)) return "Electronic Tools";
+    if (mechanicalIds.includes(id)) return "Mechanical Tools";
+    return "Mandatory Machines";
+  };
+
+  // Compute live category and status counts
+  const categoryCounts = {
+    "Mandatory Machines": 0,
+    "Electronic Tools": 0,
+    "Mechanical Tools": 0,
+    "Computing": 0,
+  };
+  let bookableCount = 0;
+  let unbookableCount = 0;
+
+  labEquipment.forEach((item) => {
+    const cat = item.category || getEquipmentCategory(item);
+    if (categoryCounts[cat] !== undefined) {
+      categoryCounts[cat]++;
+    }
+    if (item.isAvailable) {
+      bookableCount++;
+    } else {
+      unbookableCount++;
+    }
+  });
+
+  const statusCounts = { bookable: bookableCount, unbookable: unbookableCount };
+
   // Filter equipment
   const filteredEquipment = labEquipment.filter((item) => {
+    const itemCat = item.category || getEquipmentCategory(item);
+
     const matchesSearch =
+      !searchQuery.trim() ||
       item.equipmentName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       item.brandName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      itemCat?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       item.equipmentDetails?.toLowerCase().includes(searchQuery.toLowerCase());
 
     const matchesCategory =
       selectedCategories.length === 0 ||
-      selectedCategories.includes(item.category);
+      selectedCategories.includes(itemCat);
 
-    return matchesSearch && matchesCategory;
+    const matchesStatus =
+      selectedTypes.length === 0 ||
+      (selectedTypes.includes("Bookable") && item.isAvailable) ||
+      (selectedTypes.includes("Unbookable") && !item.isAvailable);
+
+    return matchesSearch && matchesCategory && matchesStatus;
   });
 
   // Handle Book Now
   const handleBookNow = (item) => {
     if (!item.isAvailable) {
-      alert("This equipment is currently unavailable");
+      toast.error("This equipment is currently unbookable");
       return;
     }
     setSelectedEquipment(item);
@@ -91,6 +141,8 @@ const Listing = ({ cart, setCart }) => {
       duration: booking.duration,
       totalAmount: booking.totalAmount,
       notes: booking.notes,
+      consumablesRequested: booking.consumablesRequested,
+      consumablesPurpose: booking.consumablesPurpose,
       status: booking.status,
     };
 
@@ -126,6 +178,8 @@ const Listing = ({ cart, setCart }) => {
               setCategoryOpen={setCategoryOpen}
               typeOpen={typeOpen}
               setTypeOpen={setTypeOpen}
+              categoryCounts={categoryCounts}
+              statusCounts={statusCounts}
             />
           </div>
 
@@ -142,7 +196,7 @@ const Listing = ({ cart, setCart }) => {
                     Lab Equipment
                   </h1>
                   <span className="text-xs font-sans uppercase font-bold tracking-wider text-amber-300 bg-amber-500/10 border border-amber-500/30 px-3.5 py-1 rounded-full">
-                    {filteredEquipment.length} Items Available
+                    {filteredEquipment.length} Items ({filteredEquipment.filter(e => e.isAvailable).length} Bookable)
                   </span>
                 </div>
               </div>
@@ -178,25 +232,28 @@ const Listing = ({ cart, setCart }) => {
                     {/* Equipment Image */}
                     <div className="relative h-52 overflow-hidden bg-stone-950">
                       <img
-                        src={getImageUrl(item.image)}
+                        src={getImageUrl(item.image) || getEquipmentFallbackSvg(item.equipmentName)}
                         alt={item.equipmentName}
                         className="w-full h-full object-cover filter brightness-95 contrast-105 hover:scale-105 transition-transform duration-500"
                         onError={(e) => {
-                          e.target.src =
-                            "https://via.placeholder.com/500x400/191618/d4af37?text=" +
-                            encodeURIComponent(item.equipmentName);
+                          e.target.onerror = null;
+                          e.target.src = getEquipmentFallbackSvg(item.equipmentName);
                         }}
                       />
                       {!item.isAvailable && (
-                        <div className="absolute top-3 left-3 bg-amber-600/90 backdrop-blur-md text-stone-950 px-3 py-1 rounded-full text-[10px] font-sans font-bold uppercase tracking-widest shadow-lg border border-amber-400/50">
-                          In Use
+                        <div className="absolute top-3 left-3 bg-rose-600/90 backdrop-blur-md text-stone-100 px-3 py-1 rounded-full text-[10px] font-sans font-bold uppercase tracking-widest shadow-lg border border-rose-400/50">
+                          Unbookable
                         </div>
                       )}
                       {item.isAvailable && (
                         <div className="absolute top-3 left-3 bg-emerald-500/90 backdrop-blur-md text-stone-950 px-3 py-1 rounded-full text-[10px] font-sans font-bold uppercase tracking-widest shadow-lg border border-emerald-300">
-                          Available
+                          Bookable
                         </div>
                       )}
+                      {/* Category Badge Top-Right */}
+                      <div className="absolute top-3 right-3 bg-stone-950/85 backdrop-blur-md px-2.5 py-1 rounded-full text-[10px] font-sans font-bold uppercase tracking-wider shadow-lg border border-amber-500/30 text-amber-300">
+                        {item.category || getEquipmentCategory(item)}
+                      </div>
                     </div>
 
                     {/* Equipment Info */}
@@ -230,10 +287,12 @@ const Listing = ({ cart, setCart }) => {
                             </span>
                             <span className="text-stone-200 font-mono">{item.quantity}</span>
                           </div>
-                          {item.pricePerHour != null && (
+                          {item.isAvailable && (
                             <div className="flex items-center justify-between font-semibold pt-1">
-                              <span className="text-stone-400 font-normal">Hourly Rate</span>
-                              <span className="text-amber-300 font-mono text-sm font-bold">₹{item.pricePerHour}/hr</span>
+                              <span className="text-stone-400 font-normal">Reservation</span>
+                              <span className="text-emerald-400 text-xs font-mono font-bold">
+                                Ready for Booking
+                              </span>
                             </div>
                           )}
                         </div>
@@ -244,12 +303,12 @@ const Listing = ({ cart, setCart }) => {
                           className={`w-full py-3 px-4 rounded-xl font-sans text-xs uppercase font-bold tracking-[0.2em] transition-all flex items-center justify-center gap-2 shadow-lg ${
                             item.isAvailable
                               ? "bg-gradient-to-r from-amber-400 via-amber-300 to-amber-500 text-stone-950 hover:brightness-110 hover:shadow-amber-500/20 cursor-pointer"
-                              : "bg-stone-900 text-stone-600 border border-stone-800 cursor-not-allowed"
+                              : "bg-stone-900 text-stone-500 border border-stone-800 cursor-not-allowed"
                           }`}
                           disabled={!item.isAvailable}
                         >
                           <Calendar className="w-4 h-4" />
-                          {item.isAvailable ? "Schedule Equipment" : "Unavailable"}
+                          {item.isAvailable ? "Schedule Equipment" : "Unbookable"}
                         </button>
                       </div>
                     </div>

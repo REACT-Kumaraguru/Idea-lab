@@ -64,6 +64,22 @@ export const useEquipmentStore = create((set, get) => ({
     }
   },
 
+  toggleEquipmentStatus: async (id) => {
+    try {
+      const res = await axiosInstance.patch(`/equipment/${id}/toggle`);
+      set((state) => ({
+        equipment: state.equipment.map((item) => (item.id === id ? res.data : item)),
+      }));
+      const label = res.data.isAvailable ? "Bookable" : "Unbookable";
+      toast.success(`Equipment marked as ${label}`);
+      return true;
+    } catch (error) {
+      console.log("Error in toggleEquipmentStatus:", error);
+      toast.error(error.response?.data?.message || "Error toggling status");
+      return false;
+    }
+  },
+
   deleteEquipment: async (id) => {
     set({ isDeletingEquipment: true });
     try {

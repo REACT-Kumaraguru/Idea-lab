@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /Hackathon/admin
+Disallow: /hackathon/admin
+Disallow: /api/
+
+Sitemap: https://idealab.kct.ac.in/sitemap.xml

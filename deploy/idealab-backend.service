@@ -1,0 +1,34 @@
+﻿# ==============================================================================
+# AICTE IDEA LAB - KUMARAGURU COLLEGE OF TECHNOLOGY (KCT)
+# SYSTEMD SERVICE CONFIGURATION FOR NODE.JS DAEMON
+# ==============================================================================
+# Installation:
+# sudo cp deploy/idealab-backend.service /etc/systemd/system/
+# sudo systemctl daemon-reload
+# sudo systemctl enable idealab-backend
+# sudo systemctl start idealab-backend
+
+[Unit]
+Description=AICTE IDEA Lab Platform Backend Daemon
+After=network.target postgresql.service
+
+[Service]
+Type=simple
+User=idealab
+Group=idealab
+WorkingDirectory=/var/www/idealab/backend
+EnvironmentFile=/var/www/idealab/backend/.env
+ExecStart=/usr/bin/node server.js
+Restart=always
+RestartSec=3
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=idealab-backend
+
+# Security Sandboxing
+ProtectSystem=full
+NoNewPrivileges=true
+LimitNOFILE=65535
+
+[Install]
+WantedBy=multi-user.target

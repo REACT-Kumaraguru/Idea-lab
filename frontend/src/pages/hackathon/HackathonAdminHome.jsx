@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import ReactDOM from "react-dom";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { axiosInstance } from "../../lib/axios";
-import { X } from "lucide-react";
+import { X, Megaphone, Send, Trash2, Radio } from "lucide-react";
 
 const HackathonAdminHome = () => {
   const location = useLocation();
@@ -14,6 +14,49 @@ const HackathonAdminHome = () => {
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState("");
+
+  // Broadcast announcement state (Phase 14.13)
+  const [broadcastText, setBroadcastText] = useState("");
+  const [broadcastLevel, setBroadcastLevel] = useState("info");
+  const [broadcastTarget, setBroadcastTarget] = useState("all");
+  const [broadcasting, setBroadcasting] = useState(false);
+  const [activeAnnouncements, setActiveAnnouncements] = useState([]);
+
+  const fetchAnnouncements = async () => {
+    try {
+      const res = await axiosInstance.get("/ich2026/announcements");
+      setActiveAnnouncements(res.data?.announcements || []);
+    } catch {}
+  };
+
+  const handlePublishAnnouncement = async (e) => {
+    e.preventDefault();
+    if (!broadcastText.trim()) return;
+    setBroadcasting(true);
+    try {
+      await axiosInstance.post("/ich2026/admin/announcement", {
+        message: broadcastText.trim(),
+        level: broadcastLevel,
+        targetRole: broadcastTarget,
+      });
+      setBroadcastText("");
+      fetchAnnouncements();
+      alert("Broadcast announced live to all participants!");
+    } catch (err) {
+      alert(err.response?.data?.message || "Failed to publish broadcast");
+    } finally {
+      setBroadcasting(false);
+    }
+  };
+
+  const handleDeleteAnnouncement = async (id) => {
+    try {
+      await axiosInstance.delete(`/ich2026/admin/announcement/${id}`);
+      setActiveAnnouncements((prev) => prev.filter((a) => a.id !== id));
+    } catch {
+      alert("Failed to delete announcement");
+    }
+  };
 
   // Deletion modal state
   const [deletingHackathon, setDeletingHackathon] = useState(null);
@@ -34,6 +77,12 @@ const HackathonAdminHome = () => {
   const [editRefreshments, setEditRefreshments] = useState("");
   const [editRequiredDocuments, setEditRequiredDocuments] = useState("");
   const [editThemes, setEditThemes] = useState("");
+  const [editGuidelines, setEditGuidelines] = useState("");
+  const [editIsRegistrationLocked, setEditIsRegistrationLocked] = useState(false);
+  const [editIsPoCSubmissionLocked, setEditIsPoCSubmissionLocked] = useState(false);
+  const [editIsProblemStatementLocked, setEditIsProblemStatementLocked] = useState(false);
+  const [editIsOnCampusEventActive, setEditIsOnCampusEventActive] = useState(false);
+  const [editWhatsappInviteLink, setEditWhatsappInviteLink] = useState("");
   const [editScheduleDays, setEditScheduleDays] = useState([]);
   const [editFacultyCoordinators, setEditFacultyCoordinators] = useState([]);
   const [editStudentCoordinators, setEditStudentCoordinators] = useState([]);
@@ -53,6 +102,7 @@ const HackathonAdminHome = () => {
       ]);
       setHackathons(hRes.data?.hackathons || []);
       setLogs(logRes.data?.logs || []);
+      await fetchAnnouncements();
     } catch (e) {
       console.error("Failed to load hackathons or audit logs:", e);
       setErrorMsg(e.response?.data?.message || e.message || "Failed to load admin data");
@@ -96,6 +146,12 @@ const HackathonAdminHome = () => {
     setEditRefreshments(h.refreshments || "");
     setEditRequiredDocuments(Array.isArray(h.requiredDocuments) ? h.requiredDocuments.join("\n") : (h.requiredDocuments || ""));
     setEditThemes(Array.isArray(h.themes) ? h.themes.join("\n") : (h.themes || ""));
+    setEditGuidelines(h.guidelines || "");
+    setEditIsRegistrationLocked(Boolean(h.isRegistrationLocked));
+    setEditIsPoCSubmissionLocked(Boolean(h.isPoCSubmissionLocked));
+    setEditIsProblemStatementLocked(Boolean(h.isProblemStatementLocked));
+    setEditIsOnCampusEventActive(Boolean(h.isOnCampusEventActive));
+    setEditWhatsappInviteLink(h.whatsappInviteLink || "");
     const sched = Array.isArray(h.schedule) && h.schedule.length > 0
       ? h.schedule.map((d) => ({
           dayNum: d.dayNum || "01",
@@ -202,6 +258,12 @@ const HackathonAdminHome = () => {
         refreshments: editRefreshments.trim(),
         requiredDocuments: editRequiredDocuments.split("\n").map((s) => s.trim()).filter(Boolean),
         themes: editThemes.split("\n").map((s) => s.trim()).filter(Boolean),
+        guidelines: editGuidelines.trim(),
+        isRegistrationLocked: editIsRegistrationLocked,
+        isPoCSubmissionLocked: editIsPoCSubmissionLocked,
+        isProblemStatementLocked: editIsProblemStatementLocked,
+        isOnCampusEventActive: editIsOnCampusEventActive,
+        whatsappInviteLink: editWhatsappInviteLink.trim(),
       });
       setEditingHackathon(null);
       window.dispatchEvent(new Event("hackathons-updated"));
@@ -238,6 +300,97 @@ const HackathonAdminHome = () => {
           <button onClick={loadData} className="px-3 py-1 bg-rose-600 hover:bg-rose-500 text-stone-100 font-bold uppercase tracking-wider rounded-lg text-xs">Retry</button>
         </div>
       )}
+
+      {/* Live Broadcast Announcement Desk (Phase 14.13) */}
+      <div className="serene-glass-card rounded-3xl p-6 border border-amber-500/25 text-stone-100 shadow-2xl space-y-4 mb-8">
+        <div className="flex items-center justify-between gap-4 border-b border-amber-500/20 pb-3">
+          <div className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping"></span>
+            <h3 className="font-serif text-lg uppercase tracking-wider text-stone-100 font-normal flex items-center gap-2">
+              <Megaphone className="w-4 h-4 text-amber-400" />
+              <span>Live Emergency Broadcast & Announcements</span>
+            </h3>
+          </div>
+          <span className="text-[10px] uppercase font-bold tracking-widest text-amber-400/80 bg-amber-400/10 px-2.5 py-1 rounded-full border border-amber-400/20">
+            Real-Time SSE Stream
+          </span>
+        </div>
+
+        <p className="text-xs text-stone-400 font-sans">
+          Push instantaneous live banner updates to all logged-in students and faculty across active dashboards.
+        </p>
+
+        <form onSubmit={handlePublishAnnouncement} className="space-y-3 font-sans text-xs">
+          <div className="flex flex-col sm:flex-row items-stretch gap-3">
+            <input
+              type="text"
+              required
+              placeholder="e.g. Lunch is served at dining hall • Pitch session commences at 2:00 PM!"
+              value={broadcastText}
+              onChange={(e) => setBroadcastText(e.target.value)}
+              className="flex-1 px-4 py-2.5 rounded-xl border border-amber-500/30 bg-stone-900/90 text-stone-100 placeholder-stone-500 focus:outline-none focus:border-amber-400"
+            />
+
+            <select
+              value={broadcastLevel}
+              onChange={(e) => setBroadcastLevel(e.target.value)}
+              className="px-3 py-2.5 rounded-xl border border-amber-500/30 bg-stone-900/90 text-stone-200 font-semibold focus:outline-none focus:border-amber-400 cursor-pointer shrink-0"
+            >
+              <option value="info">Info (Amber)</option>
+              <option value="warning">Alert (Orange)</option>
+              <option value="critical">Urgent (Red)</option>
+            </select>
+
+            <button
+              type="submit"
+              disabled={broadcasting}
+              className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-400 via-amber-300 to-amber-500 text-stone-950 font-bold uppercase tracking-wider hover:brightness-110 transition shadow-lg shrink-0 flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+            >
+              <Send className="w-3.5 h-3.5" />
+              <span>{broadcasting ? "Broadcasting..." : "Broadcast Live"}</span>
+            </button>
+          </div>
+        </form>
+
+        {/* Active broadcasts */}
+        {activeAnnouncements.length > 0 && (
+          <div className="pt-2 space-y-2">
+            <div className="text-[11px] font-bold uppercase tracking-wider text-stone-400">
+              Active Broadcasts ({activeAnnouncements.length})
+            </div>
+            <div className="space-y-2">
+              {activeAnnouncements.map((a) => (
+                <div
+                  key={a.id}
+                  className="flex items-center justify-between p-3 rounded-xl bg-stone-900/80 border border-amber-500/15 text-xs"
+                >
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider border ${
+                        a.level === "critical"
+                          ? "bg-rose-500/20 text-rose-300 border-rose-500/30"
+                          : a.level === "warning"
+                          ? "bg-amber-500/20 text-amber-300 border-amber-500/30"
+                          : "bg-blue-500/20 text-blue-300 border-blue-500/30"
+                      }`}
+                    >
+                      {a.level}
+                    </span>
+                    <span className="text-stone-200 font-sans">{a.message}</span>
+                  </div>
+                  <button
+                    onClick={() => handleDeleteAnnouncement(a.id)}
+                    className="p-1 rounded text-stone-500 hover:text-rose-400 transition"
+                    title="Dismiss Announcement"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* Active Hackathons Section */}
       <div className="serene-glass-card rounded-3xl p-6 border border-amber-500/25 text-stone-100 mb-8 shadow-2xl">
@@ -324,6 +477,19 @@ const HackathonAdminHome = () => {
       </div>
 
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5 mb-10">
+        <Link to={`/Hackathon/admin/cluster-approvals${querySuffix}`} className="serene-glass-card rounded-2xl border border-amber-500/40 p-6 shadow-xl hover:border-amber-400 hover:shadow-amber-500/20 transition group bg-gradient-to-br from-amber-500/10 via-transparent to-transparent">
+          <div className="flex items-center justify-between">
+            <div className="font-serif text-lg text-amber-300 uppercase tracking-wider group-hover:text-amber-200 transition-colors font-bold">
+              ⭐ Clusteral Team Approval
+            </div>
+            <span className="px-2 py-0.5 rounded-full bg-amber-400/20 text-amber-300 text-[10px] font-bold uppercase tracking-wider border border-amber-400/30">
+              New
+            </span>
+          </div>
+          <div className="text-stone-300 mt-1.5 text-xs font-sans">
+            Ranked leaderboard sorted by faculty marks (out of 10). Approve shortlisted teams across clusters.
+          </div>
+        </Link>
         <Link to={`/Hackathon/admin/teams${querySuffix}`} className="serene-glass-card rounded-2xl border border-amber-500/25 p-6 shadow-xl hover:border-amber-400/60 hover:shadow-amber-500/10 transition group">
           <div className="font-serif text-lg text-stone-100 uppercase tracking-wider group-hover:text-amber-300 transition-colors">Teams</div>
           <div className="text-stone-400 mt-1.5 text-xs font-sans">Monitor participant-created teams and membership.</div>
@@ -607,6 +773,125 @@ const HackathonAdminHome = () => {
                     checked={editShowResults}
                     onChange={(e) => setEditShowResults(e.target.checked)}
                     className="w-5 h-5 accent-amber-400 rounded cursor-pointer shrink-0"
+                  />
+                </label>
+              </div>
+
+              {/* Event Guidelines (Phase 14.2) */}
+              <div>
+                <label className="block text-xs uppercase tracking-wider font-semibold text-stone-300 mb-1.5">
+                  Official Event Guidelines & Rules
+                </label>
+                <textarea
+                  rows={3}
+                  value={editGuidelines}
+                  onChange={(e) => setEditGuidelines(e.target.value)}
+                  placeholder="Enter detailed rules, evaluation criteria, and conduct guidelines for this event..."
+                  className="w-full px-4 py-2.5 rounded-xl border border-amber-500/30 bg-stone-900/90 text-stone-100 placeholder-stone-500 focus:outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400 text-xs"
+                />
+              </div>
+
+              {/* WhatsApp Community Invite Link (Phase 14.8) */}
+              <div>
+                <label className="block text-xs uppercase tracking-wider font-semibold text-stone-300 mb-1.5">
+                  Official WhatsApp Community / Group Invite Link
+                </label>
+                <input
+                  type="url"
+                  value={editWhatsappInviteLink}
+                  onChange={(e) => setEditWhatsappInviteLink(e.target.value)}
+                  placeholder="https://chat.whatsapp.com/..."
+                  className="w-full px-4 py-2.5 rounded-xl border border-amber-500/30 bg-stone-900/90 text-stone-100 placeholder-stone-500 focus:outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400 font-mono text-xs"
+                />
+              </div>
+
+              {/* Administrative Event Locking Controls (Phase 14.3, 14.5, 14.6, 14.19) */}
+              <div className="space-y-3 pt-2">
+                <label className="block text-xs uppercase tracking-wider font-bold text-amber-300">
+                  Event Authority & Locking Controls
+                </label>
+
+                {/* Registration Lock */}
+                <label className={`flex items-center justify-between p-3.5 rounded-2xl border cursor-pointer transition ${editIsRegistrationLocked ? "border-rose-400 bg-rose-950/30" : "border-amber-500/20 bg-stone-900/60"}`}>
+                  <div>
+                    <div className="text-xs font-bold text-stone-100 flex items-center gap-2">
+                      <span>Lock Team Registrations</span>
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${editIsRegistrationLocked ? "bg-rose-500/20 text-rose-300 border-rose-500/30" : "bg-emerald-500/20 text-emerald-300 border-emerald-500/30"}`}>
+                        {editIsRegistrationLocked ? "LOCKED 🔒" : "OPEN FOR REGISTRATION"}
+                      </span>
+                    </div>
+                    <div className="text-[11px] text-stone-400 mt-0.5">
+                      Prevents participants from creating new teams or joining existing teams for this event.
+                    </div>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={editIsRegistrationLocked}
+                    onChange={(e) => setEditIsRegistrationLocked(e.target.checked)}
+                    className="w-4 h-4 accent-amber-400 cursor-pointer shrink-0 ml-3"
+                  />
+                </label>
+
+                {/* PoC Submission Lock */}
+                <label className={`flex items-center justify-between p-3.5 rounded-2xl border cursor-pointer transition ${editIsPoCSubmissionLocked ? "border-rose-400 bg-rose-950/30" : "border-amber-500/20 bg-stone-900/60"}`}>
+                  <div>
+                    <div className="text-xs font-bold text-stone-100 flex items-center gap-2">
+                      <span>Lock PoC & Prototype Submissions</span>
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${editIsPoCSubmissionLocked ? "bg-rose-500/20 text-rose-300 border-rose-500/30" : "bg-emerald-500/20 text-emerald-300 border-emerald-500/30"}`}>
+                        {editIsPoCSubmissionLocked ? "SUBMISSIONS LOCKED 🔒" : "SUBMISSIONS ACCEPTED"}
+                      </span>
+                    </div>
+                    <div className="text-[11px] text-stone-400 mt-0.5">
+                      Prevents teams from submitting, updating, or replacing submission files.
+                    </div>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={editIsPoCSubmissionLocked}
+                    onChange={(e) => setEditIsPoCSubmissionLocked(e.target.checked)}
+                    className="w-4 h-4 accent-amber-400 cursor-pointer shrink-0 ml-3"
+                  />
+                </label>
+
+                {/* Problem Statement Lock */}
+                <label className={`flex items-center justify-between p-3.5 rounded-2xl border cursor-pointer transition ${editIsProblemStatementLocked ? "border-rose-400 bg-rose-950/30" : "border-amber-500/20 bg-stone-900/60"}`}>
+                  <div>
+                    <div className="text-xs font-bold text-stone-100 flex items-center gap-2">
+                      <span>Lock Problem Statement / Abstraction Selection</span>
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${editIsProblemStatementLocked ? "bg-rose-500/20 text-rose-300 border-rose-500/30" : "bg-emerald-500/20 text-emerald-300 border-emerald-500/30"}`}>
+                        {editIsProblemStatementLocked ? "LOCKED 🔒" : "SELECTION OPEN"}
+                      </span>
+                    </div>
+                    <div className="text-[11px] text-stone-400 mt-0.5">
+                      Prevents teams from switching themes or changing problem statement abstractions.
+                    </div>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={editIsProblemStatementLocked}
+                    onChange={(e) => setEditIsProblemStatementLocked(e.target.checked)}
+                    className="w-4 h-4 accent-amber-400 cursor-pointer shrink-0 ml-3"
+                  />
+                </label>
+
+                {/* On-Campus Event Active */}
+                <label className={`flex items-center justify-between p-3.5 rounded-2xl border cursor-pointer transition ${editIsOnCampusEventActive ? "border-amber-400 bg-amber-950/30" : "border-amber-500/20 bg-stone-900/60"}`}>
+                  <div>
+                    <div className="text-xs font-bold text-stone-100 flex items-center gap-2">
+                      <span>Activate On-Campus Live Event Mode</span>
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${editIsOnCampusEventActive ? "bg-amber-500/20 text-amber-300 border-amber-500/30" : "bg-stone-800 text-stone-400 border-stone-700"}`}>
+                        {editIsOnCampusEventActive ? "LIVE ON CAMPUS ⚡" : "OFFLINE / UPCOMING"}
+                      </span>
+                    </div>
+                    <div className="text-[11px] text-stone-400 mt-0.5">
+                      Enables volunteer QR check-in scanning, bench allocation, and live on-campus telemetry.
+                    </div>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={editIsOnCampusEventActive}
+                    onChange={(e) => setEditIsOnCampusEventActive(e.target.checked)}
+                    className="w-4 h-4 accent-amber-400 cursor-pointer shrink-0 ml-3"
                   />
                 </label>
               </div>

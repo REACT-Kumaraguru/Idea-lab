@@ -1,6 +1,7 @@
 import HackathonTeam from "../../models/hackathon/HackathonTeamModel.js";
 import HackathonTeamMember from "../../models/hackathon/HackathonTeamMemberModel.js";
 import HackathonUser from "../../models/hackathon/HackathonUserModel.js";
+import Hackathon from "../../models/hackathon/HackathonModel.js";
 
 const getUserIdFromSession = (req) => {
   const id = req.hackathonUser?.id ?? req.session?.user?.id;
@@ -18,7 +19,14 @@ export const getReviewerTeams = async (req, res) => {
 
     const assignedTheme = reviewer.assignedTheme;
 
-    const whereClause = { hackathonId: 2 };
+    const requestedHackathonId = req.query?.hackathonId ? Number(req.query.hackathonId) : null;
+    let targetHackathonId = requestedHackathonId;
+    if (!targetHackathonId || isNaN(targetHackathonId)) {
+      const active = await Hackathon.findOne({ where: { status: "active" }, order: [["id", "DESC"]] }).catch(() => null);
+      targetHackathonId = active?.id || 2;
+    }
+
+    const whereClause = { hackathonId: targetHackathonId };
     if (reviewer.role === "reviewer" && assignedTheme) {
       whereClause.theme = assignedTheme;
     }
@@ -96,7 +104,11 @@ export const reviewAbstraction = async (req, res) => {
     const team = await HackathonTeam.findByPk(teamId);
     if (!team) return res.status(404).json({ message: "Team not found." });
 
-    const newStatus = action === "approve" ? "approved" : "rejected";
+    if (reviewer.role !== "admin" && reviewer.assignedTheme && team.theme && reviewer.assignedTheme !== team.theme) {
+      return res.status(403).json({ message: `You are only authorized to review teams in the '${reviewer.assignedTheme}' theme.` });
+    }
+
+    const newStatus = action === "approve" ? "approved" : action === "needs_revision" ? "needs_revision" : "rejected";
 
     await team.update({
       abstractionStatus: newStatus,
@@ -105,8 +117,9 @@ export const reviewAbstraction = async (req, res) => {
       reviewedAt: new Date(),
     });
 
+    const actionLabel = newStatus === "approved" ? "Approved ✓" : newStatus === "needs_revision" ? "Sent for Revision" : "Rejected";
     return res.status(200).json({
-      message: `Abstraction successfully ${newStatus === "approved" ? "Approved ✓" : "Rejected"}!`,
+      message: `Abstraction successfully ${actionLabel}!`,
       teamId: team.id,
       abstractionStatus: newStatus,
     });

@@ -122,7 +122,7 @@ export const submitProblemStatement = async (req, res) => {
     if (req.files && req.files.images) {
       const imageFiles = Array.isArray(req.files.images) ? req.files.images : [req.files.images];
       const imagePromises = imageFiles.map((file) => {
-        const imagePath = file.path.replace(/\\/g, "/");
+        const imagePath = `/uploads/${file.filename}`;
         return ProblemStatementImage.create({
           problemStatementId: problemStatement.id,
           imagePath,
@@ -138,7 +138,7 @@ export const submitProblemStatement = async (req, res) => {
     if (req.files && req.files.reports) {
       const documentFiles = Array.isArray(req.files.reports) ? req.files.reports : [req.files.reports];
       const documentPromises = documentFiles.map((file) => {
-        const documentPath = file.path.replace(/\\/g, "/");
+        const documentPath = `/api/files/${file.filename}`;
         return ProblemStatementDocument.create({
           problemStatementId: problemStatement.id,
           documentPath,
@@ -213,9 +213,15 @@ export const getProblemStatementById = async (req, res) => {
   try {
     const { id } = req.params;
     const userId = req.user.id;
+    const isAdmin = req.user?.role === "admin";
+
+    const where = { id };
+    if (!isAdmin) {
+      where.userId = userId;
+    }
 
     const problemStatement = await ProblemStatement.findOne({
-      where: { id, userId },
+      where,
       include: [
         { model: ProblemStatementImage, as: "images" },
         { model: ProblemStatementDocument, as: "documents" },

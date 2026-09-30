@@ -1,13 +1,17 @@
 
+import fs from "fs";
+import path from "path";
 import Equipment from "../models/EquipmentModel.js";
+import EquipmentBooking from "../models/EquipmentBooking.model.js";
+import { sequelize } from "../lib/db.js";
 
 export const createEquipment = async (req, res) => {
   try {
-    const { equipmentName, brandName, quantity, pricePerHour, equipmentDetails, isAvailable } = req.body;
+    const { equipmentName, brandName, quantity, pricePerHour, kctPricePerHour, equipmentDetails, isAvailable, category } = req.body;
     let imagePath = null;
 
     if (req.file) {
-      imagePath = req.file.path.replace(/\\/g, "/"); // Normalize path for different OS
+      imagePath = `/uploads/${req.file.filename}`;
     }
 
     const newEquipment = await Equipment.create({
@@ -15,7 +19,9 @@ export const createEquipment = async (req, res) => {
       brandName,
       quantity,
       pricePerHour: pricePerHour != null && pricePerHour !== '' ? pricePerHour : null,
+      kctPricePerHour: kctPricePerHour != null && kctPricePerHour !== '' ? kctPricePerHour : 0.00,
       equipmentDetails,
+      category: category || "Mandatory Machines",
       isAvailable: isAvailable === 'true' || isAvailable === true,
       image: imagePath,
     });
@@ -40,7 +46,7 @@ export const getAllEquipment = async (req, res) => {
 export const updateEquipment = async (req, res) => {
   try {
     const { id } = req.params;
-    const { equipmentName, brandName, quantity, pricePerHour, equipmentDetails, isAvailable } = req.body;
+    const { equipmentName, brandName, quantity, pricePerHour, kctPricePerHour, equipmentDetails, isAvailable, category } = req.body;
 
     const equipment = await Equipment.findByPk(id);
 
@@ -50,7 +56,7 @@ export const updateEquipment = async (req, res) => {
 
     let imagePath = equipment.image;
     if (req.file) {
-      imagePath = req.file.path.replace(/\\/g, "/");
+      imagePath = `/uploads/${req.file.filename}`;
     }
 
     const updateData = {
@@ -61,13 +67,35 @@ export const updateEquipment = async (req, res) => {
       isAvailable: isAvailable === 'true' || isAvailable === true,
       image: imagePath,
     };
+    if (category !== undefined) updateData.category = category;
     if (pricePerHour !== undefined) updateData.pricePerHour = pricePerHour === '' ? null : pricePerHour;
+    if (kctPricePerHour !== undefined) updateData.kctPricePerHour = (kctPricePerHour === '' || kctPricePerHour == null) ? 0.00 : kctPricePerHour;
 
     await equipment.update(updateData);
 
     res.status(200).json(equipment);
   } catch (error) {
     console.error("Error updating equipment:", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+export const toggleEquipmentStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const equipment = await Equipment.findByPk(id);
+
+    if (!equipment) {
+      return res.status(404).json({ message: "Equipment not found" });
+    }
+
+    const updated = await equipment.update({
+      isAvailable: !equipment.isAvailable,
+    });
+
+    res.status(200).json(updated);
+  } catch (error) {
+    console.error("Error toggling equipment status:", error);
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
@@ -81,7 +109,31 @@ export const deleteEquipment = async (req, res) => {
       return res.status(404).json({ message: "Equipment not found" });
     }
 
-    await equipment.destroy();
+    if (equipment.image) {
+      const filename = path.basename(equipment.image);
+      const possiblePaths = [
+        path.join(process.cwd(), "src", "uploads", filename),
+        path.join(process.cwd(), "uploads", filename),
+      ];
+      if (process.env.UPLOADS_DIR) {
+        possiblePaths.unshift(path.resolve(process.env.UPLOADS_DIR, filename));
+      }
+      for (const p of possiblePaths) {
+        if (fs.existsSync(p)) {
+          try {
+            fs.unlinkSync(p);
+          } catch (e) {
+            console.warn("Failed to unlink equipment image file:", e.message);
+          }
+        }
+      }
+    }
+
+    await sequelize.transaction(async (t) => {
+      await EquipmentBooking.destroy({ where: { equipmentId: id }, transaction: t });
+      await equipment.destroy({ transaction: t });
+    });
+
     res.status(200).json({ message: "Equipment deleted successfully" });
   } catch (error) {
     console.error("Error deleting equipment:", error);

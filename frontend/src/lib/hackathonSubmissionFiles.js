@@ -1,3 +1,4 @@
+import toast from "react-hot-toast";
 import { axiosInstance } from "./axios.js";
 import { API_BASE } from "./config.js";
 
@@ -46,7 +47,14 @@ export async function downloadHackathonSubmissionFile(storedPath) {
     a.click();
     a.remove();
     URL.revokeObjectURL(blobUrl);
-  } catch {
-    window.open(fileHref(storedPath), "_blank", "noopener,noreferrer");
+  } catch (err) {
+    console.error("Failed to download file:", err);
+    const msg =
+      err?.response?.status === 401
+        ? "Please log in to download this submission file."
+        : err?.response?.status === 404
+        ? "File not found or unavailable."
+        : "Failed to download file. Please try again.";
+    toast.error(msg);
   }
 }

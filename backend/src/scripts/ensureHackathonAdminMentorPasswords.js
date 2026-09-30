@@ -25,6 +25,9 @@ export async function ensureHackathonAdminMentorPasswords() {
     let updated = 0;
     for (const u of users) {
       if (EXEMPT_EMAILS.includes(u.email)) continue;
+      // Only set initial password if user does NOT currently have a password set
+      if (u.password && String(u.password).trim().length > 0) continue;
+
       const plain = generatePasswordFromEmail(u.email);
       if (!plain) continue;
       const salt = await bcrypt.genSalt(10);
@@ -33,7 +36,9 @@ export async function ensureHackathonAdminMentorPasswords() {
       updated += 1;
     }
 
-    console.log(`[hackathon] Updated ${updated} admin/mentor passwords from email prefix`);
+    if (updated > 0) {
+      console.log(`[hackathon] Initialized ${updated} admin/mentor accounts with missing passwords`);
+    }
   } catch (e) {
     console.error("[hackathon] ensureHackathonAdminMentorPasswords failed:", e.message);
   }

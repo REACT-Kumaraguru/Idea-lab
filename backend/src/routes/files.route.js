@@ -1,8 +1,20 @@
 import express from "express";
 import fs from "fs";
 import path from "path";
+import { protectRoute } from "../middleware/auth.middleware.js";
 
 const router = express.Router();
+
+const authenticateFileAccess = (req, res, next) => {
+  if (req.session?.user) {
+    return protectRoute(req, res, next);
+  }
+  if (req.session?.hackathonUser?.id) {
+    req.user = req.session.hackathonUser;
+    return next();
+  }
+  return res.status(401).json({ error: "Not authenticated", message: "Authentication required to access files" });
+};
 
 /** Root directory for user uploads (e.g. /app/uploads in Docker). */
 function getUploadsRoot() {
@@ -16,7 +28,7 @@ function getUploadsRoot() {
  * @param {string} raw
  * @returns {{ ok: true, basename: string } | { ok: false, status: number, message: string }}
  */
-function validatePdfFilename(raw) {
+function validateSafeFilename(raw) {
   if (raw == null || typeof raw !== "string") {
     return { ok: false, status: 400, message: "filename is required" };
   }
@@ -41,8 +53,8 @@ function validatePdfFilename(raw) {
     return { ok: false, status: 400, message: "Invalid filename" };
   }
 
-  if (!/^[a-zA-Z0-9._-]+\.pdf$/i.test(base)) {
-    return { ok: false, status: 400, message: "Only PDF filenames are allowed" };
+  if (!/^[a-zA-Z0-9._-]+\.(pdf|docx?|xlsx?|pptx?|txt|csv|png|jpe?g|webp)$/i.test(base)) {
+    return { ok: false, status: 400, message: "Disallowed file type or invalid filename" };
   }
 
   return { ok: true, basename: base };
@@ -50,40 +62,51 @@ function validatePdfFilename(raw) {
 
 /**
  * GET /api/files/:filename
- * Secure download for PDFs under the uploads root (e.g. /app/uploads).
+ * Secure download for files under the uploads root.
  */
-router.get("/:filename", (req, res) => {
-  const validation = validatePdfFilename(req.params.filename);
+router.get("/:filename", authenticateFileAccess, (req, res) => {
+  const validation = validateSafeFilename(req.params.filename);
   if (!validation.ok) {
     return res.status(validation.status).json({ message: validation.message });
   }
 
-  const uploadsRoot = getUploadsRoot();
-  const resolvedRoot = path.resolve(uploadsRoot);
-  const candidate = path.resolve(uploadsRoot, validation.basename);
+  const potentialRoots = [
+    getUploadsRoot(),
+    path.join(process.cwd(), "src", "uploads"),
+    path.join(process.cwd(), "uploads", "problem_documents"),
+  ];
 
-  if (candidate !== resolvedRoot && !candidate.startsWith(resolvedRoot + path.sep)) {
-    return res.status(400).json({ message: "Invalid path" });
+  let targetFile = null;
+  let targetFilename = validation.basename;
+
+  for (const root of potentialRoots) {
+    const resolvedRoot = path.resolve(root);
+    const candidate = path.resolve(root, validation.basename);
+
+    if (candidate === resolvedRoot || !candidate.startsWith(resolvedRoot + path.sep)) {
+      continue;
+    }
+
+    if (fs.existsSync(candidate) && fs.statSync(candidate).isFile()) {
+      try {
+        const realRoot = fs.realpathSync(resolvedRoot);
+        const realFile = fs.realpathSync(candidate);
+        if (realFile === realRoot || !realFile.startsWith(realRoot + path.sep)) {
+          continue;
+        }
+        targetFile = realFile;
+        break;
+      } catch {
+        continue;
+      }
+    }
   }
 
-  if (!fs.existsSync(candidate) || !fs.statSync(candidate).isFile()) {
+  if (!targetFile) {
     return res.status(404).json({ message: "File not found" });
   }
 
-  let realRoot;
-  let realFile;
-  try {
-    realRoot = fs.realpathSync(resolvedRoot);
-    realFile = fs.realpathSync(candidate);
-  } catch {
-    return res.status(404).json({ message: "File not found" });
-  }
-
-  if (realFile !== realRoot && !realFile.startsWith(realRoot + path.sep)) {
-    return res.status(400).json({ message: "Invalid path" });
-  }
-
-  return res.download(realFile, validation.basename, (err) => {
+  return res.download(targetFile, validation.basename, (err) => {
     if (err) {
       if (!res.headersSent) {
         res.status(500).json({ message: "Download failed" });

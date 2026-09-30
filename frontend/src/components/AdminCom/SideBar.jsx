@@ -8,7 +8,8 @@ import {
   PackageSearch,
   UserPlus,
   FileText,
-  QrCode
+  QrCode,
+  Activity
 } from 'lucide-react';
 import Logo from "../../assets/idea-lab.png";
 import { useAuthStore } from "../../store/useAuthStore";
@@ -25,6 +26,7 @@ export const Sidebar = () => {
     { id: 'problemStatements', icon: FileText, label: 'Problem Statements', path: '/admin/problem-statements' },
     { id: 'qrScanner', icon: QrCode, label: 'QR Scanner', path: '/admin/qr-scanner' },
     { id: 'adminUser', icon: UserPlus, label: 'Admin Access', path: '/admin/users' },
+    { id: 'systemHealth', icon: Activity, label: 'System Health', path: '/admin/system-health' },
   ];
 
   const handleLogout = async () => {

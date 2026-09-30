@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import { BrowserRouter, Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
+import PageSkeleton from "./components/PageSkeleton";
 
 import Header from "./components/Header";
 import Listing from "./components/ComponentCom/Listing";
@@ -22,11 +23,13 @@ import AdminLayout from "./components/AdminCom/AdminLayout";
 import ProblemStatements from "./components/AdminCom/ProblemStatements";
 import AdminAccess from "./components/AdminCom/AdminAccess";
 import QRScanner from "./components/AdminCom/QRScanner";
+import AdminSystemHealth from "./components/AdminCom/AdminSystemHealth";
 import ProblemSubmissionInfo from "./components/ProblemCom/ProblemSubmissionInfo";
 import ProjectForm from "./components/ProblemCom/ProjectForm";
 import MySubmissions from "./components/ProblemCom/MySubmissions";
 import AmbientBackground from "./components/AmbientBackground";
 import ErrorBoundary from "./components/ErrorBoundary";
+import { axiosInstance } from "./lib/axios.js";
 
 function Home() {
   return (
@@ -84,28 +87,36 @@ function LoginOrRedirect({ authUser }) {
   );
 }
 
-import HackathonSelect from "./pages/hackathon/HackathonSelect";
-import HackathonLanding from "./pages/hackathon/HackathonLanding";
-import HackathonRegister from "./pages/hackathon/HackathonRegister";
-import HackathonLogin from "./pages/hackathon/HackathonLogin";
-import HackathonDashboard from "./pages/hackathon/HackathonDashboard";
-import HackathonCreateTeam from "./pages/hackathon/HackathonCreateTeam";
-import HackathonJoinTeam from "./pages/hackathon/HackathonJoinTeam";
-import HackathonSubmit from "./pages/hackathon/HackathonSubmit";
-import HackathonProblems from "./pages/hackathon/HackathonProblems";
-import HackathonStatus from "./pages/hackathon/HackathonStatus";
-import HackathonPaymentDetails from "./pages/hackathon/HackathonPaymentDetails";
-import HackathonForgotPassword from "./pages/hackathon/HackathonForgotPassword";
-import HackathonAdminHome from "./pages/hackathon/HackathonAdminHome";
-import HackathonAdminProblems from "./pages/hackathon/HackathonAdminProblems";
-import HackathonAdminSubmissions from "./pages/hackathon/HackathonAdminSubmissions";
-import HackathonAdminTeams from "./pages/hackathon/HackathonAdminTeams";
-import HackathonAdminUsers from "./pages/hackathon/HackathonAdminUsers";
-import HackathonAdminMentors from "./pages/hackathon/HackathonAdminMentors";
-import HackathonAdminSendMail from "./pages/hackathon/HackathonAdminSendMail";
-import HackathonAdminWinners from "./pages/hackathon/HackathonAdminWinners";
-import HackathonAdminPaymentDetails from "./pages/hackathon/HackathonAdminPaymentDetails";
-import HackathonAdminThemes from "./pages/hackathon/HackathonAdminThemes";
+const HackathonAdminSystemHealth = React.lazy(() => import("./pages/hackathon/HackathonAdminSystemHealth.jsx"));
+const HackathonSelect = React.lazy(() => import("./pages/hackathon/HackathonSelect"));
+const HackathonLanding = React.lazy(() => import("./pages/hackathon/HackathonLanding"));
+const HackathonRegister = React.lazy(() => import("./pages/hackathon/HackathonRegister"));
+const HackathonLogin = React.lazy(() => import("./pages/hackathon/HackathonLogin"));
+const HackathonDashboard = React.lazy(() => import("./pages/hackathon/HackathonDashboard"));
+const HackathonCreateTeam = React.lazy(() => import("./pages/hackathon/HackathonCreateTeam"));
+const HackathonJoinTeam = React.lazy(() => import("./pages/hackathon/HackathonJoinTeam"));
+const HackathonSubmit = React.lazy(() => import("./pages/hackathon/HackathonSubmit"));
+const HackathonProblems = React.lazy(() => import("./pages/hackathon/HackathonProblems"));
+const HackathonStatus = React.lazy(() => import("./pages/hackathon/HackathonStatus"));
+const HackathonPaymentDetails = React.lazy(() => import("./pages/hackathon/HackathonPaymentDetails"));
+const HackathonForgotPassword = React.lazy(() => import("./pages/hackathon/HackathonForgotPassword"));
+const HackathonAdminHome = React.lazy(() => import("./pages/hackathon/HackathonAdminHome"));
+const HackathonAdminProblems = React.lazy(() => import("./pages/hackathon/HackathonAdminProblems"));
+const HackathonAdminSubmissions = React.lazy(() => import("./pages/hackathon/HackathonAdminSubmissions"));
+const HackathonAdminTeams = React.lazy(() => import("./pages/hackathon/HackathonAdminTeams"));
+const HackathonAdminUsers = React.lazy(() => import("./pages/hackathon/HackathonAdminUsers"));
+const HackathonAdminMentors = React.lazy(() => import("./pages/hackathon/HackathonAdminMentors"));
+const HackathonAdminSendMail = React.lazy(() => import("./pages/hackathon/HackathonAdminSendMail"));
+const HackathonAdminWinners = React.lazy(() => import("./pages/hackathon/HackathonAdminWinners"));
+const HackathonAdminPaymentDetails = React.lazy(() => import("./pages/hackathon/HackathonAdminPaymentDetails"));
+const HackathonAdminThemes = React.lazy(() => import("./pages/hackathon/HackathonAdminThemes"));
+const HackathonAdminClusterApprovals = React.lazy(() => import("./pages/hackathon/HackathonAdminClusterApprovals"));
+const ClusterDashboard = React.lazy(() => import("./pages/hackathon/ClusterDashboard"));
+const HackathonTeam = React.lazy(() => import("./pages/hackathon/HackathonTeam"));
+const VolunteerDashboard = React.lazy(() => import("./pages/hackathon/VolunteerDashboard"));
+const HackathonAdminVolunteers = React.lazy(() => import("./pages/hackathon/HackathonAdminVolunteers.jsx"));
+const HackathonAdminAttendance = React.lazy(() => import("./pages/hackathon/HackathonAdminAttendance.jsx"));
+const HackathonShowcase = React.lazy(() => import("./pages/hackathon/HackathonShowcase.jsx"));
 import HackathonLayout from "./components/hackathon/HackathonLayout";
 
 import { useLocation } from "react-router-dom";
@@ -127,6 +138,7 @@ function App() {
 
   useEffect(() => {
     checkAuth();
+    axiosInstance.get("/csrf-token").catch(() => {});
   }, [checkAuth]);
 
   useEffect(() => {
@@ -140,6 +152,7 @@ function App() {
   return (
     <BrowserRouter>
       <ScrollToTop />
+      <Suspense fallback={<PageSkeleton />}>
       <Routes>
         {/* Home page */}
         <Route path="/" element={<Home />} />
@@ -178,6 +191,16 @@ function App() {
         <Route path="/hackathon/admin/payment-details" element={<HackathonLayout><HackathonAdminPaymentDetails /></HackathonLayout>} />
         <Route path="/Hackathon/admin/winners" element={<HackathonLayout><HackathonAdminWinners /></HackathonLayout>} />
         <Route path="/hackathon/admin/winners" element={<HackathonLayout><HackathonAdminWinners /></HackathonLayout>} />
+        <Route path="/Hackathon/admin/volunteers" element={<HackathonLayout><HackathonAdminVolunteers /></HackathonLayout>} />
+        <Route path="/hackathon/admin/volunteers" element={<HackathonLayout><HackathonAdminVolunteers /></HackathonLayout>} />
+        <Route path="/Hackathon/admin/attendance" element={<HackathonLayout><HackathonAdminAttendance /></HackathonLayout>} />
+        <Route path="/hackathon/admin/attendance" element={<HackathonLayout><HackathonAdminAttendance /></HackathonLayout>} />
+        <Route path="/Hackathon/admin/system-health" element={<HackathonLayout><HackathonAdminSystemHealth /></HackathonLayout>} />
+        <Route path="/hackathon/admin/system-health" element={<HackathonLayout><HackathonAdminSystemHealth /></HackathonLayout>} />
+        <Route path="/Hackathon/admin/cluster-approvals" element={<HackathonLayout><HackathonAdminClusterApprovals /></HackathonLayout>} />
+        <Route path="/hackathon/admin/cluster-approvals" element={<HackathonLayout><HackathonAdminClusterApprovals /></HackathonLayout>} />
+        <Route path="/Hackathon/cluster/dashboard" element={<ErrorBoundary><HackathonLayout><ClusterDashboard /></HackathonLayout></ErrorBoundary>} />
+        <Route path="/hackathon/cluster/dashboard" element={<ErrorBoundary><HackathonLayout><ClusterDashboard /></HackathonLayout></ErrorBoundary>} />
 
         {/* Standalone Hackathon Dashboard Routes */}
         <Route path="/Hackathon/dashboard" element={<ErrorBoundary><HackathonLayout><HackathonDashboard /></HackathonLayout></ErrorBoundary>} />
@@ -220,6 +243,16 @@ function App() {
         <Route path="/hackathon/:hackathonSlug/admin/payment-details" element={<ErrorBoundary><HackathonLayout><HackathonAdminPaymentDetails /></HackathonLayout></ErrorBoundary>} />
         <Route path="/Hackathon/:hackathonSlug/admin/winners" element={<ErrorBoundary><HackathonLayout><HackathonAdminWinners /></HackathonLayout></ErrorBoundary>} />
         <Route path="/hackathon/:hackathonSlug/admin/winners" element={<ErrorBoundary><HackathonLayout><HackathonAdminWinners /></HackathonLayout></ErrorBoundary>} />
+        <Route path="/Hackathon/:hackathonSlug/admin/cluster-approvals" element={<ErrorBoundary><HackathonLayout><HackathonAdminClusterApprovals /></HackathonLayout></ErrorBoundary>} />
+        <Route path="/hackathon/:hackathonSlug/admin/cluster-approvals" element={<ErrorBoundary><HackathonLayout><HackathonAdminClusterApprovals /></HackathonLayout></ErrorBoundary>} />
+        <Route path="/Hackathon/:hackathonSlug/admin/volunteers" element={<ErrorBoundary><HackathonLayout><HackathonAdminVolunteers /></HackathonLayout></ErrorBoundary>} />
+        <Route path="/hackathon/:hackathonSlug/admin/volunteers" element={<ErrorBoundary><HackathonLayout><HackathonAdminVolunteers /></HackathonLayout></ErrorBoundary>} />
+        <Route path="/Hackathon/:hackathonSlug/admin/attendance" element={<ErrorBoundary><HackathonLayout><HackathonAdminAttendance /></HackathonLayout></ErrorBoundary>} />
+        <Route path="/hackathon/:hackathonSlug/admin/attendance" element={<ErrorBoundary><HackathonLayout><HackathonAdminAttendance /></HackathonLayout></ErrorBoundary>} />
+        <Route path="/Hackathon/:hackathonSlug/admin/system-health" element={<ErrorBoundary><HackathonLayout><HackathonAdminSystemHealth /></HackathonLayout></ErrorBoundary>} />
+        <Route path="/hackathon/:hackathonSlug/admin/system-health" element={<ErrorBoundary><HackathonLayout><HackathonAdminSystemHealth /></HackathonLayout></ErrorBoundary>} />
+        <Route path="/Hackathon/:hackathonSlug/cluster/dashboard" element={<ErrorBoundary><HackathonLayout><ClusterDashboard /></HackathonLayout></ErrorBoundary>} />
+        <Route path="/hackathon/:hackathonSlug/cluster/dashboard" element={<ErrorBoundary><HackathonLayout><ClusterDashboard /></HackathonLayout></ErrorBoundary>} />
 
         <Route path="/Hackathon/:hackathonSlug/dashboard" element={<ErrorBoundary><HackathonLayout><HackathonDashboard /></HackathonLayout></ErrorBoundary>} />
         <Route path="/hackathon/:hackathonSlug/dashboard" element={<ErrorBoundary><HackathonLayout><HackathonDashboard /></HackathonLayout></ErrorBoundary>} />
@@ -244,9 +277,34 @@ function App() {
         <Route path="/Hackathon/:hackathonSlug/forgot-password" element={<HackathonForgotPassword />} />
         <Route path="/hackathon/:hackathonSlug/forgot-password" element={<HackathonForgotPassword />} />
 
+        {/* Dedicated Team Pass & QR Route */}
+        <Route path="/Hackathon/team" element={<ErrorBoundary><HackathonLayout><HackathonTeam /></HackathonLayout></ErrorBoundary>} />
+        <Route path="/hackathon/team" element={<ErrorBoundary><HackathonLayout><HackathonTeam /></HackathonLayout></ErrorBoundary>} />
+        <Route path="/Hackathon/:hackathonSlug/team" element={<ErrorBoundary><HackathonLayout><HackathonTeam /></HackathonLayout></ErrorBoundary>} />
+        <Route path="/hackathon/:hackathonSlug/team" element={<ErrorBoundary><HackathonLayout><HackathonTeam /></HackathonLayout></ErrorBoundary>} />
+
+        {/* Dedicated Volunteer On-Campus Check-In Portal */}
+        <Route path="/Hackathon/volunteer" element={<ErrorBoundary><HackathonLayout><VolunteerDashboard /></HackathonLayout></ErrorBoundary>} />
+        <Route path="/hackathon/volunteer" element={<ErrorBoundary><HackathonLayout><VolunteerDashboard /></HackathonLayout></ErrorBoundary>} />
+        <Route path="/Hackathon/:hackathonSlug/volunteer" element={<ErrorBoundary><HackathonLayout><VolunteerDashboard /></HackathonLayout></ErrorBoundary>} />
+        <Route path="/hackathon/:hackathonSlug/volunteer" element={<ErrorBoundary><HackathonLayout><VolunteerDashboard /></HackathonLayout></ErrorBoundary>} />
+
+        {/* Public Project Showcase / Hall of Fame (Phase 14.29) */}
+        <Route path="/hackathons/:hackathonSlug/showcase" element={<ErrorBoundary><HackathonShowcase /></ErrorBoundary>} />
+        <Route path="/Hackathon/:hackathonSlug/showcase" element={<ErrorBoundary><HackathonShowcase /></ErrorBoundary>} />
+        <Route path="/hackathon/:hackathonSlug/showcase" element={<ErrorBoundary><HackathonShowcase /></ErrorBoundary>} />
+        <Route path="/Hackathon/showcase" element={<ErrorBoundary><HackathonShowcase /></ErrorBoundary>} />
+        <Route path="/hackathon/showcase" element={<ErrorBoundary><HackathonShowcase /></ErrorBoundary>} />
+
         {/* Dynamic Event Catch-all Route: /Hackathon/:hackathonSlug MUST come after static /Hackathon/admin */}
         <Route path="/Hackathon/:hackathonSlug" element={<HackathonLanding />} />
         <Route path="/hackathon/:hackathonSlug" element={<HackathonLanding />} />
+
+        {/* Named Route Aliases (Phase 14.27) */}
+        <Route path="/admin-dashboard" element={<Navigate to="/Hackathon/admin" replace />} />
+        <Route path="/student-dashboard" element={<Navigate to="/Hackathon/dashboard" replace />} />
+        <Route path="/reviewer-dashboard" element={<Navigate to="/Hackathon/dashboard" replace />} />
+        <Route path="/volunteer-dashboard" element={<Navigate to="/Hackathon/volunteer" replace />} />
 
         {/* Legacy Hackathon 2026 Redirects (guarantees URL stays clean) */}
         <Route path="/ich2026" element={<Navigate to="/Hackathon" replace />} />
@@ -327,6 +385,26 @@ function App() {
             )
           }
         />
+        <Route
+          path="/mybookings"
+          element={
+            authUser ? (
+              <MyBookings />
+            ) : (
+              <Navigate to="/login" replace />
+            )
+          }
+        />
+        <Route
+          path="/my-bookings"
+          element={
+            authUser ? (
+              <MyBookings />
+            ) : (
+              <Navigate to="/login" replace />
+            )
+          }
+        />
 
         <Route
           path="/upload-problem"
@@ -399,9 +477,11 @@ function App() {
           <Route path="problem-statements" element={<ProblemStatements />} />
           <Route path="qr-scanner" element={<QRScanner />} />
           <Route path="users" element={<AdminAccess />} />
+          <Route path="system-health" element={<AdminSystemHealth />} />
         </Route>
 
       </Routes>
+      </Suspense>
 
       <Toaster />
     </BrowserRouter>

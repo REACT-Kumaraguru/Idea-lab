@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   Activity,
   ArrowLeft,
+  Award,
   CreditCard,
   ChevronLeft,
   ChevronRight,
@@ -15,10 +16,15 @@ import {
   Tag,
   UploadCloud,
   Users,
+  FileText,
+  MessageSquare,
+  QrCode,
+  CheckCircle,
 } from "lucide-react";
 import { useHackathonAuthStore } from "../../store/useHackathonAuthStore";
 import { axiosInstance } from "../../lib/axios.js";
 import AmbientBackground from "../AmbientBackground";
+import HackathonAnnouncementBanner from "./HackathonAnnouncementBanner.jsx";
 
 const baseNavItem =
   "w-full flex items-center gap-3 px-4 py-2 rounded-xl text-sm font-semibold transition";
@@ -27,6 +33,19 @@ const HackathonLayout = ({ children }) => {
   const { hackathonUser, logout, checkAuth, isCheckingAuth } = useHackathonAuthStore();
   const location = useLocation();
   const navigate = useNavigate();
+
+  const [isOffline, setIsOffline] = useState(typeof navigator !== "undefined" ? !navigator.onLine : false);
+
+  useEffect(() => {
+    const handleOnline = () => setIsOffline(false);
+    const handleOffline = () => setIsOffline(true);
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+  }, []);
 
   useEffect(() => {
     checkAuth();
@@ -197,25 +216,22 @@ const HackathonLayout = ({ children }) => {
   const showResults = selectedHackathonObj?.showResults === true;
 
   const studentNav = useMemo(() => {
-    const isLockedCustom = isCustomHackathonMode && !showResults;
-
-    if (isLockedCustom) {
-      return [
-        { to: makeUrl("/dashboard"), label: "Dashboard", tabKey: "dashboard", icon: LayoutDashboard },
-        { to: makeUrl("/dashboard/team"), label: "Team", tabKey: "team", icon: Users },
-        { to: makeUrl("/dashboard/problems"), label: "Problems", tabKey: "problems", icon: ClipboardList },
-      ];
-    }
     const base = [
       { to: makeUrl("/dashboard"), label: "Dashboard", tabKey: "dashboard", icon: LayoutDashboard },
-      { to: makeUrl("/dashboard/team"), label: "Team", tabKey: "team", icon: Users },
+      { to: makeUrl("/dashboard/team"), label: "My Team & QR Pass", tabKey: "team", icon: Users },
       { to: makeUrl("/dashboard/problems"), label: "Problems", tabKey: "problems", icon: ClipboardList },
-      { to: makeUrl("/payment-details"), label: "Payment", icon: CreditCard },
+      { to: makeUrl("/dashboard/guidelines"), label: "Guidelines", tabKey: "guidelines", icon: FileText },
+      { to: makeUrl("/dashboard/contact"), label: "Contact & Community", tabKey: "contact", icon: MessageSquare },
     ];
-    const submitItem = { to: makeUrl("/dashboard/submit"), label: "Submit", tabKey: "submit", icon: UploadCloud };
-    const statusItem = { to: makeUrl("/dashboard/status"), label: "Status", tabKey: "status", icon: Activity };
-    return teamHasSubmitted ? [...base, statusItem] : [...base, submitItem, statusItem];
-  }, [currentSlug, teamHasSubmitted, isCustomHackathonMode, showResults]);
+
+    if (teamAbstractionStatus === "approved") {
+      base.push({ to: makeUrl("/payment-details"), label: "Payment Details", tabKey: "payment", icon: CreditCard });
+      base.push({ to: makeUrl("/dashboard/submit"), label: "Submit PoC", tabKey: "submit", icon: UploadCloud });
+      base.push({ to: makeUrl("/dashboard/status"), label: "Review Status", tabKey: "status", icon: Activity });
+    }
+
+    return base;
+  }, [currentSlug, teamAbstractionStatus]);
 
   const mentorNav = useMemo(
     () => {
@@ -242,13 +258,18 @@ const HackathonLayout = ({ children }) => {
     () => {
       const items = [
         { to: makeUrl("/admin"), label: "Admin Home", icon: Shield },
+        { to: makeUrl("/admin/cluster-approvals"), label: "Clusteral Approvals", icon: Award },
         { to: makeUrl("/admin/teams"), label: "Teams", icon: Users },
         { to: makeUrl("/admin/mentors"), label: "Mentors", icon: Users },
         { to: makeUrl("/admin/problems"), label: "Problems", icon: ClipboardList },
         { to: makeUrl("/admin/submissions"), label: "Submissions", icon: Activity },
         { to: makeUrl("/admin/payment-details"), label: "Payment Details", icon: CreditCard },
         { to: makeUrl("/admin/send-mail"), label: "Send Mail", icon: Mail },
-        { to: makeUrl("/admin/users"), label: "Admins", icon: Users },
+        { to: makeUrl("/admin/users"), label: "Staff & Reviewers", icon: Users },
+        { to: makeUrl("/admin/volunteers"), label: "Volunteers", icon: Users },
+        { to: makeUrl("/admin/attendance"), label: "Attendance Desk", icon: CheckCircle },
+        { to: "/Hackathon/admin/system-health", label: "System Health & Vault", icon: Activity },
+        { to: "/Hackathon/volunteer", label: "Volunteer Scanner", icon: QrCode },
       ];
       if (isCustomHackathonMode) {
         return items.map((i) =>
@@ -664,6 +685,25 @@ const HackathonLayout = ({ children }) => {
                   Logout
                 </button>
               </div>
+            </div>
+
+            {isOffline && (
+              <div className="mb-4 p-3.5 rounded-xl border border-amber-500/50 bg-amber-500/15 text-amber-200 text-xs font-semibold flex items-center justify-between shadow-lg">
+                <div className="flex items-center gap-2.5">
+                  <span className="relative flex h-2.5 w-2.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-500"></span>
+                  </span>
+                  <span>Internet connection lost. Attempting to reconnect to IDEA Lab...</span>
+                </div>
+                <span className="text-[10px] uppercase font-bold tracking-wider px-2.5 py-1 rounded bg-amber-500/30 text-amber-200 border border-amber-500/40">
+                  Offline
+                </span>
+              </div>
+            )}
+
+            <div className="mb-4">
+              <HackathonAnnouncementBanner />
             </div>
 
             <div className="serene-glass-card rounded-2xl sm:rounded-3xl border border-amber-500/25 shadow-2xl p-4 sm:p-8">

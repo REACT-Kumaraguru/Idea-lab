@@ -1,23 +1,33 @@
 import session from "express-session";
-import connectPgSimple from "connect-pg-simple";
+import connectSessionSequelize from "connect-session-sequelize";
+import { sequelize } from "../lib/db.js";
 import { ENV } from "../lib/env.js";
+
+const SequelizeStore = connectSessionSequelize(session.Store);
+
+let sessionStore = null;
+
+export function getSessionStore() {
+  if (!sessionStore) {
+    sessionStore = new SequelizeStore({
+      db: sequelize,
+      tableName: "Sessions",
+      checkExpirationInterval: 15 * 60 * 1000,
+      expiration: 7 * 24 * 60 * 60 * 1000,
+    });
+    sessionStore.sync().catch((err) => {
+      console.warn("[session] Session table sync notice:", err.message);
+    });
+  }
+  return sessionStore;
+}
 
 export function createSessionMiddleware() {
   const secretKey = ENV.SESSION_SECRET || "development-secret-key-12345";
-  const isPostgres = ENV.DATABASE_URL && ENV.DATABASE_URL.startsWith("postgres");
-
-  const sessionStore = isPostgres
-    ? new (connectPgSimple(session))({
-        conObject: {
-          connectionString: ENV.DATABASE_URL,
-        },
-        tableName: "session",
-        createTableIfMissing: true,
-      })
-    : undefined;
+  const store = getSessionStore();
 
   return session({
-    ...(sessionStore ? { store: sessionStore } : {}),
+    store,
     secret: secretKey,
     resave: false,
     saveUninitialized: false,

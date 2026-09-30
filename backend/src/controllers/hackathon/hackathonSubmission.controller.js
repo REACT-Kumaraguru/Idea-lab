@@ -12,6 +12,7 @@ import {
 import HackathonMentor from "../../models/hackathon/HackathonMentorModel.js";
 import HackathonTeamMentor from "../../models/hackathon/HackathonTeamMentorModel.js";
 import HackathonProblemMentor from "../../models/hackathon/HackathonProblemMentorModel.js";
+import Hackathon from "../../models/hackathon/HackathonModel.js";
 import { Op } from "sequelize";
 import {
   isHackathonRegistrationClosed,
@@ -138,6 +139,11 @@ export const submit = async (req, res) => {
 
     if (!team) return res.status(400).json({ message: "You must be part of a team" });
 
+    const hackathon = team.hackathonId ? await Hackathon.findByPk(team.hackathonId) : null;
+    if (hackathon && hackathon.isPoCSubmissionLocked) {
+      return res.status(403).json({ message: "Submissions are currently locked for this hackathon by administrators." });
+    }
+
     const isLeader = teamMember ? Boolean(teamMember.isLeader) : Number(team.leaderUserId) === Number(userId);
     if (!isLeader && Number(team.leaderUserId) !== Number(userId)) {
       return res.status(403).json({ message: "Only team leader can submit" });
@@ -160,15 +166,10 @@ export const submit = async (req, res) => {
       problem = await HackathonProblem.findOne({ where: { title: team.topic } });
     }
 
-    const alreadySubmitted = await HackathonSubmission.findOne({ where: { teamId: team.id } });
-    if (alreadySubmitted) {
-      return res.status(400).json({
-        message: "Your team has already submitted. Only one submission is allowed per team.",
-      });
-    }
+    const defaultProb = await HackathonProblem.findOne();
+    const resolvedProblemId = problem?.id || defaultProb?.id || 1;
 
     const finalTitle = String(title || "").trim() || String(problem?.title || team?.topic || "Submission").trim();
-
     if (!finalTitle) {
       return res.status(400).json({ message: "Problem title or topic is required." });
     }
@@ -187,51 +188,75 @@ export const submit = async (req, res) => {
       return res.status(400).json({ message: "Upload at least one file for Final phase" });
     }
 
-    if (problem) {
-      const limit = problem.teamRegistrationLimit;
-      if (limit != null && limit > 0) {
-        const count = await HackathonSubmission.count({
-          where: { problemId: problem.id },
-          distinct: true,
-          col: "teamId",
-        });
-        if (count >= limit) {
-          return res.status(400).json({
-            message: `Registration limit (${limit} teams) reached for this problem statement.`,
+    const created = await sequelize.transaction(async (t) => {
+      const alreadySubmitted = await HackathonSubmission.findOne({
+        where: { teamId: team.id },
+        transaction: t,
+        lock: t.LOCK?.UPDATE,
+      });
+      if (alreadySubmitted) {
+        throw new Error("ALREADY_SUBMITTED");
+      }
+
+      if (problem) {
+        const limit = problem.teamRegistrationLimit;
+        if (limit != null && limit > 0) {
+          const count = await HackathonSubmission.count({
+            where: { problemId: problem.id },
+            distinct: true,
+            col: "teamId",
+            transaction: t,
           });
+          if (count >= limit) {
+            throw new Error(`REGISTRATION_LIMIT_REACHED:${limit}`);
+          }
         }
       }
-    }
 
-    const defaultProb = await HackathonProblem.findOne();
-    const resolvedProblemId = problem?.id || defaultProb?.id || 1;
+      // Save topic & description on Team object for quick admin reference
+      await team.update(
+        {
+          topic: finalTitle,
+          description: description ? String(description).trim() : team.description,
+        },
+        { transaction: t }
+      );
 
-    // Save topic & description on Team object for quick admin reference
-    await team.update({
-      topic: finalTitle,
-      description: description ? String(description).trim() : team.description,
-    });
-
-    const created = await HackathonSubmission.create({
-      teamId: team.id,
-      problemId: resolvedProblemId,
-      submissionPhase: resolvedPhase,
-      title: finalTitle,
-      description: description ? String(description).trim() : null,
-      status: "pending",
-      submittedByUserId: userId,
-      whyParticipate: whyParticipate?.trim() || null,
-      problemToSolve: problemToSolve?.trim() || null,
-      plannedTech: plannedTech?.trim() || null,
-      workedBefore: workedBefore ? String(workedBefore) : null,
-      agreedTerms: agreedTerms != null ? Boolean(agreedTerms) : null,
-      pocFilePaths: resolvedPhase === "poc" ? pocFilePaths : [],
-      prototypeFilePaths: resolvedPhase !== "poc" ? prototypeFilePaths : [],
-      hackathonId: team.hackathonId || null,
+      return await HackathonSubmission.create(
+        {
+          teamId: team.id,
+          problemId: resolvedProblemId,
+          submissionPhase: resolvedPhase,
+          title: finalTitle,
+          description: description ? String(description).trim() : null,
+          status: "pending",
+          submittedByUserId: userId,
+          whyParticipate: whyParticipate?.trim() || null,
+          problemToSolve: problemToSolve?.trim() || null,
+          plannedTech: plannedTech?.trim() || null,
+          workedBefore: workedBefore ? String(workedBefore) : null,
+          agreedTerms: agreedTerms != null ? Boolean(agreedTerms) : null,
+          pocFilePaths: resolvedPhase === "poc" ? pocFilePaths : [],
+          prototypeFilePaths: resolvedPhase !== "poc" ? prototypeFilePaths : [],
+          hackathonId: team.hackathonId || null,
+        },
+        { transaction: t }
+      );
     });
 
     return res.status(201).json({ submission: created });
   } catch (error) {
+    if (error.message === "ALREADY_SUBMITTED") {
+      return res.status(400).json({
+        message: "Your team has already submitted. Only one submission is allowed per team.",
+      });
+    }
+    if (error.message?.startsWith("REGISTRATION_LIMIT_REACHED:")) {
+      const limit = error.message.split(":")[1];
+      return res.status(400).json({
+        message: `Registration limit (${limit} teams) reached for this problem statement.`,
+      });
+    }
     console.error("Error in submit:", error);
     return res.status(500).json({ message: error?.message || "Internal Server Error" });
   }
@@ -240,7 +265,7 @@ export const submit = async (req, res) => {
 export const getStatus = async (req, res) => {
   try {
     const userId = Number(req.hackathonUser?.id ?? req.session?.user?.id);
-    const role = req.hackathonUser.role;
+    const role = req.hackathonUser?.role ?? req.session?.hackathonUser?.role ?? req.session?.user?.role;
 
     if (role === "mentor") {
       const reqHackathonId = req.query.hackathonId ? Number(req.query.hackathonId) : null;

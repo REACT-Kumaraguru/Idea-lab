@@ -33,5 +33,9 @@ export const ENV = {
   /** When set, OTP emails are enqueued (BullMQ) instead of blocking the API. */
   REDIS_HOST: process.env.REDIS_HOST,
   REDIS_PORT: process.env.REDIS_PORT ? Number(process.env.REDIS_PORT) : 6379,
-  REDIS_PASSWORD: process.env.REDIS_PASSWORD,
+  /** Passwords for initial seed administrators / mentors (override in .env) */
+  DEFAULT_ADMIN_PASSWORD: process.env.DEFAULT_ADMIN_PASSWORD,
+  DEFAULT_HACKATHON_ADMIN_PASSWORD: process.env.DEFAULT_HACKATHON_ADMIN_PASSWORD,
+  DEFAULT_MENTOR_PASSWORD: process.env.DEFAULT_MENTOR_PASSWORD,
+  UPLOADS_DIR: process.env.UPLOADS_DIR,
 };

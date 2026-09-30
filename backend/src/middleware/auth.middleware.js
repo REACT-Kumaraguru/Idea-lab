@@ -14,7 +14,7 @@ const hydrateUserFromSession = async (req, res) => {
 
   if (sessionUser.role === "admin") {
     const admin = await Admin.findByPk(sessionUser.id, {
-      attributes: { exclude: ["passwordHash"] },
+      attributes: { exclude: ["password", "passwordHash"] },
     });
     if (!admin) {
       res.status(404).json({ message: "Admin not found" });

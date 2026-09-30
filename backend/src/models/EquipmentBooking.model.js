@@ -69,6 +69,16 @@ const EquipmentBooking = sequelize.define(
       type: DataTypes.TEXT,
       allowNull: true,
     },
+    consumablesRequested: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+      field: "consumables_requested",
+    },
+    consumablesPurpose: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+      field: "consumables_purpose",
+    },
     submissionBatchId: {
       type: DataTypes.STRING(64),
       allowNull: true,

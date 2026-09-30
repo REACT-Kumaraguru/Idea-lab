@@ -36,12 +36,16 @@ import {
   adminSelectWinner,
   mentorSetSubmissionApproval,
 } from "../../controllers/hackathon/hackathonSubmission.controller.js";
-import { protectHackathonRoute, requireHackathonRole, requireHackathonStudentRole, requireHackathonMentorRole, requireHackathonAdminRole } from "../../middleware/hackathonAuth.middleware.js";
+import { protectHackathonRoute, requireHackathonRole, requireHackathonStudentRole, requireHackathonMentorRole, requireHackathonAdminRole, requireHackathonVolunteerOrAdminRole } from "../../middleware/hackathonAuth.middleware.js";
+import { authRateLimiter, otpRateLimiter, uploadRateLimiter } from "../../middleware/rateLimit.middleware.js";
+import { checkAccountLockout } from "../../middleware/accountLockout.middleware.js";
+import { validate } from "../../middleware/validate.middleware.js";
+import { loginSchema, registerSchema, otpRequestSchema, otpVerifySchema } from "../../validators/auth.validator.js";
 import { hackathonUpload } from "../../modules/hackathon/lib/hackathonUpload.js";
 import { getDashboard } from "../../controllers/hackathon/hackathonDashboard.controller.js";
-import { adminListTeams, adminExportTeamsExcel } from "../../controllers/hackathon/hackathonTeamAdmin.controller.js";
+import { adminListTeams, adminExportTeamsExcel, adminDeleteTeam } from "../../controllers/hackathon/hackathonTeamAdmin.controller.js";
 import { adminListRegisteredStudents } from "../../controllers/hackathon/hackathonAdminStudents.controller.js";
-import { adminSendTeamMail } from "../../controllers/hackathon/hackathonAdminMail.controller.js";
+import { adminSendTeamMail, getAdminEmailLogs } from "../../controllers/hackathon/hackathonAdminMail.controller.js";
 import { listHackathonAdmins, createHackathonAdmin, updateHackathonAdmin, deleteHackathonAdmin } from "../../controllers/hackathon/hackathonAdminUsers.controller.js";
 import {
   adminListMentors,
@@ -75,17 +79,20 @@ setupHackathonAssociations();
 
 const router = express.Router();
 
-// Download API (explicit route): GET /api/ich2026/download/hackathon/:filename
-router.get("/download/hackathon/:filename", async (req, res) => {
+// Download API (authenticated & secured route): GET /api/ich2026/download/hackathon/:filename
+router.get("/download/hackathon/:filename", protectHackathonRoute, async (req, res) => {
   const { filename } = req.params || {};
-  if (!filename) return res.status(400).send("filename is required");
+  if (!filename) return res.status(400).json({ message: "Filename is required" });
 
   const safeName = path.basename(String(filename));
-  const uploadDir = path.join(process.cwd(), "uploads", "hackathon");
+  const uploadDir = process.env.UPLOADS_DIR 
+    ? path.resolve(process.env.UPLOADS_DIR, "hackathon")
+    : path.join(process.cwd(), "uploads", "hackathon");
 
   const filePath = path.join(uploadDir, safeName);
-  if (!fs.existsSync(filePath)) return res.status(404).send("File not found");
+  if (!fs.existsSync(filePath)) return res.status(404).json({ message: "File not found" });
 
+  res.setHeader("X-Content-Type-Options", "nosniff");
   res.setHeader("Content-Disposition", `attachment; filename="${safeName}"`);
   return res.sendFile(filePath);
 });
@@ -117,14 +124,14 @@ router.get("/templatehackthon.pdf", (req, res) => {
 });
 
 // Hackathon auth (module-scoped)
-router.post("/register", register);
-router.post("/login", login);
+router.post("/register", authRateLimiter, validate(registerSchema), register);
+router.post("/login", authRateLimiter, checkAccountLockout, validate(loginSchema), login);
 router.post("/logout", logout);
 router.get("/check", protectHackathonRoute, checkAuth);
 
-router.post("/send-reset-otp", sendHackathonResetOtp);
-router.post("/verify-reset-otp", verifyHackathonResetOtp);
-router.post("/reset-password", resetHackathonPassword);
+router.post("/send-reset-otp", otpRateLimiter, validate(otpRequestSchema), sendHackathonResetOtp);
+router.post("/verify-reset-otp", otpRateLimiter, validate(otpVerifySchema), verifyHackathonResetOtp);
+router.post("/reset-password", authRateLimiter, resetHackathonPassword);
 
 // Public hackathon pages
 router.get("/hackathons", getPublicHackathons);
@@ -147,6 +154,7 @@ router.post(
   "/submit",
   protectHackathonRoute,
   requireHackathonStudentRole,
+  uploadRateLimiter,
   hackathonUpload.fields([
     { name: "pocFiles", maxCount: 10 },
     { name: "prototypeFiles", maxCount: 10 },
@@ -171,14 +179,40 @@ router.delete("/admin/hackathons/:id", protectHackathonRoute, requireHackathonAd
 router.get("/admin/hackathons/logs", protectHackathonRoute, requireHackathonAdminRole, adminListHackathonLogs);
 
 router.get("/admin/teams", protectHackathonRoute, requireHackathonAdminRole, adminListTeams);
+router.delete("/admin/teams/:teamId", protectHackathonRoute, requireHackathonAdminRole, adminDeleteTeam);
 router.get(
   "/admin/teams/export-xlsx",
   protectHackathonRoute,
   requireHackathonAdminRole,
   adminExportTeamsExcel
 );
+import multer from "multer";
+
+const DANGEROUS_EXTENSIONS = /\.(exe|bat|cmd|sh|vbs|msi|dll|scr|com|pif)$/i;
+
+const mailUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB max per file
+    files: 5,
+  },
+  fileFilter: (req, file, cb) => {
+    if (DANGEROUS_EXTENSIONS.test(file.originalname)) {
+      return cb(new Error("Executable attachments are not permitted for security reasons."));
+    }
+    cb(null, true);
+  },
+});
+
 router.get("/admin/students", protectHackathonRoute, requireHackathonAdminRole, adminListRegisteredStudents);
-router.post("/admin/send-mail", protectHackathonRoute, requireHackathonAdminRole, adminSendTeamMail);
+router.post(
+  "/admin/send-mail",
+  protectHackathonRoute,
+  requireHackathonAdminRole,
+  mailUpload.array("attachments", 5),
+  adminSendTeamMail
+);
+router.get("/admin/email-logs", protectHackathonRoute, requireHackathonAdminRole, getAdminEmailLogs);
 
 router.get("/admin/problems", protectHackathonRoute, requireHackathonAdminRole, adminGetProblems);
 router.post("/admin/problems", protectHackathonRoute, requireHackathonAdminRole, adminAddProblem);
@@ -226,6 +260,167 @@ router.post("/admin/winners/select", protectHackathonRoute, requireHackathonAdmi
 import { getReviewerTeams, reviewAbstraction } from "../../controllers/hackathon/hackathonReviewer.controller.js";
 router.get("/reviewer/teams", protectHackathonRoute, getReviewerTeams);
 router.post("/reviewer/review-abstraction", protectHackathonRoute, reviewAbstraction);
+
+// Cluster workspace & Admin Clusteral Approval endpoints
+import {
+  getClusterTeams,
+  gradeClusterTeam,
+  getAdminClusterTeams,
+  adminApproveClusterTeam,
+  getClusterFacultyList,
+  sendClusterFacultyEmails,
+} from "../../controllers/hackathon/hackathonCluster.controller.js";
+
+router.get("/cluster/teams", protectHackathonRoute, getClusterTeams);
+router.post("/cluster/grade", protectHackathonRoute, gradeClusterTeam);
+router.get("/admin/cluster-teams", protectHackathonRoute, requireHackathonAdminRole, getAdminClusterTeams);
+router.get("/cluster/admin/teams", protectHackathonRoute, requireHackathonAdminRole, getAdminClusterTeams);
+router.post("/admin/cluster-approve", protectHackathonRoute, requireHackathonAdminRole, adminApproveClusterTeam);
+router.post("/cluster/admin/approve", protectHackathonRoute, requireHackathonAdminRole, adminApproveClusterTeam);
+router.get("/admin/cluster-faculty-list", protectHackathonRoute, requireHackathonAdminRole, getClusterFacultyList);
+router.post("/admin/send-cluster-faculty-emails", protectHackathonRoute, requireHackathonAdminRole, sendClusterFacultyEmails);
+
+
+// System Diagnostics & Self-Healing Auto-Update endpoints
+import {
+  getSystemDiagnostics,
+  runAutoUpdates,
+  createDbSnapshot,
+  listDbSnapshots,
+  restoreDbSnapshot,
+} from "../../controllers/hackathon/hackathonSystemDiagnostic.controller.js";
+
+router.get("/admin/system-diagnostic", protectHackathonRoute, requireHackathonAdminRole, getSystemDiagnostics);
+router.get("/admin/system-diagnostics", protectHackathonRoute, requireHackathonAdminRole, getSystemDiagnostics);
+router.post("/admin/system-diagnostic/auto-update", protectHackathonRoute, requireHackathonAdminRole, runAutoUpdates);
+router.post("/admin/system-diagnostic/db-snapshot", protectHackathonRoute, requireHackathonAdminRole, createDbSnapshot);
+router.get("/admin/system-diagnostic/db-snapshots", protectHackathonRoute, requireHackathonAdminRole, listDbSnapshots);
+router.post("/admin/system-diagnostic/db-snapshot/restore", protectHackathonRoute, requireHackathonAdminRole, restoreDbSnapshot);
+// Volunteer Check-in Portal & Live Attendance (Phase 14.18)
+import {
+  volunteerScanTeam,
+  volunteerCheckInTeam,
+  volunteerListAttendance,
+} from "../../controllers/hackathon/hackathonVolunteer.controller.js";
+
+router.get("/volunteer/scan", protectHackathonRoute, requireHackathonVolunteerOrAdminRole, volunteerScanTeam);
+router.post("/volunteer/check-in", protectHackathonRoute, requireHackathonVolunteerOrAdminRole, volunteerCheckInTeam);
+router.get("/volunteer/attendance", protectHackathonRoute, requireHackathonVolunteerOrAdminRole, volunteerListAttendance);
+
+// Announcements SSE & REST (Phase 14.13)
+import {
+  streamAnnouncements,
+  getActiveAnnouncements,
+  publishAnnouncement,
+  deleteAnnouncement,
+} from "../../controllers/hackathon/hackathonAnnouncement.controller.js";
+
+router.get("/announcements/stream", streamAnnouncements);
+router.get("/announcements", getActiveAnnouncements);
+router.post("/admin/announcement", protectHackathonRoute, requireHackathonAdminRole, publishAnnouncement);
+router.post("/admin/announcements", protectHackathonRoute, requireHackathonAdminRole, publishAnnouncement);
+router.delete("/admin/announcements/:id", protectHackathonRoute, requireHackathonAdminRole, deleteAnnouncement);
+
+// Admin Team Management (Phase 14.1)
+import {
+  adminCreateTeam,
+  adminUpdateTeam,
+  adminAddTeamMember,
+  adminRemoveTeamMember,
+} from "../../controllers/hackathon/hackathonTeamAdmin.controller.js";
+
+router.post("/admin/teams/create", protectHackathonRoute, requireHackathonAdminRole, adminCreateTeam);
+router.put("/admin/teams/:teamId", protectHackathonRoute, requireHackathonAdminRole, adminUpdateTeam);
+router.post("/admin/teams/:teamId/members", protectHackathonRoute, requireHackathonAdminRole, adminAddTeamMember);
+router.delete("/admin/teams/:teamId/members/:userId", protectHackathonRoute, requireHackathonAdminRole, adminRemoveTeamMember);
+
+// Volunteers Management (Phase 14.20 & 14.25)
+import {
+  listVolunteers,
+  createVolunteer,
+  deleteVolunteer,
+} from "../../controllers/hackathon/hackathonAdminUsers.controller.js";
+
+router.get("/admin/volunteers", protectHackathonRoute, requireHackathonAdminRole, listVolunteers);
+router.post("/admin/volunteers", protectHackathonRoute, requireHackathonAdminRole, createVolunteer);
+router.delete("/admin/volunteers/:id", protectHackathonRoute, requireHackathonAdminRole, deleteVolunteer);
+
+// Attendance Desk (Phase 14.21)
+import {
+  adminGetAttendance,
+  adminToggleAttendance,
+} from "../../controllers/hackathon/hackathonVolunteer.controller.js";
+
+router.get("/admin/attendance", protectHackathonRoute, requireHackathonAdminRole, adminGetAttendance);
+router.post("/admin/attendance/toggle", protectHackathonRoute, requireHackathonAdminRole, adminToggleAttendance);
+
+// Public Project Showcase & Innovation Gallery (Phase 14.29)
+import HackathonTeam from "../../models/hackathon/HackathonTeamModel.js";
+import HackathonTeamMember from "../../models/hackathon/HackathonTeamMemberModel.js";
+import HackathonUser from "../../models/hackathon/HackathonUserModel.js";
+import Hackathon from "../../models/hackathon/HackathonModel.js";
+import HackathonSubmission from "../../models/hackathon/HackathonSubmissionModel.js";
+
+router.get("/hackathons/:slug/showcase", async (req, res) => {
+  try {
+    const { slug } = req.params;
+    let hackathon = await Hackathon.findOne({ where: { slug } });
+    if (!hackathon && /^\d+$/.test(slug)) {
+      hackathon = await Hackathon.findByPk(Number(slug));
+    }
+    const hackathonId = hackathon?.id || 1;
+
+    const teams = await HackathonTeam.findAll({
+      where: { hackathonId, abstractionStatus: "approved" },
+      limit: 50,
+    });
+
+    const enriched = await Promise.all(
+      teams.map(async (t) => {
+        const members = await HackathonTeamMember.findAll({ where: { teamId: t.id } });
+        const memberUsers = await Promise.all(
+          members.map((m) => HackathonUser.findByPk(m.userId, { attributes: ["fullName", "college", "branch"] }))
+        );
+        const sub = await HackathonSubmission.findOne({ where: { teamId: t.id } });
+        return {
+          id: t.id,
+          teamName: t.teamName,
+          theme: t.theme,
+          topic: t.topic,
+          description: t.description,
+          cluster: t.cluster,
+          githubRepo: sub?.githubRepo || sub?.projectLink || null,
+          title: sub?.title || t.topic || t.teamName,
+          members: memberUsers.map((u) => u?.fullName).filter(Boolean),
+          college: memberUsers[0]?.college || "Kumaraguru College of Technology",
+          isWinner: sub?.isWinner || false,
+          awardCategory: sub?.awardCategory || (sub?.isWinner ? "Champion" : null),
+        };
+      })
+    );
+
+    let galleryItems = [];
+    if (hackathon?.gallery) {
+      try {
+        galleryItems = typeof hackathon.gallery === "string" ? JSON.parse(hackathon.gallery) : hackathon.gallery;
+      } catch {}
+    }
+
+    return res.json({
+      success: true,
+      hackathon: {
+        id: hackathon?.id,
+        name: hackathon?.name || "AICTE IDEA Lab Hackathon",
+        slug: hackathon?.slug || slug,
+        gallery: galleryItems,
+      },
+      showcase: enriched,
+    });
+  } catch (error) {
+    console.error("Error in showcase route:", error);
+    return res.status(500).json({ message: "Failed to load showcase" });
+  }
+});
 
 export default router;
 

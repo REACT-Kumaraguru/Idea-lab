@@ -26,9 +26,6 @@ export async function ensureDefaultStudent() {
         isVerified: true,
       });
       console.log("[db] Created default student account:", DEFAULT_STUDENT.email);
-    } else {
-      await existing.update({ passwordHash: hashedPassword });
-      console.log("[db] Updated default student account:", DEFAULT_STUDENT.email);
     }
   } catch (err) {
     console.error("Error creating default student:", err.message);

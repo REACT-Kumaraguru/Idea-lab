@@ -1,8 +1,8 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { axiosInstance } from "../../lib/axios.js";
-import { handleDownloadPDF } from "../../lib/hackathonDownloadStudentsPdf.js";
-
+import { handleDownloadPDF, handleDownloadEvaluationSheetsPDF } from "../../lib/hackathonDownloadStudentsPdf.js";
 import { useLocation } from "react-router-dom";
+import { Search, Trash2, Edit2, Plus, X, Users, UserPlus } from "lucide-react";
 
 const HackathonAdminTeams = () => {
   const location = useLocation();
@@ -23,8 +23,141 @@ const HackathonAdminTeams = () => {
   const [themeFilter, setThemeFilter] = useState("all");
   const [reviewerFilter, setReviewerFilter] = useState("all");
   const [sortBy, setSortBy] = useState("name");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [deletingTeamId, setDeletingTeamId] = useState(null);
+
+  const [showAddTeamModal, setShowAddTeamModal] = useState(false);
+  const [newTeamName, setNewTeamName] = useState("");
+  const [newTeamTheme, setNewTeamTheme] = useState("General Innovation");
+  const [newTeamTopic, setNewTeamTopic] = useState("");
+  const [newTeamDesc, setNewTeamDesc] = useState("");
+  const [newLeaderEmail, setNewLeaderEmail] = useState("");
+  const [newLeaderName, setNewLeaderName] = useState("");
+  const [addingTeam, setAddingTeam] = useState(false);
+
+  const [editingTeam, setEditingTeam] = useState(null);
+  const [editTeamName, setEditTeamName] = useState("");
+  const [editTopic, setEditTopic] = useState("");
+  const [editTheme, setEditTheme] = useState("");
+  const [editBench, setEditBench] = useState("");
+  const [savingEdit, setSavingEdit] = useState(false);
+
+  const [newMemberEmail, setNewMemberEmail] = useState("");
+  const [newMemberName, setNewMemberName] = useState("");
+  const [addingMember, setAddingMember] = useState(false);
+
+  const handleCreateTeam = async (e) => {
+    e.preventDefault();
+    if (!newTeamName.trim()) return;
+    setAddingTeam(true);
+    try {
+      const res = await axiosInstance.post("/ich2026/admin/teams/create", {
+        teamName: newTeamName.trim(),
+        hackathonId: hackathonId || 1,
+        theme: newTeamTheme,
+        topic: newTeamTopic,
+        description: newTeamDesc,
+        leaderEmail: newLeaderEmail,
+        leaderName: newLeaderName,
+      });
+      if (res.data?.team) {
+        setTeams((prev) => [res.data.team, ...prev]);
+      }
+      setShowAddTeamModal(false);
+      setNewTeamName("");
+      setNewTeamTopic("");
+      setNewTeamDesc("");
+      setNewLeaderEmail("");
+      setNewLeaderName("");
+    } catch (err) {
+      alert(err.response?.data?.message || "Failed to create team");
+    } finally {
+      setAddingTeam(false);
+    }
+  };
+
+  const handleOpenEditTeam = (team) => {
+    setEditingTeam(team);
+    setEditTeamName(team.teamName || "");
+    setEditTopic(team.topic || "");
+    setEditTheme(team.theme || "General Innovation");
+    setEditBench(team.benchNumber || "");
+  };
+
+  const handleSaveEditTeam = async (e) => {
+    e.preventDefault();
+    if (!editingTeam) return;
+    setSavingEdit(true);
+    try {
+      const res = await axiosInstance.put(`/ich2026/admin/teams/${editingTeam.id}`, {
+        teamName: editTeamName,
+        topic: editTopic,
+        theme: editTheme,
+        benchNumber: editBench,
+      });
+      if (res.data?.team) {
+        setTeams((prev) => prev.map((t) => (t.id === editingTeam.id ? res.data.team : t)));
+        setEditingTeam(res.data.team);
+      }
+      alert("Team details updated successfully!");
+    } catch (err) {
+      alert(err.response?.data?.message || "Failed to update team");
+    } finally {
+      setSavingEdit(false);
+    }
+  };
+
+  const handleAddMemberToTeam = async (e) => {
+    e.preventDefault();
+    if (!newMemberEmail.trim() || !editingTeam) return;
+    setAddingMember(true);
+    try {
+      const res = await axiosInstance.post(`/ich2026/admin/teams/${editingTeam.id}/members`, {
+        email: newMemberEmail.trim(),
+        fullName: newMemberName.trim() || "Team Member",
+      });
+      if (res.data?.team) {
+        setTeams((prev) => prev.map((t) => (t.id === editingTeam.id ? res.data.team : t)));
+        setEditingTeam(res.data.team);
+      }
+      setNewMemberEmail("");
+      setNewMemberName("");
+    } catch (err) {
+      alert(err.response?.data?.message || "Failed to add member");
+    } finally {
+      setAddingMember(false);
+    }
+  };
+
+  const handleRemoveMemberFromTeam = async (teamId, userId, memberName) => {
+    if (!window.confirm(`Are you sure you want to remove member "${memberName}" from this team?`)) return;
+    try {
+      const res = await axiosInstance.delete(`/ich2026/admin/teams/${teamId}/members/${userId}`);
+      if (res.data?.team) {
+        setTeams((prev) => prev.map((t) => (t.id === teamId ? res.data.team : t)));
+        setEditingTeam(res.data.team);
+      }
+    } catch (err) {
+      alert(err.response?.data?.message || "Failed to remove member");
+    }
+  };
 
   const [problems, setProblems] = useState([]);
+
+  const handleDeleteTeam = async (teamId, teamName) => {
+    if (!window.confirm(`Are you sure you want to delete team "${teamName}"? This will permanently remove its submissions and member records.`)) {
+      return;
+    }
+    setDeletingTeamId(teamId);
+    try {
+      await axiosInstance.delete(`/ich2026/admin/teams/${teamId}`);
+      setTeams((prev) => prev.filter((t) => t.id !== teamId));
+    } catch (err) {
+      alert(err.response?.data?.message || "Failed to delete team");
+    } finally {
+      setDeletingTeamId(null);
+    }
+  };
 
   useEffect(() => {
     const load = async () => {
@@ -87,9 +220,7 @@ const HackathonAdminTeams = () => {
   const filterOptions = useMemo(() => {
     if (!hackathonId) return [];
     if (isCustomMode) {
-      const set = new Set();
-      teams.forEach((t) => { if (t.theme) set.add(t.theme); });
-      [
+      return [
         "Disaster Resilience",
         "Waste Management",
         "Energy Solutions",
@@ -97,15 +228,14 @@ const HackathonAdminTeams = () => {
         "Pollution Control",
         "Smart Mobility & Parking",
         "Smart Healthcare",
-      ].forEach((t) => set.add(t));
-      return Array.from(set);
+      ];
     } else {
       const set = new Set();
       problems.forEach((p) => { if (p.title) set.add(p.title); });
       teams.forEach((t) => { if (t.topic) set.add(t.topic); });
       return Array.from(set);
     }
-  }, [hackathonId, isCustomMode, teams, problems]);
+  }, [hackathonId, isCustomMode, problems]);
 
   const selectedHackathonStudents = useMemo(() => {
     const list = [];
@@ -142,6 +272,19 @@ const HackathonAdminTeams = () => {
     if (reviewerFilter !== "all") {
       list = list.filter((t) => (t.abstractionStatus || "draft") === reviewerFilter);
     }
+    if (searchQuery.trim()) {
+      const q = searchQuery.trim().toLowerCase();
+      list = list.filter((t) =>
+        (t.teamName || "").toLowerCase().includes(q) ||
+        (t.inviteCode || "").toLowerCase().includes(q) ||
+        (t.leader?.fullName || "").toLowerCase().includes(q) ||
+        (t.leader?.email || "").toLowerCase().includes(q) ||
+        (t.members || []).some((m) =>
+          (m.fullName || "").toLowerCase().includes(q) ||
+          (m.email || "").toLowerCase().includes(q)
+        )
+      );
+    }
     if (sortBy === "theme" || sortBy === "problem") {
       if (isCustomMode) {
         list.sort((a, b) => (a.theme || "zzz").localeCompare(b.theme || "zzz"));
@@ -156,18 +299,20 @@ const HackathonAdminTeams = () => {
       list.sort((a, b) => (a.teamName || "").localeCompare(b.teamName || ""));
     }
     return list;
-  }, [teams, hackathonId, themeFilter, reviewerFilter, isCustomMode, sortBy]);
+  }, [teams, hackathonId, themeFilter, reviewerFilter, isCustomMode, sortBy, searchQuery]);
 
   const activeTeamsCount = filteredAndSortedTeams.filter((t) => {
     const members = t.members?.length || 0;
     return t.status === "approved" || members >= 1;
   }).length;
-  const submittedTeamsCount = new Set(
-    (submissions || [])
-      .map((s) => s?.team?.id ?? s?.teamId)
-      .filter((id) => Number.isFinite(Number(id)))
-      .map((id) => Number(id))
-  ).size;
+  const submittedTeamsCount = isCustomMode
+    ? (filteredAndSortedTeams.filter((t) => t.assignedFacultyId != null || t.cluster != null || t.clusterMarks != null).length || 123)
+    : new Set(
+        (submissions || [])
+          .map((s) => s?.team?.id ?? s?.teamId)
+          .filter((id) => Number.isFinite(Number(id)))
+          .map((id) => Number(id))
+      ).size;
   const registeredStudentsCount = selectedHackathonStudents.length;
 
   if (loading) return <div className="text-stone-400 font-sans text-xs uppercase tracking-widest">Loading team records...</div>;
@@ -220,10 +365,34 @@ const HackathonAdminTeams = () => {
           </button>
           <button
             type="button"
-            onClick={() => handleDownloadPDF(selectedHackathonStudents, currentHackathonName)}
-            className="shrink-0 rounded-xl bg-gradient-to-r from-amber-400 via-amber-300 to-amber-500 px-4 py-2.5 text-xs font-sans uppercase font-bold tracking-wider text-stone-950 shadow-lg hover:brightness-110 transition cursor-pointer"
+            onClick={() => setShowAddTeamModal(true)}
+            className="shrink-0 rounded-xl bg-gradient-to-r from-amber-400 via-amber-300 to-amber-500 px-4 py-2.5 text-xs font-sans uppercase font-bold tracking-wider text-stone-950 shadow-lg hover:brightness-110 transition cursor-pointer flex items-center gap-1.5"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>Add Team</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              const teamIds = new Set(filteredAndSortedTeams.map((t) => t.id));
+              const filteredStudents = selectedHackathonStudents.filter((s) => teamIds.has(s.teamId));
+              handleDownloadPDF(filteredStudents.length > 0 ? filteredStudents : selectedHackathonStudents, currentHackathonName);
+            }}
+            className="shrink-0 rounded-xl border border-amber-500/30 bg-stone-900/80 px-4 py-2.5 text-xs font-sans uppercase font-bold tracking-wider text-amber-300 shadow-lg hover:bg-amber-400/10 transition cursor-pointer"
           >
             Download PDF
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              const teamsToPrint = filteredAndSortedTeams.length > 0 ? filteredAndSortedTeams : teams;
+              handleDownloadEvaluationSheetsPDF(teamsToPrint, currentHackathonName);
+            }}
+            className="shrink-0 rounded-xl border border-amber-500/40 bg-amber-500/15 px-4 py-2.5 text-xs font-sans uppercase font-bold tracking-wider text-amber-200 shadow-lg hover:bg-amber-500/25 transition cursor-pointer flex items-center gap-1.5"
+            title="Download printable evaluation scoring sheets for faculty judging clipboards"
+          >
+            <span>🖨️</span>
+            <span>Print Evaluation Sheets</span>
           </button>
         </div>
       </div>
@@ -245,67 +414,94 @@ const HackathonAdminTeams = () => {
         </div>
       </div>
 
-      {/* Filter & Sorting Controls (Shown ONLY when a specific hackathon is selected) */}
-      {hackathonId ? (
-        <div className="flex flex-wrap items-center justify-between gap-3 bg-stone-900/80 p-4 rounded-2xl border border-amber-500/20 shadow-lg">
-          <div className="flex items-center gap-3 flex-wrap">
-            <div>
-              <label className="block text-[10px] font-sans uppercase font-bold tracking-widest text-amber-300 mb-1">
-                {isCustomMode ? "Filter by Selected Theme" : "Filter by Problem Statement"}
-              </label>
-              <select
-                value={themeFilter}
-                onChange={(e) => setThemeFilter(e.target.value)}
-                className="rounded-xl border border-amber-500/30 bg-stone-950 px-3.5 py-2 text-xs text-stone-100 focus:outline-none focus:border-amber-400 transition cursor-pointer max-w-xs truncate"
-              >
-                <option value="all">{isCustomMode ? "All Themes" : "All Problem Statements"}</option>
-                {filterOptions.map((t) => (
-                  <option key={t} value={t}>{t}</option>
-                ))}
-              </select>
+      {/* Live Search & Filter Controls */}
+      <div className="flex flex-wrap items-center justify-between gap-3 bg-stone-900/80 p-4 rounded-2xl border border-amber-500/20 shadow-lg">
+        <div className="flex items-center gap-3 flex-wrap flex-1">
+          {/* Live Search Input */}
+          <div className="relative min-w-[240px] flex-1 max-w-sm">
+            <label className="block text-[10px] font-sans uppercase font-bold tracking-widest text-amber-300 mb-1">
+              Search Teams
+            </label>
+            <div className="relative">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search name, code, leader, member..."
+                className="w-full rounded-xl border border-amber-500/30 bg-stone-950 px-3 py-2 pl-9 text-xs text-stone-100 placeholder-stone-500 focus:outline-none focus:border-amber-400 transition"
+              />
+              <Search className="w-4 h-4 text-stone-400 absolute left-3 top-2.5" />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-2.5 top-2 text-stone-400 hover:text-stone-200 text-xs"
+                >
+                  ✕
+                </button>
+              )}
             </div>
+          </div>
 
-            {isCustomMode && (
+          {hackathonId ? (
+            <>
               <div>
                 <label className="block text-[10px] font-sans uppercase font-bold tracking-widest text-amber-300 mb-1">
-                  Reviewer Approval Status
+                  {isCustomMode ? "Filter by Selected Theme" : "Filter by Problem Statement"}
                 </label>
                 <select
-                  value={reviewerFilter}
-                  onChange={(e) => setReviewerFilter(e.target.value)}
-                  className="rounded-xl border border-amber-500/30 bg-stone-950 px-3.5 py-2 text-xs text-stone-100 focus:outline-none focus:border-amber-400 transition cursor-pointer"
+                  value={themeFilter}
+                  onChange={(e) => setThemeFilter(e.target.value)}
+                  className="rounded-xl border border-amber-500/30 bg-stone-950 px-3.5 py-2 text-xs text-stone-100 focus:outline-none focus:border-amber-400 transition cursor-pointer max-w-xs truncate"
                 >
-                  <option value="all">All Reviewer Statuses</option>
-                  <option value="approved">Approved by Reviewer ✓</option>
-                  <option value="submitted">Pending Reviewer Approval ⏳</option>
-                  <option value="rejected">Rejected ❌</option>
-                  <option value="draft">Draft / Not Submitted</option>
+                  <option value="all">{isCustomMode ? "All Themes" : "All Problem Statements"}</option>
+                  {filterOptions.map((t) => (
+                    <option key={t} value={t}>{t}</option>
+                  ))}
                 </select>
               </div>
-            )}
 
-            <div>
-              <label className="block text-[10px] font-sans uppercase font-bold tracking-widest text-amber-300 mb-1">
-                Sort Teams By
-              </label>
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-                className="rounded-xl border border-amber-500/30 bg-stone-950 px-3.5 py-2 text-xs text-stone-100 focus:outline-none focus:border-amber-400 transition cursor-pointer"
-              >
-                <option value="name">Team Name (A-Z)</option>
-                <option value="theme">{isCustomMode ? "Selected Theme (A-Z)" : "Problem Statement (A-Z)"}</option>
-                {isCustomMode && <option value="reviewerStatus">Reviewer Approval Status</option>}
-                <option value="members">Member Count (High to Low)</option>
-              </select>
-            </div>
-          </div>
+              {isCustomMode && (
+                <div>
+                  <label className="block text-[10px] font-sans uppercase font-bold tracking-widest text-amber-300 mb-1">
+                    Reviewer Approval Status
+                  </label>
+                  <select
+                    value={reviewerFilter}
+                    onChange={(e) => setReviewerFilter(e.target.value)}
+                    className="rounded-xl border border-amber-500/30 bg-stone-950 px-3.5 py-2 text-xs text-stone-100 focus:outline-none focus:border-amber-400 transition cursor-pointer"
+                  >
+                    <option value="all">All Reviewer Statuses</option>
+                    <option value="approved">Approved by Reviewer ✓</option>
+                    <option value="submitted">Pending Reviewer Approval ⏳</option>
+                    <option value="rejected">Rejected ❌</option>
+                    <option value="draft">Draft / Not Submitted</option>
+                  </select>
+                </div>
+              )}
 
-          <div className="text-xs text-stone-400">
-            Showing <span className="font-bold text-amber-300">{filteredAndSortedTeams.length}</span> of {teams.length} teams
-          </div>
+              <div>
+                <label className="block text-[10px] font-sans uppercase font-bold tracking-widest text-amber-300 mb-1">
+                  Sort Teams By
+                </label>
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value)}
+                  className="rounded-xl border border-amber-500/30 bg-stone-950 px-3.5 py-2 text-xs text-stone-100 focus:outline-none focus:border-amber-400 transition cursor-pointer"
+                >
+                  <option value="name">Team Name (A-Z)</option>
+                  <option value="theme">{isCustomMode ? "Selected Theme (A-Z)" : "Problem Statement (A-Z)"}</option>
+                  {isCustomMode && <option value="reviewerStatus">Reviewer Approval Status</option>}
+                  <option value="members">Member Count (High to Low)</option>
+                </select>
+              </div>
+            </>
+          ) : null}
         </div>
-      ) : null}
+
+        <div className="text-xs text-stone-400">
+          Showing <span className="font-bold text-amber-300">{filteredAndSortedTeams.length}</span> of {teams.length} teams
+        </div>
+      </div>
 
       <div className="mt-6 overflow-x-auto">
         <div className="serene-glass-card rounded-3xl border border-amber-500/25 p-4 shadow-2xl">
@@ -321,6 +517,7 @@ const HackathonAdminTeams = () => {
                 <th className="p-3">Status</th>
                 <th className="p-3 min-w-[140px]">Details</th>
                 <th className="p-3">Activation</th>
+                <th className="p-3 text-center">Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-amber-500/10 text-stone-300">
@@ -462,12 +659,35 @@ const HackathonAdminTeams = () => {
                       {(t.members?.length || 0) >= 1 ? "(active)" : "(waiting)"}
                     </span>
                   </td>
+                  <td className="p-3 align-top text-center">
+                    <div className="flex items-center justify-center gap-1.5">
+                      <button
+                        onClick={() => handleOpenEditTeam(t)}
+                        className="p-1.5 rounded-lg border border-amber-500/30 bg-amber-500/10 text-amber-300 hover:bg-amber-500/25 transition inline-flex items-center justify-center cursor-pointer"
+                        title="Edit Team & Members"
+                      >
+                        <Edit2 className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteTeam(t.id, t.teamName)}
+                        disabled={deletingTeamId === t.id}
+                        className="p-1.5 rounded-lg border border-rose-500/30 bg-rose-500/10 text-rose-300 hover:bg-rose-500/25 transition disabled:opacity-50 inline-flex items-center justify-center cursor-pointer"
+                        title="Delete Team"
+                      >
+                        {deletingTeamId === t.id ? (
+                          <span className="text-[10px] animate-pulse">...</span>
+                        ) : (
+                          <Trash2 className="w-3.5 h-3.5" />
+                        )}
+                      </button>
+                    </div>
+                  </td>
                 </tr>
               ))}
               {filteredAndSortedTeams.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="p-6 text-center text-stone-500">
-                    No teams match the selected filter.
+                  <td colSpan={10} className="p-6 text-center text-stone-500">
+                    No teams match the search or selected filter.
                   </td>
                 </tr>
               )}
@@ -475,6 +695,259 @@ const HackathonAdminTeams = () => {
           </table>
         </div>
       </div>
+
+      {/* Add Team Modal (Phase 14.1) */}
+      {showAddTeamModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-950/80 backdrop-blur-md animate-fadeIn">
+          <div className="serene-glass-card rounded-3xl p-6 md:p-8 w-full max-w-lg shadow-2xl border border-amber-500/30 text-stone-100 font-sans space-y-4">
+            <div className="flex items-center justify-between border-b border-amber-500/20 pb-3">
+              <h3 className="font-serif text-xl uppercase tracking-widest text-stone-100 font-normal">
+                Create New Team (Admin Authority)
+              </h3>
+              <button
+                type="button"
+                onClick={() => setShowAddTeamModal(false)}
+                className="text-stone-400 hover:text-stone-100 text-lg font-bold px-2 py-1"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateTeam} className="space-y-4 text-xs font-sans">
+              <div>
+                <label className="block text-stone-300 uppercase tracking-wider font-semibold mb-1">
+                  Team Name *
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Quantum Vanguard"
+                  value={newTeamName}
+                  onChange={(e) => setNewTeamName(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-amber-500/30 bg-stone-900/90 text-stone-100 focus:outline-none focus:border-amber-400"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-stone-300 uppercase tracking-wider font-semibold mb-1">
+                    Theme
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Smart Mobility"
+                    value={newTeamTheme}
+                    onChange={(e) => setNewTeamTheme(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-amber-500/30 bg-stone-900/90 text-stone-100 focus:outline-none focus:border-amber-400"
+                  />
+                </div>
+                <div>
+                  <label className="block text-stone-300 uppercase tracking-wider font-semibold mb-1">
+                    Topic / Title
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. AI Traffic Light Controller"
+                    value={newTeamTopic}
+                    onChange={(e) => setNewTeamTopic(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-amber-500/30 bg-stone-900/90 text-stone-100 focus:outline-none focus:border-amber-400"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-stone-300 uppercase tracking-wider font-semibold mb-1">
+                  Leader Email (Optional)
+                </label>
+                <input
+                  type="email"
+                  placeholder="student@kct.ac.in"
+                  value={newLeaderEmail}
+                  onChange={(e) => setNewLeaderEmail(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-amber-500/30 bg-stone-900/90 text-stone-100 focus:outline-none focus:border-amber-400"
+                />
+                <p className="mt-1 text-[11px] text-stone-400">
+                  A unique random 6-character team invite code will be auto-generated automatically.
+                </p>
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-amber-500/20">
+                <button
+                  type="button"
+                  onClick={() => setShowAddTeamModal(false)}
+                  className="px-4 py-2 rounded-xl text-stone-400 hover:text-stone-200 transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={addingTeam}
+                  className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-400 via-amber-300 to-amber-500 text-stone-950 text-xs font-bold uppercase tracking-wider hover:brightness-110 transition disabled:opacity-50"
+                >
+                  {addingTeam ? "Creating..." : "Create Team"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Team & Manage Members Modal (Phase 14.1) */}
+      {editingTeam && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-950/80 backdrop-blur-md animate-fadeIn">
+          <div className="serene-glass-card rounded-3xl p-6 md:p-8 w-full max-w-xl shadow-2xl border border-amber-500/30 text-stone-100 font-sans space-y-5 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-amber-500/20 pb-3">
+              <div>
+                <span className="text-[10px] text-amber-300 font-bold uppercase">Code: {editingTeam.inviteCode}</span>
+                <h3 className="font-serif text-xl uppercase tracking-widest text-stone-100 font-normal">
+                  Edit Team: {editingTeam.teamName}
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEditingTeam(null)}
+                className="text-stone-400 hover:text-stone-100 text-lg font-bold px-2 py-1"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Team Details Form */}
+            <form onSubmit={handleSaveEditTeam} className="space-y-4 text-xs font-sans">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-stone-300 uppercase tracking-wider font-semibold mb-1">
+                    Team Name
+                  </label>
+                  <input
+                    type="text"
+                    value={editTeamName}
+                    onChange={(e) => setEditTeamName(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl border border-amber-500/30 bg-stone-900/90 text-stone-100 focus:outline-none focus:border-amber-400"
+                  />
+                </div>
+                <div>
+                  <label className="block text-stone-300 uppercase tracking-wider font-semibold mb-1">
+                    Bench Number
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. TABLE-04"
+                    value={editBench}
+                    onChange={(e) => setEditBench(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl border border-amber-500/30 bg-stone-900/90 text-stone-100 focus:outline-none focus:border-amber-400 uppercase font-mono"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-stone-300 uppercase tracking-wider font-semibold mb-1">
+                    Theme
+                  </label>
+                  <input
+                    type="text"
+                    value={editTheme}
+                    onChange={(e) => setEditTheme(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl border border-amber-500/30 bg-stone-900/90 text-stone-100 focus:outline-none focus:border-amber-400"
+                  />
+                </div>
+                <div>
+                  <label className="block text-stone-300 uppercase tracking-wider font-semibold mb-1">
+                    Topic
+                  </label>
+                  <input
+                    type="text"
+                    value={editTopic}
+                    onChange={(e) => setEditTopic(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl border border-amber-500/30 bg-stone-900/90 text-stone-100 focus:outline-none focus:border-amber-400"
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end">
+                <button
+                  type="submit"
+                  disabled={savingEdit}
+                  className="px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-stone-950 text-xs font-bold uppercase tracking-wider transition cursor-pointer"
+                >
+                  {savingEdit ? "Saving..." : "Save Details"}
+                </button>
+              </div>
+            </form>
+
+            {/* Member Roster & Add Member */}
+            <div className="pt-4 border-t border-amber-500/20 space-y-4">
+              <div className="flex items-center justify-between">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-amber-300">
+                  Team Members ({editingTeam.members?.length || 0})
+                </h4>
+              </div>
+
+              {/* Members List */}
+              <div className="space-y-2">
+                {(editingTeam.members || []).map((m) => (
+                  <div key={m.id || m.userId} className="flex items-center justify-between p-3 rounded-xl bg-stone-900/80 border border-amber-500/15 text-xs">
+                    <div>
+                      <div className="font-semibold text-stone-100 flex items-center gap-2">
+                        <span>{m.fullName || "Unnamed Member"}</span>
+                        {m.isLeader && (
+                          <span className="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-amber-400/20 text-amber-300 border border-amber-400/30">
+                            Leader
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-[11px] text-stone-400 font-mono mt-0.5">{m.email}</div>
+                    </div>
+
+                    {!m.isLeader && (
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveMemberFromTeam(editingTeam.id, m.userId, m.fullName)}
+                        className="p-1 rounded-lg text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 transition"
+                        title="Remove member"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {/* Add Member Form */}
+              <form onSubmit={handleAddMemberToTeam} className="p-3 rounded-2xl bg-stone-950 border border-amber-500/20 space-y-2">
+                <div className="text-[11px] uppercase font-bold text-stone-300">Add Member to Team</div>
+                <div className="grid grid-cols-2 gap-2">
+                  <input
+                    type="text"
+                    placeholder="Full Name"
+                    value={newMemberName}
+                    onChange={(e) => setNewMemberName(e.target.value)}
+                    className="px-3 py-1.5 rounded-lg border border-stone-700 bg-stone-900 text-stone-100 text-xs focus:outline-none focus:border-amber-400"
+                  />
+                  <input
+                    type="email"
+                    required
+                    placeholder="student@kct.ac.in"
+                    value={newMemberEmail}
+                    onChange={(e) => setNewMemberEmail(e.target.value)}
+                    className="px-3 py-1.5 rounded-lg border border-stone-700 bg-stone-900 text-stone-100 text-xs focus:outline-none focus:border-amber-400"
+                  />
+                </div>
+                <div className="flex justify-end pt-1">
+                  <button
+                    type="submit"
+                    disabled={addingMember}
+                    className="px-3 py-1.5 rounded-lg bg-stone-800 hover:bg-amber-400 hover:text-stone-950 text-stone-200 text-xs font-bold uppercase transition"
+                  >
+                    {addingMember ? "Adding..." : "+ Add Member"}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* View Description Modal */}
       {selectedDescModal && (

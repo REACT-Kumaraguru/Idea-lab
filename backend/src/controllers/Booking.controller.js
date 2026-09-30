@@ -2,7 +2,118 @@ import EquipmentBooking from "../models/EquipmentBooking.model.js";
 import Equipment from "../models/EquipmentModel.js";
 import User from "../models/UserModel.js";
 import { Op } from "sequelize";
+import { sequelize } from "../lib/db.js";
 import { sendBookingStatusEmail, sendBookingBatchStatusEmail } from "../lib/email.js";
+
+/**
+ * Checks whether an email belongs to the KCT institution.
+ * Handles @kct.ac.in and institutional subdomains.
+ */
+export const isKctEmail = (email) => {
+  if (!email || typeof email !== "string") return false;
+  const clean = email.trim().toLowerCase();
+  return clean.endsWith("@kct.ac.in") || clean.endsWith(".kct.ac.in");
+};
+
+/**
+ * Converts a "HH:MM" string to minutes from midnight.
+ */
+export const timeToMinutes = (t) => {
+  const s = String(t || "");
+  const [h, m] = s.split(":").map(Number);
+  return (h || 0) * 60 + (m || 0);
+};
+
+/**
+ * Robust slot capacity checker for equipment with quantity >= 1.
+ * An interval [targetStart, targetEnd) is available iff at every critical time point
+ * t in [targetStart, targetEnd), concurrent active bookings < equipment.quantity.
+ */
+export const checkSlotCapacity = async ({
+  equipmentId,
+  bookingDate,
+  startTime,
+  durationHours,
+  excludeBookingId = null,
+  statuses = ["pending", "approved"],
+  transaction = null,
+}) => {
+  const equipment = await Equipment.findByPk(equipmentId, { transaction });
+  if (!equipment) {
+    return { available: false, message: "Equipment not found" };
+  }
+
+  if (!equipment.isAvailable) {
+    return {
+      available: false,
+      message: "This equipment is currently unbookable. Only 3D printers and PCB Milling Machine are currently available for booking.",
+    };
+  }
+
+  const maxQuantity = Math.max(1, parseInt(equipment.quantity, 10) || 1);
+  const targetStartMin = timeToMinutes(startTime);
+  const targetEndMin = targetStartMin + Math.round(parseFloat(durationHours) * 60);
+
+  const whereClause = {
+    equipmentId,
+    bookingDate,
+    status: { [Op.in]: statuses },
+  };
+
+  if (excludeBookingId) {
+    whereClause.id = { [Op.ne]: excludeBookingId };
+  }
+
+  const existingBookings = await EquipmentBooking.findAll({
+    where: whereClause,
+    attributes: ["id", "bookingTime", "duration", "status"],
+    transaction,
+  });
+
+  const activeIntervals = [];
+  const timePoints = new Set([targetStartMin]);
+
+  for (const b of existingBookings) {
+    const bStart = timeToMinutes(b.bookingTime);
+    const bDuration = parseFloat(b.duration) || 1;
+    const bEnd = bStart + Math.round(bDuration * 60);
+
+    if (targetStartMin < bEnd && targetEndMin > bStart) {
+      activeIntervals.push({ id: b.id, start: bStart, end: bEnd });
+      if (bStart >= targetStartMin && bStart < targetEndMin) {
+        timePoints.add(bStart);
+      }
+    }
+  }
+
+  for (const t of timePoints) {
+    let concurrentCount = 0;
+    for (const interval of activeIntervals) {
+      if (interval.start <= t && interval.end > t) {
+        concurrentCount++;
+      }
+    }
+
+    if (concurrentCount >= maxQuantity) {
+      const conflictHour = Math.floor(t / 60).toString().padStart(2, "0");
+      const conflictMin = (t % 60).toString().padStart(2, "0");
+      return {
+        available: false,
+        maxQuantity,
+        concurrentCount,
+        conflictTime: `${conflictHour}:${conflictMin}`,
+        message: `All ${maxQuantity} unit(s) of this equipment are already booked for time window around ${conflictHour}:${conflictMin}. Max capacity reached.`,
+      };
+    }
+  }
+
+  return {
+    available: true,
+    maxQuantity,
+    equipment,
+  };
+};
+
 
 // @desc    Get all bookings (Admin) - excludes draft (cart-only) bookings
 // @route   GET /api/bookings
@@ -27,7 +138,7 @@ export const getAllBookings = async (req, res) => {
         {
           model: Equipment,
           as: "equipment",
-          attributes: ["id", "equipmentName", "brandName", "image", "pricePerHour"],
+          attributes: ["id", "equipmentName", "brandName", "image", "pricePerHour", "kctPricePerHour"],
         },
         {
           model: User,
@@ -59,7 +170,18 @@ export const getAllBookings = async (req, res) => {
 // @access  Private
 export const createBooking = async (req, res) => {
   try {
-    const { equipmentId, bookingDate, bookingTime, duration, purposeOfUsage, benefitsForKCT, benefitsReason, notes } = req.body;
+    const {
+      equipmentId,
+      bookingDate,
+      bookingTime,
+      duration,
+      purposeOfUsage,
+      benefitsForKCT,
+      benefitsReason,
+      notes,
+      consumablesRequested,
+      consumablesPurpose,
+    } = req.body;
     const userId = req.user.id;
 
     // Validate required fields
@@ -145,106 +267,141 @@ export const createBooking = async (req, res) => {
       }
     }
 
-    // Time to minutes from midnight (for overlap check)
-    const timeToMinutes = (t) => {
-      const s = String(t);
-      const [h, m] = s.split(":").map(Number);
-      return (h || 0) * 60 + (m || 0);
-    };
+    let createdBooking;
+    await sequelize.transaction(async (t) => {
+      // 1. Verify equipment existence & bookability
+      const equipment = await Equipment.findByPk(equipmentId, { transaction: t });
+      if (!equipment) {
+        throw new Error("Equipment not found");
+      }
+      if (!equipment.isAvailable) {
+        throw new Error("This equipment is currently unbookable. Only 3D printers and PCB Milling Machine are currently available for booking.");
+      }
 
-    const newStartMin = timeToMinutes(bookingTime);
-    const newEndMin = newStartMin + Math.round(durationHours * 60);
-
-    // Fetch approved (and pending) bookings for this equipment on this date
-    const existingBookings = await EquipmentBooking.findAll({
-      where: {
+      // 2. Strict concurrency & multi-unit capacity check against equipment.quantity
+      const capacityCheck = await checkSlotCapacity({
         equipmentId,
         bookingDate,
-        status: { [Op.in]: ["pending", "approved"] },
-      },
-      attributes: ["bookingTime", "duration"],
-    });
+        startTime: bookingTime,
+        durationHours,
+        transaction: t,
+      });
 
-    for (const existing of existingBookings) {
-      const existingStartMin = timeToMinutes(existing.bookingTime);
-      const existingDurationHours = parseFloat(existing.duration) || 1;
-      const existingEndMin = existingStartMin + Math.round(existingDurationHours * 60);
-      const overlaps = newStartMin < existingEndMin && newEndMin > existingStartMin;
-      if (overlaps) {
-        return res.status(400).json({
-          success: false,
-          message: "This time slot overlaps an existing booking",
-        });
+      if (!capacityCheck.available) {
+        throw new Error(capacityCheck.message);
       }
-    }
 
-    const pricePerHour = parseFloat(equipment.pricePerHour) || 0;
-    const totalAmount = Math.round(durationHours * pricePerHour * 100) / 100;
+      const userEmail = String(req.user?.email || "").trim().toLowerCase();
+      const isKct = isKctEmail(userEmail);
 
-    // Create booking as draft (only sent to admin when user clicks "Proceed to Request" in cart)
-    const booking = await EquipmentBooking.create({
-      equipmentId,
-      userId,
-      bookingDate,
-      bookingTime,
-      duration: durationHours,
-      totalAmount,
-      purposeOfUsage,
-      benefitsForKCT,
-      benefitsReason,
-      notes,
-      status: "draft",
-    });
+      const pricePerHour = isKct
+        ? (parseFloat(equipment.kctPricePerHour) || 0)
+        : (parseFloat(equipment.pricePerHour) || 0);
 
-    // Fetch the created booking with associations
-    const createdBooking = await EquipmentBooking.findByPk(booking.id, {
-      include: [
+      const totalAmount = Math.round(durationHours * pricePerHour * 100) / 100;
+
+      // Format consumables payload safely
+      const formattedConsumables = consumablesRequested
+        ? (typeof consumablesRequested === "object" ? JSON.stringify(consumablesRequested) : String(consumablesRequested))
+        : null;
+
+      // Create booking as draft (only sent to admin when student confirms "Book Now" in cart)
+      const booking = await EquipmentBooking.create(
         {
-          model: Equipment,
-          as: "equipment",
-          attributes: ["id", "equipmentName", "brandName", "image", "pricePerHour"],
+          equipmentId,
+          userId,
+          bookingDate,
+          bookingTime,
+          duration: durationHours,
+          totalAmount,
+          purposeOfUsage,
+          benefitsForKCT,
+          benefitsReason,
+          notes,
+          consumablesRequested: formattedConsumables,
+          consumablesPurpose: consumablesPurpose ? String(consumablesPurpose).trim() : null,
+          status: "draft",
         },
-        {
-          model: User,
-          as: "user",
-          attributes: ["id", "fullName", "email"],
-        },
-      ],
+        { transaction: t }
+      );
+
+      // Fetch the created booking with associations
+      createdBooking = await EquipmentBooking.findByPk(booking.id, {
+        include: [
+          {
+            model: Equipment,
+            as: "equipment",
+            attributes: [
+              "id",
+              "equipmentName",
+              "brandName",
+              "image",
+              "quantity",
+              "isAvailable",
+              "pricePerHour",
+              "kctPricePerHour",
+            ],
+          },
+          {
+            model: User,
+            as: "user",
+            attributes: ["id", "fullName", "email"],
+          },
+        ],
+        transaction: t,
+      });
     });
 
     res.status(201).json({
       success: true,
-      message: "Booking created successfully",
+      message: "Equipment scheduled and added to cart successfully",
       data: createdBooking,
     });
   } catch (error) {
     console.error("Error creating booking:", error);
-    res.status(500).json({
+    const isClientError =
+      error.message.includes("not found") ||
+      error.message.includes("unbookable") ||
+      error.message.includes("already booked") ||
+      error.message.includes("capacity reached");
+
+    res.status(isClientError ? 400 : 500).json({
       success: false,
-      message: "Error creating booking",
+      message: error.message || "Error creating booking",
       error: error.message,
     });
   }
 };
 
-// @desc    Get all bookings for a specific equipment (approved only, for slot blocking)
+// @desc    Get all bookings for a specific equipment (pending & approved for slot availability tracking)
 // @route   GET /api/bookings/equipment/:equipmentId
 // @access  Public
 export const getEquipmentBookings = async (req, res) => {
   try {
     const { equipmentId } = req.params;
+    const { date } = req.query;
+
+    const whereClause = {
+      equipmentId,
+      status: { [Op.in]: ["pending", "approved"] },
+    };
+    if (date) {
+      whereClause.bookingDate = date;
+    }
+
+    const equipment = await Equipment.findByPk(equipmentId, {
+      attributes: ["id", "equipmentName", "brandName", "quantity", "isAvailable", "image"],
+    });
 
     const bookings = await EquipmentBooking.findAll({
-      where: {
-        equipmentId,
-        status: "approved",
-      },
+      where: whereClause,
       attributes: ["id", "bookingDate", "bookingTime", "duration", "status"],
-      order: [["bookingDate", "ASC"]],
+      order: [["bookingDate", "ASC"], ["bookingTime", "ASC"]],
     });
 
     res.status(200).json({
       success: true,
+      equipment,
       count: bookings.length,
       data: bookings,
     });
@@ -273,7 +430,7 @@ export const getMyBookings = async (req, res) => {
         {
           model: Equipment,
           as: "equipment",
-          attributes: ["id", "equipmentName", "brandName", "image", "pricePerHour", "equipmentDetails", "quantity"],
+          attributes: ["id", "equipmentName", "brandName", "image", "pricePerHour", "kctPricePerHour", "equipmentDetails", "quantity"],
         },
         {
           model: User,
@@ -312,7 +469,7 @@ export const getBookingById = async (req, res) => {
         {
           model: Equipment,
           as: "equipment",
-          attributes: ["id", "equipmentName", "brandName", "image", "pricePerHour"],
+          attributes: ["id", "equipmentName", "brandName", "image", "pricePerHour", "kctPricePerHour"],
         },
         {
           model: User,
@@ -326,6 +483,14 @@ export const getBookingById = async (req, res) => {
       return res.status(404).json({
         success: false,
         message: "Booking not found",
+      });
+    }
+
+    const isAdmin = req.user?.role === "admin" || req.session?.user?.role === "admin";
+    if (Number(booking.userId) !== Number(req.user?.id) && !isAdmin) {
+      return res.status(403).json({
+        success: false,
+        message: "Access denied. You do not have permission to view this booking.",
       });
     }
 
@@ -373,6 +538,24 @@ export const updateBookingStatus = async (req, res) => {
         success: false,
         message: "Booking not found",
       });
+    }
+
+    if (status === "approved") {
+      const capacityCheck = await checkSlotCapacity({
+        equipmentId: booking.equipmentId,
+        bookingDate: booking.bookingDate,
+        startTime: booking.bookingTime,
+        durationHours: booking.duration,
+        excludeBookingId: booking.id,
+        statuses: ["approved"], // Capacity check against already approved bookings
+      });
+
+      if (!capacityCheck.available) {
+        return res.status(400).json({
+          success: false,
+          message: `Cannot approve booking: all ${capacityCheck.maxQuantity} unit(s) are already occupied by approved bookings for this time window.`,
+        });
+      }
     }
 
     booking.status = status;
@@ -459,10 +642,32 @@ export const updateBatchStatus = async (req, res) => {
       });
     }
 
-    for (const b of bookings) {
-      b.status = status;
-      await b.save();
+    if (status === "approved") {
+      for (const booking of bookings) {
+        const capacityCheck = await checkSlotCapacity({
+          equipmentId: booking.equipmentId,
+          bookingDate: booking.bookingDate,
+          startTime: booking.bookingTime,
+          durationHours: booking.duration,
+          excludeBookingId: booking.id,
+          statuses: ["approved"],
+        });
+
+        if (!capacityCheck.available) {
+          return res.status(400).json({
+            success: false,
+            message: `Cannot approve batch: ${booking.equipment?.equipmentName || "Equipment"} conflict: ${capacityCheck.message}`,
+          });
+        }
+      }
     }
+
+    await sequelize.transaction(async (t) => {
+      for (const b of bookings) {
+        b.status = status;
+        await b.save({ transaction: t });
+      }
+    });
 
     const user = bookings[0].user;
     if (user?.email) {
@@ -500,85 +705,78 @@ export const submitCart = async (req, res) => {
   try {
     const userId = req.user.id;
 
-    const draftBookings = await EquipmentBooking.findAll({
-      where: { userId, status: "draft" },
-      order: [["id", "ASC"]],
-    });
-
-    if (draftBookings.length === 0) {
-      return res.status(400).json({
-        success: false,
-        message: "No items in cart to submit",
-      });
-    }
-
-    const batchId = `sub-${userId}-${Date.now()}`;
     let submitted = 0;
     const skipped = [];
+    const batchId = `sub-${userId}-${Date.now()}`;
 
-    // Helper function to convert time to minutes
-    const timeToMinutes = (t) => {
-      const s = String(t);
-      const [h, m] = s.split(":").map(Number);
-      return (h || 0) * 60 + (m || 0);
-    };
-
-    for (const booking of draftBookings) {
-      // Check for time slot overlap conflicts
-      const newStartMin = timeToMinutes(booking.bookingTime);
-      const newDurationHours = parseFloat(booking.duration) || 1;
-      const newEndMin = newStartMin + Math.round(newDurationHours * 60);
-
-      // Find all existing bookings for this equipment on this date
-      const existingBookings = await EquipmentBooking.findAll({
-        where: {
-          equipmentId: booking.equipmentId,
-          bookingDate: booking.bookingDate,
-          status: { [Op.in]: ["pending", "approved"] },
-          id: { [Op.ne]: booking.id },
-        },
-        attributes: ["id", "bookingTime", "duration"],
+    await sequelize.transaction(async (t) => {
+      const draftBookings = await EquipmentBooking.findAll({
+        where: { userId, status: "draft" },
+        include: [
+          {
+            model: Equipment,
+            as: "equipment",
+            attributes: ["id", "equipmentName", "quantity", "isAvailable"],
+          },
+        ],
+        order: [["id", "ASC"]],
+        transaction: t,
       });
 
-      // Check if the new booking overlaps with any existing booking
-      let hasConflict = false;
-      for (const existing of existingBookings) {
-        const existingStartMin = timeToMinutes(existing.bookingTime);
-        const existingDurationHours = parseFloat(existing.duration) || 1;
-        const existingEndMin = existingStartMin + Math.round(existingDurationHours * 60);
-        
-        // Check for overlap: newStart < existingEnd AND newEnd > existingStart
-        const overlaps = newStartMin < existingEndMin && newEndMin > existingStartMin;
-        if (overlaps) {
-          hasConflict = true;
-          break;
+      if (draftBookings.length === 0) {
+        throw new Error("No items in cart to book");
+      }
+
+      for (const booking of draftBookings) {
+        const eq = booking.equipment;
+        if (!eq || !eq.isAvailable) {
+          skipped.push({
+            id: booking.id,
+            equipmentName: eq?.equipmentName || "Unknown",
+            reason: "Equipment is currently unbookable",
+          });
+          continue;
         }
-      }
 
-      if (hasConflict) {
-        skipped.push({ id: booking.id, reason: "Time slot overlaps with existing booking" });
-        continue;
-      }
+        // Multi-unit capacity check against equipment.quantity
+        const capacityCheck = await checkSlotCapacity({
+          equipmentId: booking.equipmentId,
+          bookingDate: booking.bookingDate,
+          startTime: booking.bookingTime,
+          durationHours: booking.duration,
+          excludeBookingId: booking.id,
+          transaction: t,
+        });
 
-      booking.status = "pending";
-      booking.submissionBatchId = batchId;
-      await booking.save();
-      submitted++;
-    }
+        if (!capacityCheck.available) {
+          skipped.push({
+            id: booking.id,
+            equipmentName: eq.equipmentName,
+            reason: capacityCheck.message,
+          });
+          continue;
+        }
+
+        booking.status = "pending";
+        booking.submissionBatchId = batchId;
+        await booking.save({ transaction: t });
+        submitted++;
+      }
+    });
 
     res.status(200).json({
-      success: true,
+      success: submitted > 0,
       message:
         submitted > 0
-          ? `Request submitted. ${submitted} booking(s) sent to admin.${skipped.length ? ` ${skipped.length} skipped (slot already taken).` : ""}`
-          : "No bookings could be submitted (all slots already taken).",
+          ? `Booking confirmed! ${submitted} equipment reservation(s) booked successfully.${skipped.length ? ` ${skipped.length} could not be booked (capacity reached or unbookable).` : ""}`
+          : `Could not book: ${skipped.map((s) => s.reason).join("; ")}`,
       data: { submitted, skipped },
     });
   } catch (error) {
     console.error("Error submitting cart:", error);
-    res.status(500).json({
+    res.status(400).json({
       success: false,
-      message: "Error submitting cart",
+      message: error.message || "Error submitting cart",
       error: error.message,
     });
   }

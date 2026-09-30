@@ -1,3 +1,4 @@
+import crypto from "crypto";
 import bcrypt from "bcryptjs";
 import { sequelize } from "../../lib/db.js";
 import HackathonUser from "../../models/hackathon/HackathonUserModel.js";
@@ -9,23 +10,15 @@ import HackathonMentor from "../../models/hackathon/HackathonMentorModel.js";
 import HackathonProblemMentor from "../../models/hackathon/HackathonProblemMentorModel.js";
 import HackathonTeamMentor from "../../models/hackathon/HackathonTeamMentorModel.js";
 
-const DEFAULT_ADMIN_EMAIL = "react@kct.ac.in";
-
 const normalizeEmail = (email) => String(email || "").trim().toLowerCase();
 
-const isDefaultAdmin = (req) => normalizeEmail(req.hackathonUser?.email) === DEFAULT_ADMIN_EMAIL;
-
-function generatePasswordFromEmail(email) {
-  const normalized = normalizeEmail(email);
-  const idx = normalized.indexOf("@");
-  if (idx <= 0) {
-    throw new Error("Invalid email format");
-  }
-  return normalized.slice(0, idx);
-}
+const isAdmin = (req) => {
+  const role = req.hackathonUser?.role || req.session?.hackathonUser?.role || req.session?.user?.role;
+  return role === "admin";
+};
 
 export const listHackathonAdmins = async (req, res) => {
-  if (!isDefaultAdmin(req)) return res.status(403).json({ message: "Forbidden" });
+  if (!isAdmin(req)) return res.status(403).json({ message: "Forbidden" });
 
   const admins = await HackathonUser.findAll({
     where: { role: "admin" },
@@ -37,9 +30,9 @@ export const listHackathonAdmins = async (req, res) => {
 };
 
 export const createHackathonAdmin = async (req, res) => {
-  if (!isDefaultAdmin(req)) return res.status(403).json({ message: "Forbidden" });
+  if (!isAdmin(req)) return res.status(403).json({ message: "Forbidden" });
 
-  const { fullName, email, phoneNumber } = req.body || {};
+  const { fullName, email, phoneNumber, password } = req.body || {};
 
   const normalizedEmail = normalizeEmail(email);
   const normalizedPhone = String(phoneNumber ?? "").trim();
@@ -54,12 +47,9 @@ export const createHackathonAdmin = async (req, res) => {
   const existingByPhone = await HackathonUser.findOne({ where: { phoneNumber: normalizedPhone } });
   if (existingByPhone) return res.status(400).json({ message: "Phone number already exists" });
 
-  let passwordPlain = "";
-  try {
-    passwordPlain = generatePasswordFromEmail(normalizedEmail);
-  } catch (e) {
-    return res.status(400).json({ message: "Invalid email format" });
-  }
+  const passwordPlain = (password && String(password).trim().length >= 6)
+    ? String(password).trim()
+    : crypto.randomBytes(4).toString("hex");
 
   const salt = await bcrypt.genSalt(10);
   const hashedPassword = await bcrypt.hash(passwordPlain, salt);
@@ -84,12 +74,13 @@ export const createHackathonAdmin = async (req, res) => {
       fullName: admin.fullName,
       email: admin.email,
       phoneNumber: admin.phoneNumber,
+      initialPassword: passwordPlain,
     },
   });
 };
 
 export const updateHackathonAdmin = async (req, res) => {
-  if (!isDefaultAdmin(req)) return res.status(403).json({ message: "Forbidden" });
+  if (!isAdmin(req)) return res.status(403).json({ message: "Forbidden" });
 
   const { id } = req.params;
   const adminId = Number(id);
@@ -98,22 +89,18 @@ export const updateHackathonAdmin = async (req, res) => {
   const existing = await HackathonUser.findByPk(adminId);
   if (!existing || existing.role !== "admin") return res.status(404).json({ message: "Admin not found" });
 
-  const { fullName, email, phoneNumber } = req.body || {};
+  const { fullName, email, phoneNumber, password } = req.body || {};
 
   const updates = {};
   if (fullName?.trim()) updates.fullName = fullName.trim();
   if (email?.trim()) updates.email = normalizeEmail(email);
   if (phoneNumber != null) updates.phoneNumber = String(phoneNumber).trim();
-  // Password is always derived from email prefix for admin accounts.
-  const targetEmail = updates.email || existing.email;
-  let passwordPlain = "";
-  try {
-    passwordPlain = generatePasswordFromEmail(targetEmail);
-  } catch {
-    return res.status(400).json({ message: "Invalid email format" });
+
+  // Update password only if an explicit new password is provided
+  if (password && String(password).trim().length >= 6) {
+    const salt = await bcrypt.genSalt(10);
+    updates.password = await bcrypt.hash(String(password).trim(), salt);
   }
-  const salt = await bcrypt.genSalt(10);
-  updates.password = await bcrypt.hash(passwordPlain, salt);
 
   // Uniqueness checks (avoid Sequelize unique-constraint errors returning 500)
   if (updates.email) {
@@ -145,11 +132,16 @@ export const updateHackathonAdmin = async (req, res) => {
 };
 
 export const deleteHackathonAdmin = async (req, res) => {
-  if (!isDefaultAdmin(req)) return res.status(403).json({ message: "Forbidden" });
+  if (!isAdmin(req)) return res.status(403).json({ message: "Forbidden" });
 
   const { id } = req.params;
   const adminId = Number(id);
   if (!Number.isInteger(adminId)) return res.status(400).json({ message: "Invalid admin id" });
+
+  const currentUserId = req.hackathonUser?.id || req.session?.hackathonUser?.id || req.session?.user?.id;
+  if (currentUserId && Number(currentUserId) === adminId) {
+    return res.status(400).json({ message: "You cannot delete your own admin account" });
+  }
 
   const existing = await HackathonUser.findByPk(adminId);
   if (!existing || existing.role !== "admin") return res.status(404).json({ message: "Admin not found" });
@@ -199,4 +191,75 @@ export const deleteHackathonAdmin = async (req, res) => {
 
   return res.status(200).json({ success: true });
 };
+
+export const listVolunteers = async (req, res) => {
+  try {
+    const volunteers = await HackathonUser.findAll({
+      where: { role: "volunteer" },
+      attributes: ["id", "fullName", "email", "phoneNumber", "phone", "created_at"],
+      order: [["created_at", "DESC"]],
+    });
+    return res.status(200).json({ volunteers });
+  } catch (err) {
+    console.error("listVolunteers:", err);
+    return res.status(500).json({ message: "Failed to list volunteers" });
+  }
+};
+
+export const createVolunteer = async (req, res) => {
+  try {
+    const { email, password, fullName } = req.body || {};
+    const normalizedEmail = normalizeEmail(email);
+
+    if (!normalizedEmail || !password) {
+      return res.status(400).json({ message: "Email and password are required" });
+    }
+
+    const existing = await HackathonUser.findOne({ where: { email: normalizedEmail } });
+    if (existing) {
+      return res.status(400).json({ message: "An account with this email already exists" });
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    const volunteer = await HackathonUser.create({
+      email: normalizedEmail,
+      password: hashedPassword,
+      fullName: fullName?.trim() || "Student Volunteer",
+      name: fullName?.trim() || "Student Volunteer",
+      role: "volunteer",
+      phone: "0000000000",
+    });
+
+    return res.status(201).json({
+      success: true,
+      volunteer: {
+        id: volunteer.id,
+        fullName: volunteer.fullName,
+        email: volunteer.email,
+        role: volunteer.role,
+      },
+    });
+  } catch (err) {
+    console.error("createVolunteer:", err);
+    return res.status(500).json({ message: "Failed to create volunteer" });
+  }
+};
+
+export const deleteVolunteer = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const user = await HackathonUser.findByPk(id);
+    if (!user || user.role !== "volunteer") {
+      return res.status(404).json({ message: "Volunteer not found" });
+    }
+    await user.destroy();
+    return res.json({ success: true, message: "Volunteer removed successfully" });
+  } catch (err) {
+    console.error("deleteVolunteer:", err);
+    return res.status(500).json({ message: "Failed to delete volunteer" });
+  }
+};
+
 

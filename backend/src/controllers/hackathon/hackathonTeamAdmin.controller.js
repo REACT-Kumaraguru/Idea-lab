@@ -1,3 +1,7 @@
+import crypto from "crypto";
+import bcrypt from "bcryptjs";
+import { Op } from "sequelize";
+import { sequelize } from "../../lib/db.js";
 import HackathonTeam from "../../models/hackathon/HackathonTeamModel.js";
 import HackathonTeamMember from "../../models/hackathon/HackathonTeamMemberModel.js";
 import HackathonUser from "../../models/hackathon/HackathonUserModel.js";
@@ -6,7 +10,21 @@ import HackathonSubmission from "../../models/hackathon/HackathonSubmissionModel
 import HackathonProblem from "../../models/hackathon/HackathonProblemModel.js";
 import HackathonTeamMentor from "../../models/hackathon/HackathonTeamMentorModel.js";
 import HackathonMentor from "../../models/hackathon/HackathonMentorModel.js";
+import HackathonPaymentDetail from "../../models/hackathon/HackathonPaymentDetailModel.js";
 import ExcelJS from "exceljs";
+
+export const sanitizeExcelCell = (val) => {
+  if (val == null) return "";
+  const str = String(val);
+  return /^[=@+\-\t\r]/.test(str) ? "'" + str : str;
+};
+
+const generateInviteCode = () => {
+  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let out = "";
+  for (let i = 0; i < 8; i++) out += alphabet[crypto.randomInt(0, alphabet.length)];
+  return out;
+};
 
 async function serializeTeamForAdmin(teamInstance) {
   const team = teamInstance.toJSON ? teamInstance.toJSON() : teamInstance;
@@ -32,9 +50,10 @@ async function serializeTeamForAdmin(teamInstance) {
     order: [["created_at", "ASC"]],
   });
 
-  let members = await Promise.all(
-    membersRows.map(async (m) => {
-      const u = await HackathonUser.findByPk(m.userId, {
+  const memberUserIds = membersRows.map((m) => m.userId).filter(Boolean);
+  const memberUsers = memberUserIds.length > 0
+    ? await HackathonUser.findAll({
+        where: { id: { [Op.in]: memberUserIds } },
         attributes: [
           "id",
           "fullName",
@@ -47,23 +66,28 @@ async function serializeTeamForAdmin(teamInstance) {
           "college",
           "branch",
         ],
-      });
-      return {
-        id: m.id,
-        userId: m.userId,
-        isLeader: m.isLeader === true,
-        fullName: u?.fullName ?? null,
-        email: u?.email ?? null,
-        phoneNumber: u?.phoneNumber ?? null,
-        phone: u?.phone ?? null,
-        role: u?.role ?? null,
-        degree: u?.degree ?? null,
-        graduationYear: u?.graduationYear ?? null,
-        college: u?.college ?? null,
-        branch: u?.branch ?? null,
-      };
-    })
-  );
+      })
+    : [];
+
+  const userMap = new Map(memberUsers.map((u) => [u.id, u]));
+
+  let members = membersRows.map((m) => {
+    const u = userMap.get(m.userId);
+    return {
+      id: m.id,
+      userId: m.userId,
+      isLeader: m.isLeader === true,
+      fullName: u?.fullName ?? null,
+      email: u?.email ?? null,
+      phoneNumber: u?.phoneNumber ?? null,
+      phone: u?.phone ?? null,
+      role: u?.role ?? null,
+      degree: u?.degree ?? null,
+      graduationYear: u?.graduationYear ?? null,
+      college: u?.college ?? null,
+      branch: u?.branch ?? null,
+    };
+  });
 
   if (members.length === 0 && team.leaderUserId) {
     const u = await HackathonUser.findByPk(team.leaderUserId, {
@@ -285,15 +309,15 @@ export const adminExportTeamsExcel = async (req, res) => {
       if (members.length === 0) {
         ws.addRow([
           sNo++,
-          teamHackathonName,
-          t.teamName || "",
-          t.theme || "—",
-          t.topic || "—",
-          t.description || "—",
-          t.inviteCode || "",
-          t.status || "",
-          t.leader?.fullName || "",
-          t.leader?.email || "",
+          sanitizeExcelCell(teamHackathonName),
+          sanitizeExcelCell(t.teamName || ""),
+          sanitizeExcelCell(t.theme || "—"),
+          sanitizeExcelCell(t.topic || "—"),
+          sanitizeExcelCell(t.description || "—"),
+          sanitizeExcelCell(t.inviteCode || ""),
+          sanitizeExcelCell(t.status || ""),
+          sanitizeExcelCell(t.leader?.fullName || ""),
+          sanitizeExcelCell(t.leader?.email || ""),
           0,
           "",
           "",
@@ -308,22 +332,22 @@ export const adminExportTeamsExcel = async (req, res) => {
       for (const m of members) {
         ws.addRow([
           sNo++,
-          teamHackathonName,
-          t.teamName || "",
-          t.theme || "—",
-          t.topic || "—",
-          t.description || "—",
-          t.inviteCode || "",
-          t.status || "",
-          t.leader?.fullName || "",
-          t.leader?.email || "",
+          sanitizeExcelCell(teamHackathonName),
+          sanitizeExcelCell(t.teamName || ""),
+          sanitizeExcelCell(t.theme || "—"),
+          sanitizeExcelCell(t.topic || "—"),
+          sanitizeExcelCell(t.description || "—"),
+          sanitizeExcelCell(t.inviteCode || ""),
+          sanitizeExcelCell(t.status || ""),
+          sanitizeExcelCell(t.leader?.fullName || ""),
+          sanitizeExcelCell(t.leader?.email || ""),
           members.length,
-          m.fullName || "",
-          m.email || "",
-          m.phoneNumber || m.phone || "",
+          sanitizeExcelCell(m.fullName || ""),
+          sanitizeExcelCell(m.email || ""),
+          sanitizeExcelCell(m.phoneNumber || m.phone || ""),
           m.isLeader ? "Leader" : "Member",
-          m.college || "",
-          m.branch || "",
+          sanitizeExcelCell(m.college || ""),
+          sanitizeExcelCell(m.branch || ""),
         ]);
       }
     }
@@ -346,4 +370,185 @@ export const adminExportTeamsExcel = async (req, res) => {
     return res.status(500).json({ message: "Failed to export teams" });
   }
 };
+
+export const adminDeleteTeam = async (req, res) => {
+  try {
+    const { teamId } = req.params;
+    const team = await HackathonTeam.findByPk(teamId);
+    if (!team) {
+      return res.status(404).json({ message: "Team not found" });
+    }
+
+    await sequelize.transaction(async (t) => {
+      await HackathonTeamMember.destroy({ where: { teamId }, transaction: t });
+      await HackathonSubmission.destroy({ where: { teamId }, transaction: t });
+      await HackathonTeamMentor.destroy({ where: { teamId }, transaction: t });
+      await HackathonPaymentDetail.destroy({ where: { teamId }, transaction: t });
+      await team.destroy({ transaction: t });
+    });
+
+    return res.json({ success: true, message: "Team deleted successfully" });
+  } catch (error) {
+    console.error("Error in adminDeleteTeam:", error);
+    return res.status(500).json({ message: "Failed to delete team" });
+  }
+};
+
+export const adminCreateTeam = async (req, res) => {
+  try {
+    const { teamName, hackathonId = 1, theme, topic, description, leaderEmail, leaderName } = req.body;
+    if (!teamName || !teamName.trim()) {
+      return res.status(400).json({ message: "Team name is required" });
+    }
+
+    // Auto-generate cryptographically secure unique 8-char invite code
+    let inviteCode = generateInviteCode();
+    let collisionCheck = 0;
+    while (await HackathonTeam.findOne({ where: { inviteCode } })) {
+      inviteCode = generateInviteCode();
+      collisionCheck++;
+      if (collisionCheck > 10) break;
+    }
+
+    const defaultHashedPassword = await bcrypt.hash("studentDefaultPassword123!", 10);
+
+    // Find or create leader user
+    let leaderUser = null;
+    if (leaderEmail && leaderEmail.trim()) {
+      leaderUser = await HackathonUser.findOne({ where: { email: leaderEmail.trim().toLowerCase() } });
+      if (!leaderUser) {
+        leaderUser = await HackathonUser.create({
+          email: leaderEmail.trim().toLowerCase(),
+          fullName: leaderName?.trim() || "Team Leader",
+          password: defaultHashedPassword,
+          role: "student",
+        });
+      }
+    } else {
+      // Create a placeholder leader if none supplied
+      const dummyEmail = `leader_${Date.now()}@hackathon.local`;
+      leaderUser = await HackathonUser.create({
+        email: dummyEmail,
+        fullName: leaderName?.trim() || "Team Leader",
+        password: defaultHashedPassword,
+        role: "student",
+      });
+    }
+
+    const team = await HackathonTeam.create({
+      teamName: teamName.trim(),
+      hackathonId: Number(hackathonId) || 1,
+      theme: theme || "General Innovation",
+      topic: topic || "",
+      description: description || "",
+      inviteCode,
+      leaderUserId: leaderUser.id,
+      status: "active",
+      abstractionStatus: "draft",
+    });
+
+    await HackathonTeamMember.create({
+      teamId: team.id,
+      userId: leaderUser.id,
+      isLeader: true,
+    });
+
+    const serialized = await serializeTeamForAdmin(team);
+    return res.status(201).json({ success: true, message: "Team created successfully", team: serialized });
+  } catch (error) {
+    console.error("Error in adminCreateTeam:", error);
+    return res.status(500).json({ message: error.message || "Failed to create team" });
+  }
+};
+
+export const adminUpdateTeam = async (req, res) => {
+  try {
+    const { teamId } = req.params;
+    const { teamName, theme, topic, description, cluster, benchNumber } = req.body;
+
+    const team = await HackathonTeam.findByPk(teamId);
+    if (!team) {
+      return res.status(404).json({ message: "Team not found" });
+    }
+
+    const updates = {};
+    if (teamName !== undefined) updates.teamName = teamName.trim();
+    if (theme !== undefined) updates.theme = theme;
+    if (topic !== undefined) updates.topic = topic;
+    if (description !== undefined) updates.description = description;
+    if (cluster !== undefined) updates.cluster = cluster;
+    if (benchNumber !== undefined) updates.benchNumber = benchNumber;
+
+    await team.update(updates);
+    const serialized = await serializeTeamForAdmin(team);
+    return res.json({ success: true, message: "Team updated successfully", team: serialized });
+  } catch (error) {
+    console.error("Error in adminUpdateTeam:", error);
+    return res.status(500).json({ message: "Failed to update team" });
+  }
+};
+
+export const adminAddTeamMember = async (req, res) => {
+  try {
+    const { teamId } = req.params;
+    const { email, fullName, role = "student" } = req.body;
+
+    if (!email || !email.trim()) {
+      return res.status(400).json({ message: "Member email is required" });
+    }
+
+    const team = await HackathonTeam.findByPk(teamId);
+    if (!team) {
+      return res.status(404).json({ message: "Team not found" });
+    }
+
+    let user = await HackathonUser.findOne({ where: { email: email.trim().toLowerCase() } });
+    if (!user) {
+      const defaultHashedPassword = await bcrypt.hash("studentDefaultPassword123!", 10);
+      user = await HackathonUser.create({
+        email: email.trim().toLowerCase(),
+        fullName: fullName?.trim() || "Team Member",
+        password: defaultHashedPassword,
+        role: "student",
+      });
+    }
+
+    const existingMember = await HackathonTeamMember.findOne({ where: { teamId, userId: user.id } });
+    if (existingMember) {
+      return res.status(400).json({ message: "Student is already in this team" });
+    }
+
+    await HackathonTeamMember.create({
+      teamId: team.id,
+      userId: user.id,
+      isLeader: false,
+    });
+
+    const serialized = await serializeTeamForAdmin(team);
+    return res.status(201).json({ success: true, message: "Member added successfully", team: serialized });
+  } catch (error) {
+    console.error("Error in adminAddTeamMember:", error);
+    return res.status(500).json({ message: "Failed to add member" });
+  }
+};
+
+export const adminRemoveTeamMember = async (req, res) => {
+  try {
+    const { teamId, userId } = req.params;
+    const member = await HackathonTeamMember.findOne({ where: { teamId, userId } });
+    if (!member) {
+      return res.status(404).json({ message: "Member not found in team" });
+    }
+
+    await member.destroy();
+
+    const team = await HackathonTeam.findByPk(teamId);
+    const serialized = team ? await serializeTeamForAdmin(team) : null;
+    return res.json({ success: true, message: "Member removed from team", team: serialized });
+  } catch (error) {
+    console.error("Error in adminRemoveTeamMember:", error);
+    return res.status(500).json({ message: "Failed to remove member" });
+  }
+};
+
 

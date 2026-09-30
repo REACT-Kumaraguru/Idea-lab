@@ -3,27 +3,16 @@ import { axiosInstance } from "../lib/axios.js";
 import { toast } from "react-hot-toast";
 
 export const useHackathonAuthStore = create((set, get) => ({
-  hackathonUser: (() => {
-    try {
-      const raw = localStorage.getItem("hackathon_user");
-      return raw ? JSON.parse(raw) : null;
-    } catch {
-      return null;
-    }
-  })(),
+  hackathonUser: null,
   isSigningUp: false,
   isLoggingIn: false,
-  isCheckingAuth: !Boolean(localStorage.getItem("hackathon_user")),
+  isCheckingAuth: true,
 
   checkAuth: async () => {
     try {
       const res = await axiosInstance.get("/ich2026/check");
-      if (res.data) {
-        localStorage.setItem("hackathon_user", JSON.stringify(res.data));
-        set({ hackathonUser: res.data });
-      }
+      set({ hackathonUser: res.data || null });
     } catch (error) {
-      localStorage.removeItem("hackathon_user");
       set({ hackathonUser: null });
     } finally {
       set({ isCheckingAuth: false });
@@ -34,9 +23,6 @@ export const useHackathonAuthStore = create((set, get) => ({
     set({ isSigningUp: true });
     try {
       const res = await axiosInstance.post("/ich2026/register", data);
-      if (res.data) {
-        localStorage.setItem("hackathon_user", JSON.stringify(res.data));
-      }
       set({ hackathonUser: res.data, isCheckingAuth: false });
       toast.success("Hackathon account created");
       return res.data;
@@ -56,9 +42,6 @@ export const useHackathonAuthStore = create((set, get) => ({
         password: String(data?.password || ""),
       };
       const res = await axiosInstance.post("/ich2026/login", payload);
-      if (res.data) {
-        localStorage.setItem("hackathon_user", JSON.stringify(res.data));
-      }
       set({ hackathonUser: res.data, isCheckingAuth: false });
       toast.success("Logged in successfully");
       return res.data;
@@ -81,7 +64,6 @@ export const useHackathonAuthStore = create((set, get) => ({
     } catch (e) {
       console.error("Logout request error:", e);
     } finally {
-      localStorage.removeItem("hackathon_user");
       set({ hackathonUser: null, isCheckingAuth: false });
     }
   },

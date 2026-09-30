@@ -53,8 +53,6 @@ export async function ensureDummyTeam() {
         schedule: defaultSchedule1,
       });
       console.log("[dummy-team] Created default hackathon: ICH 2026 (completed)");
-    } else {
-      await hackathon1.update({ status: "completed", schedule: defaultSchedule1 });
     }
 
 
@@ -136,8 +134,6 @@ export async function ensureDummyTeam() {
     if (!smartCityHackathon) {
       smartCityHackathon = await Hackathon.create(smartCityData);
       console.log("[dummy-team] Created Smart City Hackathon 2026");
-    } else {
-      await smartCityHackathon.update(smartCityData);
     }
 
     const salt = await bcrypt.genSalt(10);
@@ -158,14 +154,6 @@ export async function ensureDummyTeam() {
         role: DUMMY_LEADER.role,
       });
       console.log("[dummy-team] Created dummy leader user:", DUMMY_LEADER.email);
-    } else {
-      await user.update({
-        password: hashedPassword,
-        fullName: DUMMY_LEADER.fullName,
-        name: DUMMY_LEADER.fullName,
-        role: DUMMY_LEADER.role,
-      });
-      console.log("[dummy-team] Updated dummy leader password:", DUMMY_LEADER.email);
     }
 
     let problem = await HackathonProblem.findOne({ where: { title: "Smart IoT Monitoring System" } });
@@ -240,8 +228,6 @@ export async function ensureDummyTeam() {
         password: mentorHashedPassword,
       });
       console.log("[dummy-team] Created mentor user: mentor@kct.ac.in");
-    } else {
-      await mentorUser.update({ password: mentorHashedPassword, role: "mentor" });
     }
 
     let mentorRecord = await HackathonMentor.findOne({ where: { userId: mentorUser.id } });
