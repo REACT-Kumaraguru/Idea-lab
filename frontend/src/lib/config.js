@@ -30,7 +30,8 @@ export function getImageUrl(imagePath) {
   if (!imagePath) return null;
   if (imagePath.startsWith("http")) return imagePath;
   const cleanPath = imagePath.startsWith("/") ? imagePath : `/${imagePath}`;
-  return `${API_BASE}${cleanPath}`;
+  const separator = cleanPath.includes("?") ? "&" : "?";
+  return `${API_BASE}${cleanPath}${separator}v=6`;
 }
 
 export function getEquipmentFallbackSvg(title = "IDEA Lab Equipment") {
