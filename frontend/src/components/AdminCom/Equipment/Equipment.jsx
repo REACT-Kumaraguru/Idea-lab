@@ -33,11 +33,18 @@ const Equipment = () => {
     }
   };
 
-  const filteredList = equipment.filter(item =>
-    item.equipmentName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.brandName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.category?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredList = equipment
+    .filter(item =>
+      item.equipmentName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.brandName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.category?.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+    .sort((a, b) => {
+      if (Boolean(a.isAvailable) !== Boolean(b.isAvailable)) {
+        return a.isAvailable ? -1 : 1;
+      }
+      return (a.id || 0) - (b.id || 0);
+    });
 
   return (
     <div className="min-h-screen bg-[#0a0809] text-stone-100 font-sans relative overflow-x-hidden p-6 md:p-8">

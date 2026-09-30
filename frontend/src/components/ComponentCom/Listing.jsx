@@ -91,28 +91,36 @@ const Listing = ({ cart, setCart }) => {
 
   const statusCounts = { bookable: bookableCount, unbookable: unbookableCount };
 
-  // Filter equipment
-  const filteredEquipment = labEquipment.filter((item) => {
-    const itemCat = item.category || getEquipmentCategory(item);
+  // Filter and sort equipment: always show bookables first, then unbookables
+  const filteredEquipment = labEquipment
+    .filter((item) => {
+      const itemCat = item.category || getEquipmentCategory(item);
 
-    const matchesSearch =
-      !searchQuery.trim() ||
-      item.equipmentName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.brandName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      itemCat?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.equipmentDetails?.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesSearch =
+        !searchQuery.trim() ||
+        item.equipmentName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.brandName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        itemCat?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.equipmentDetails?.toLowerCase().includes(searchQuery.toLowerCase());
 
-    const matchesCategory =
-      selectedCategories.length === 0 ||
-      selectedCategories.includes(itemCat);
+      const matchesCategory =
+        selectedCategories.length === 0 ||
+        selectedCategories.includes(itemCat);
 
-    const matchesStatus =
-      selectedTypes.length === 0 ||
-      (selectedTypes.includes("Bookable") && item.isAvailable) ||
-      (selectedTypes.includes("Unbookable") && !item.isAvailable);
+      const matchesStatus =
+        selectedTypes.length === 0 ||
+        (selectedTypes.includes("Bookable") && item.isAvailable) ||
+        (selectedTypes.includes("Unbookable") && !item.isAvailable);
 
-    return matchesSearch && matchesCategory && matchesStatus;
-  });
+      return matchesSearch && matchesCategory && matchesStatus;
+    })
+    .sort((a, b) => {
+      // Always show all bookable items first
+      if (Boolean(a.isAvailable) !== Boolean(b.isAvailable)) {
+        return a.isAvailable ? -1 : 1;
+      }
+      return (a.id || 0) - (b.id || 0);
+    });
 
   // Handle Book Now
   const handleBookNow = (item) => {

@@ -35,7 +35,12 @@ export const createEquipment = async (req, res) => {
 
 export const getAllEquipment = async (req, res) => {
   try {
-    const equipments = await Equipment.findAll();
+    const equipments = await Equipment.findAll({
+      order: [
+        ["isAvailable", "DESC"],
+        ["id", "ASC"],
+      ],
+    });
     res.status(200).json(equipments);
   } catch (error) {
     console.error("Error fetching equipment:", error);
