@@ -16,6 +16,10 @@ export async function ensureHackathonColumns({ sequelize }) {
 
         ALTER TABLE "hackathon_teams" ADD COLUMN IF NOT EXISTS "hackathon_id" INTEGER DEFAULT 1;
         ALTER TABLE "hackathon_teams" ADD COLUMN IF NOT EXISTS "theme" VARCHAR(255);
+        ALTER TABLE "hackathon_teams" ADD COLUMN IF NOT EXISTS "is_present" BOOLEAN DEFAULT false;
+        ALTER TABLE "hackathon_teams" ADD COLUMN IF NOT EXISTS "bench_number" VARCHAR(255);
+        ALTER TABLE "hackathon_teams" ADD COLUMN IF NOT EXISTS "attendance_marked_at" TIMESTAMPTZ;
+        ALTER TABLE "hackathon_teams" ADD COLUMN IF NOT EXISTS "attendance_marked_by" VARCHAR(255);
         ALTER TABLE "hackathon_problems" ADD COLUMN IF NOT EXISTS "hackathon_id" INTEGER DEFAULT 1;
         ALTER TABLE "hackathon_mentors" ADD COLUMN IF NOT EXISTS "hackathon_id" INTEGER;
         ALTER TABLE "hackathon_submissions" ADD COLUMN IF NOT EXISTS "hackathon_id" INTEGER DEFAULT 1;
