@@ -297,7 +297,7 @@ export async function getSystemDiagnostics(req, res) {
       SELECT count(*) as count FROM hackathon_team_members 
       WHERE team_id NOT IN (SELECT id FROM hackathon_teams)
     `).catch(() => [[{ count: 0 }]]);
-    const omCount = orphanMembers?.[0]?.count || 0;
+    const omCount = Number(orphanMembers?.[0]?.count || 0);
     orphanDetails.push({ table: "hackathon_team_members", orphanRows: omCount });
     orphanCount += omCount;
 
@@ -305,7 +305,7 @@ export async function getSystemDiagnostics(req, res) {
       SELECT count(*) as count FROM hackathon_submissions 
       WHERE team_id NOT IN (SELECT id FROM hackathon_teams)
     `).catch(() => [[{ count: 0 }]]);
-    const osCount = orphanSubs?.[0]?.count || 0;
+    const osCount = Number(orphanSubs?.[0]?.count || 0);
     orphanDetails.push({ table: "hackathon_submissions", orphanRows: osCount });
     orphanCount += osCount;
 
@@ -313,7 +313,7 @@ export async function getSystemDiagnostics(req, res) {
       SELECT count(*) as count FROM hackathon_payment_details 
       WHERE team_id NOT IN (SELECT id FROM hackathon_teams)
     `).catch(() => [[{ count: 0 }]]);
-    const opCount = orphanPayments?.[0]?.count || 0;
+    const opCount = Number(orphanPayments?.[0]?.count || 0);
     orphanDetails.push({ table: "hackathon_payment_details", orphanRows: opCount });
     orphanCount += opCount;
 
