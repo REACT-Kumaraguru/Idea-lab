@@ -583,7 +583,21 @@ export async function ensureLabEquipments() {
       }
     }
 
-    
+    // Ensure any legacy equipment items (e.g. PCB Milling Machine) have image and details populated
+    await Equipment.update(
+      {
+        image: "/uploads/equipment/equipment_28.jpg",
+        brandName: "Enthu Technology Solutions",
+        equipmentDetails: "Model PCBMATE 300W. CNC PCB prototyping machine, 1.2KW 25000 RPM spindle, working area 300x200mm, PC cabinet.",
+      },
+      {
+        where: {
+          equipmentName: "PCB Milling Machine",
+          [Op.or]: [{ image: null }, { image: "" }],
+        },
+      }
+    );
+
     // Strictly ensure only 3D printers and PCB Milling machine are bookable by default
     const bookableNames = [
       "Prusa 3D Printer (FDM)",
