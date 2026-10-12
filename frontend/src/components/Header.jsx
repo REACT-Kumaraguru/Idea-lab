@@ -199,7 +199,7 @@ const Header = () => {
                               Outreach & Collaborations
                             </div>
                             <div className="text-xs text-stone-400 leading-snug">
-                              AtomQuest 2026 and external opportunities
+                              Industry partnerships and external opportunities
                             </div>
                           </div>
                         </Link>
@@ -218,7 +218,7 @@ const Header = () => {
                               Workshops & Training
                             </div>
                             <div className="text-xs text-stone-400 leading-snug">
-                              PCB design and fabrication programs conducted by KCT
+                              Hands-on workshops and technical training
                             </div>
                           </div>
                         </Link>
@@ -318,7 +318,7 @@ const Header = () => {
                     <Handshake className="w-4 h-4 text-sky-400 shrink-0 mt-0.5" />
                     <div>
                       <div className="text-xs font-semibold">Outreach & Collaborations</div>
-                      <div className="text-[10px] text-stone-400 leading-tight">AtomQuest 2026 and external opportunities</div>
+                      <div className="text-[10px] text-stone-400 leading-tight">Industry partnerships and external opportunities</div>
                     </div>
                   </Link>
 
@@ -330,7 +330,7 @@ const Header = () => {
                     <GraduationCap className="w-4 h-4 text-sky-400 shrink-0 mt-0.5" />
                     <div>
                       <div className="text-xs font-semibold">Workshops & Training</div>
-                      <div className="text-[10px] text-stone-400 leading-tight">PCB design and fabrication programs conducted by KCT</div>
+                      <div className="text-[10px] text-stone-400 leading-tight">Hands-on workshops and technical training</div>
                     </div>
                   </Link>
                 </div>

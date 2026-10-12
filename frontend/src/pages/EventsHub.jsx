@@ -38,24 +38,24 @@ export default function EventsHub() {
     {
       id: "outreach",
       title: "Outreach & Collaborations",
-      subtitle: "AtomQuest 2026 and external opportunities",
+      subtitle: "Industry partnerships and external opportunities",
       badge: "Partnership Ecosystem",
       icon: <Handshake className="w-8 h-8 text-sky-400" />,
       colorBorder: "border-sky-500/40",
       colorGlow: "from-sky-500/20 to-transparent",
       link: "/events/outreach",
-      desc: "Flagship AtomQuest 2026 national innovation championship by Atomberg Technologies, prototype mentoring, and ecosystem tie-ups.",
+      desc: "National innovation championships, corporate open challenges, prototype mentoring, and ecosystem tie-ups.",
       features: [
-        "AtomQuest 2026 national challenge by Atomberg",
-        "₹2 Lakhs prize pool (Fan, Water Purifier, Mixer Grinder)",
-        "IDEA Lab prototype development & mentorship support"
+        "National student innovation championships",
+        "Industry mentorship & technical support",
+        "Direct IDEA Lab prototype sandbox access"
       ],
       btnText: "View Outreach & Initiatives"
     },
     {
       id: "workshops",
       title: "Workshops & Training",
-      subtitle: "PCB design and fabrication skilling program",
+      subtitle: "Hands-on workshops and technical training",
       badge: "Skill Certification",
       icon: <GraduationCap className="w-8 h-8 text-emerald-400" />,
       colorBorder: "border-emerald-500/40",
