@@ -1,4 +1,5 @@
 import bcrypt from "bcryptjs";
+import { Op } from "sequelize";
 import HackathonUser from "../../models/hackathon/HackathonUserModel.js";
 import HackathonSession from "../../models/hackathon/HackathonSessionModel.js";
 import { generateOtp, OTP_EXPIRY_MS } from "../../utils/otp.js";
@@ -8,6 +9,7 @@ import {
   hackathonRegistrationClosedMessage,
   getHackathonRegistrationClosedPayload,
 } from "../../lib/hackathonRegistrationStatus.js";
+import { recordFailedLogin, clearFailedLogin } from "../../middleware/accountLockout.middleware.js";
 
 const normalizeEmail = (email) => String(email || "").trim().toLowerCase();
 
@@ -96,7 +98,14 @@ export const register = async (req, res) => {
     const existingByEmail = await HackathonUser.findOne({ where: { email: normalizedEmail } });
     if (existingByEmail) return res.status(400).json({ message: "Email already exists" });
 
-    const existingByPhone = await HackathonUser.findOne({ where: { phoneNumber: resolvedPhone } });
+    const existingByPhone = await HackathonUser.findOne({
+      where: {
+        [Op.or]: [
+          { phoneNumber: resolvedPhone },
+          { phone: resolvedPhone },
+        ],
+      },
+    });
     if (existingByPhone) return res.status(400).json({ message: "Phone number already exists" });
 
     const salt = await bcrypt.genSalt(10);
@@ -117,6 +126,17 @@ export const register = async (req, res) => {
       role: resolvedRole,
     });
 
+    delete req.session.registrationEmailVerified;
+
+    if (req.session && typeof req.session.regenerate === "function") {
+      await new Promise((resolve) => {
+        req.session.regenerate((err) => {
+          if (err) console.error("Session regenerate error:", err);
+          resolve();
+        });
+      });
+    }
+
     req.session.hackathonUser = {
       id: user.id,
       role: user.role,
@@ -126,7 +146,14 @@ export const register = async (req, res) => {
 
     await createSessionRow(req, user);
 
-    delete req.session.registrationEmailVerified;
+    if (req.session && typeof req.session.save === "function") {
+      await new Promise((resolve) => {
+        req.session.save((err) => {
+          if (err) console.error("Session save error:", err);
+          resolve();
+        });
+      });
+    }
 
     return res.status(201).json({
       id: user.id,
@@ -150,36 +177,27 @@ export const login = async (req, res) => {
 
     const normalizedEmail = normalizeEmail(email);
     const user = await HackathonUser.findOne({ where: { email: normalizedEmail } });
-    if (!user) return res.status(400).json({ message: "Invalid credentials" });
-
-    let ok = await bcrypt.compare(password, user.password);
-
-    if (!ok) {
-      const derivedPasswordPlain = (normalizedEmail.split("@")[0] || "").toLowerCase();
-      const providedLower = String(password).trim().toLowerCase();
-
-      if (
-        providedLower === derivedPasswordPlain ||
-        providedLower === "ryuugamma123" ||
-        providedLower === "studentpass123" ||
-        providedLower === "idealab@123" ||
-        providedLower === "idealab-kct" ||
-        providedLower === "react-kct" ||
-        providedLower === "adithyapass123" ||
-        providedLower === "mentorpass123" ||
-        providedLower === "mentor@123" ||
-        providedLower === "mentor123" ||
-        providedLower === "mentor"
-      ) {
-        const salt = await bcrypt.genSalt(10);
-        const newHashed = await bcrypt.hash(password, salt);
-        await user.update({ password: newHashed });
-        ok = true;
-        console.log(`[hackathon-login] Updated password hash for ${normalizedEmail}`);
-      }
+    if (!user) {
+      recordFailedLogin(normalizedEmail);
+      return res.status(400).json({ message: "Invalid credentials" });
     }
 
-    if (!ok) return res.status(400).json({ message: "Invalid credentials" });
+    const isPasswordCorrect = await bcrypt.compare(password, user.password);
+    if (!isPasswordCorrect) {
+      recordFailedLogin(normalizedEmail);
+      return res.status(400).json({ message: "Invalid credentials" });
+    }
+
+    clearFailedLogin(normalizedEmail);
+
+    if (req.session && typeof req.session.regenerate === "function") {
+      await new Promise((resolve) => {
+        req.session.regenerate((err) => {
+          if (err) console.error("Session regenerate error:", err);
+          resolve();
+        });
+      });
+    }
 
     req.session.hackathonUser = {
       id: user.id,
@@ -191,8 +209,11 @@ export const login = async (req, res) => {
     await createSessionRow(req, user);
 
     if (req.session && typeof req.session.save === "function") {
-      req.session.save((err) => {
-        if (err) console.error("Session save error:", err);
+      await new Promise((resolve) => {
+        req.session.save((err) => {
+          if (err) console.error("Session save error:", err);
+          resolve();
+        });
       });
     }
 
@@ -288,12 +309,21 @@ export const verifyHackathonResetOtp = async (req, res) => {
       typeof expiresAt !== "number" ||
       Date.now() > expiresAt
     ) {
+      req.session.hackathonOtpAttempts = (req.session.hackathonOtpAttempts || 0) + 1;
+      if (req.session.hackathonOtpAttempts >= 5) {
+        clearHackathonResetSession(req);
+        delete req.session.hackathonOtpAttempts;
+        return res.status(429).json({
+          message: "Too many failed attempts. This verification code has been invalidated for security. Please request a new code.",
+        });
+      }
       return res.status(400).json({ message: "Invalid or expired verification code" });
     }
 
     delete req.session.hackathonResetEmail;
     delete req.session.hackathonResetOtp;
     delete req.session.hackathonResetOtpExpiresAt;
+    delete req.session.hackathonOtpAttempts;
 
     req.session.hackathonResetPasswordEmail = email;
 

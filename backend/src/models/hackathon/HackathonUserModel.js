@@ -65,6 +65,11 @@ const HackathonUser = sequelize.define(
       allowNull: true,
       field: "assigned_theme",
     },
+    assignedCluster: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      field: "assigned_cluster",
+    },
   },
   {
     tableName: "hackathon_users",

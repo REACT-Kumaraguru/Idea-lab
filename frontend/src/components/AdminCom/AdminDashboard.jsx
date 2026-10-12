@@ -12,6 +12,7 @@ import {
   ChevronRight,
   Loader2,
   AlertCircle,
+  Activity,
 } from "lucide-react";
 import { axiosInstance } from "../../lib/axios";
 import AmbientBackground from "../AmbientBackground";
@@ -115,6 +116,15 @@ export default function AdminDashboard() {
       iconBg: "bg-emerald-50",
       href: "/admin/qr-scanner",
     },
+    {
+      label: "SYSTEM HEALTH",
+      count: "100%",
+      icon: <Activity size={20} />,
+      borderColor: "border-amber-500",
+      textColor: "text-amber-500",
+      iconBg: "bg-amber-500/10",
+      href: "/admin/system-health",
+    },
   ];
 
   const pendingBookings = bookings
@@ -138,6 +148,7 @@ export default function AdminDashboard() {
     { label: "Add equipment", path: "/admin/new-equipment", icon: PlusCircle },
     { label: "Problem statements", path: "/admin/problem-statements", icon: FileText },
     { label: "Admin access", path: "/admin/users", icon: UserPlus },
+    { label: "System Health & E2E Test", path: "/admin/system-health", icon: Activity },
   ];
 
   if (loading) {

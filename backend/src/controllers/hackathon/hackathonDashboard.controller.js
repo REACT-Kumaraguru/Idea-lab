@@ -81,7 +81,10 @@ const getTeamForMentorUserId = async (userId) => {
 export const getDashboard = async (req, res) => {
   try {
     const userId = getUserIdFromSession(req);
-    const role = req.hackathonUser.role;
+    const role = req.hackathonUser?.role ?? req.session?.hackathonUser?.role ?? req.session?.user?.role;
+    if (!role) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
 
     const problemsRaw = await HackathonProblem.findAll({
       order: [["created_at", "DESC"]],
@@ -104,7 +107,7 @@ export const getDashboard = async (req, res) => {
     });
 
     const teamCountRows = await sequelize.query(
-      `SELECT problem_id AS "problemId", COUNT(DISTINCT team_id)::int AS n
+      `SELECT problem_id AS "problemId", COUNT(DISTINCT team_id) AS n
        FROM hackathon_submissions
        GROUP BY problem_id`,
       { type: QueryTypes.SELECT }

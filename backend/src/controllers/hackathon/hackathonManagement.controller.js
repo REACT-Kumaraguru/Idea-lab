@@ -3,6 +3,14 @@ import HackathonLog from "../../models/hackathon/HackathonLogModel.js";
 import HackathonRegistration from "../../models/hackathon/HackathonRegistrationModel.js";
 import HackathonTeamMember from "../../models/hackathon/HackathonTeamMemberModel.js";
 import HackathonTeam from "../../models/hackathon/HackathonTeamModel.js";
+import HackathonSubmission from "../../models/hackathon/HackathonSubmissionModel.js";
+import HackathonProblem from "../../models/hackathon/HackathonProblemModel.js";
+import HackathonPaymentDetail from "../../models/hackathon/HackathonPaymentDetailModel.js";
+import HackathonAnnouncement from "../../models/hackathon/HackathonAnnouncementModel.js";
+import HackathonMentor from "../../models/hackathon/HackathonMentorModel.js";
+import HackathonProblemMentor from "../../models/hackathon/HackathonProblemMentorModel.js";
+import HackathonTeamMentor from "../../models/hackathon/HackathonTeamMentorModel.js";
+import { sequelize } from "../../lib/db.js";
 import { Op } from "sequelize";
 
 const slugify = (text) =>
@@ -153,6 +161,12 @@ export const adminUpdateHackathon = async (req, res) => {
     refreshments,
     requiredDocuments,
     themes,
+    guidelines,
+    isRegistrationLocked,
+    isPoCSubmissionLocked,
+    isProblemStatementLocked,
+    isOnCampusEventActive,
+    whatsappInviteLink,
   } = req.body || {};
 
   try {
@@ -181,6 +195,12 @@ export const adminUpdateHackathon = async (req, res) => {
     if (refreshments !== undefined) updates.refreshments = refreshments?.trim() || null;
     if (requiredDocuments !== undefined) updates.requiredDocuments = Array.isArray(requiredDocuments) ? requiredDocuments : (typeof requiredDocuments === "string" ? requiredDocuments.split(",").map((s) => s.trim()).filter(Boolean) : []);
     if (themes !== undefined) updates.themes = Array.isArray(themes) ? themes : (typeof themes === "string" ? themes.split(",").map((s) => s.trim()).filter(Boolean) : []);
+    if (guidelines !== undefined) updates.guidelines = guidelines ? String(guidelines).trim() : null;
+    if (typeof isRegistrationLocked === "boolean") updates.isRegistrationLocked = isRegistrationLocked;
+    if (typeof isPoCSubmissionLocked === "boolean") updates.isPoCSubmissionLocked = isPoCSubmissionLocked;
+    if (typeof isProblemStatementLocked === "boolean") updates.isProblemStatementLocked = isProblemStatementLocked;
+    if (typeof isOnCampusEventActive === "boolean") updates.isOnCampusEventActive = isOnCampusEventActive;
+    if (whatsappInviteLink !== undefined) updates.whatsappInviteLink = whatsappInviteLink ? String(whatsappInviteLink).trim() : null;
 
     await hackathon.update(updates);
 
@@ -210,8 +230,44 @@ export const adminDeleteHackathon = async (req, res) => {
 
     const hackathonName = hackathon.name;
     const adminInfo = getAdminInfo(req);
+    const hackathonId = Number(id);
 
-    await hackathon.destroy();
+    await sequelize.transaction(async (t) => {
+      // Find all teams for this hackathon
+      const teams = await HackathonTeam.findAll({ where: { hackathonId }, transaction: t });
+      const teamIds = teams.map((tm) => tm.id);
+
+      if (teamIds.length > 0) {
+        await HackathonTeamMember.destroy({ where: { teamId: { [Op.in]: teamIds } }, transaction: t });
+        await HackathonSubmission.destroy({ where: { teamId: { [Op.in]: teamIds } }, transaction: t });
+        await HackathonPaymentDetail.destroy({ where: { teamId: { [Op.in]: teamIds } }, transaction: t });
+        await HackathonTeamMentor.destroy({ where: { teamId: { [Op.in]: teamIds } }, transaction: t });
+      }
+
+      // Find and clean problem mentors
+      const problems = await HackathonProblem.findAll({ where: { hackathonId }, transaction: t });
+      const problemIds = problems.map((p) => p.id);
+      if (problemIds.length > 0) {
+        await HackathonProblemMentor.destroy({ where: { problemId: { [Op.in]: problemIds } }, transaction: t });
+      }
+
+      // Find and clean mentor associations
+      const mentors = await HackathonMentor.findAll({ where: { hackathonId }, transaction: t });
+      const mentorIds = mentors.map((m) => m.id);
+      if (mentorIds.length > 0) {
+        await HackathonProblemMentor.destroy({ where: { mentorId: { [Op.in]: mentorIds } }, transaction: t });
+        await HackathonTeamMentor.destroy({ where: { mentorId: { [Op.in]: mentorIds } }, transaction: t });
+      }
+
+      await HackathonSubmission.destroy({ where: { hackathonId }, transaction: t });
+      await HackathonPaymentDetail.destroy({ where: { hackathonId }, transaction: t });
+      await HackathonTeam.destroy({ where: { hackathonId }, transaction: t });
+      await HackathonProblem.destroy({ where: { hackathonId }, transaction: t });
+      await HackathonRegistration.destroy({ where: { hackathonId }, transaction: t });
+      await HackathonAnnouncement.destroy({ where: { hackathonId }, transaction: t });
+      await HackathonMentor.destroy({ where: { hackathonId }, transaction: t });
+      await hackathon.destroy({ transaction: t });
+    });
 
     await HackathonLog.create({
       hackathonName,

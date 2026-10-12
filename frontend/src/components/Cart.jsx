@@ -1,12 +1,19 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import Navbar from "./Navbar";
-import { Trash2, MapPin, Users, Calendar, Clock } from "lucide-react";
+import { Trash2, MapPin, Users, Calendar, Clock, Package, CheckCircle } from "lucide-react";
 import { useBookingStore } from "../store/useBookingStore";
 import { axiosInstance } from "../lib/axios";
-import { getImageUrl } from "../lib/config.js";
+import { getImageUrl, getEquipmentFallbackSvg } from "../lib/config.js";
 import AmbientBackground from "./AmbientBackground";
+import { useAuthStore } from "../store/useAuthStore";
 
 const Cart = ({ cart = [], setCart = () => {} }) => {
+  const navigate = useNavigate();
+  const authUser = useAuthStore((state) => state.authUser);
+  const userEmail = String(authUser?.email || "").trim().toLowerCase();
+  const isKct = userEmail.endsWith("@kct.ac.in") || userEmail.endsWith(".kct.ac.in");
+
   const { bookings, fetchMyBookings, isFetchingBookings, submitCart, isSubmittingCart } = useBookingStore();
 
   const [cancellingId, setCancellingId] = useState(null);
@@ -54,13 +61,15 @@ const Cart = ({ cart = [], setCart = () => {} }) => {
   const draftCount = displayBookings.length;
   const cartCount = draftCount;
 
-  const handleProceedToRequest = async () => {
+  const handleBookNow = async () => {
     if (draftCount === 0) {
-      alert("No items in cart to submit. Add equipment from the listing and click \"Add to Cart\" in the schedule form.");
+      alert("No items in cart to book. Add equipment from the catalog first.");
       return;
     }
-    if (!window.confirm("Submit your cart to admin for approval? Your name and email are already linked to your account.")) return;
-    await submitCart();
+    const res = await submitCart();
+    if (res && res.success) {
+      navigate("/reserved");
+    }
   };
 
   return (
@@ -105,12 +114,12 @@ const Cart = ({ cart = [], setCart = () => {} }) => {
                     className="flex items-start gap-5 p-6 border-b border-amber-500/15 last:border-none"
                   >
                     <img
-                      src={imageUrl || "https://via.placeholder.com/80/191618/d4af37?text=Equipment"}
+                      src={imageUrl || getEquipmentFallbackSvg(eq.equipmentName)}
                       alt={eq.equipmentName}
                       className="w-24 h-24 object-cover rounded-2xl border border-amber-500/30 shrink-0"
                       onError={(e) => {
-                        e.target.src =
-                          "https://via.placeholder.com/80/191618/d4af37?text=Equipment";
+                        e.target.onerror = null;
+                        e.target.src = getEquipmentFallbackSvg(eq.equipmentName);
                       }}
                     />
 
@@ -135,20 +144,18 @@ const Cart = ({ cart = [], setCart = () => {} }) => {
                         {eq.quantity != null && (
                           <div className="flex items-center gap-1.5">
                             <Users className="w-3.5 h-3.5 text-stone-400" />
-                            <span>Qty: {eq.quantity}</span>
+                            <span>Total Units: {eq.quantity}</span>
                           </div>
                         )}
-                        {eq.pricePerHour != null && (
-                          <span className="font-mono text-amber-300 font-bold">
-                            ₹{eq.pricePerHour}/hr
-                          </span>
-                        )}
+                        <span className="font-sans text-amber-300 bg-amber-500/10 border border-amber-500/30 px-2.5 py-0.5 rounded text-xs font-medium">
+                          Scheduled for Reservation
+                        </span>
                       </div>
 
                       {/* Scheduled slot */}
                       <div className="mt-4 p-4 bg-stone-900/80 rounded-2xl border border-amber-500/15">
                         <p className="text-[10px] font-sans font-bold uppercase tracking-widest text-amber-300 mb-1.5">
-                          Scheduled Slot
+                          Scheduled Time Slot
                         </p>
                         <div className="flex flex-wrap items-center gap-4 text-xs font-sans text-stone-200">
                           <span className="flex items-center gap-1.5">
@@ -159,11 +166,6 @@ const Cart = ({ cart = [], setCart = () => {} }) => {
                             <Clock className="w-3.5 h-3.5 text-amber-400" />
                             {formatTime(booking.bookingTime)} • {booking.duration}h
                           </span>
-                          {booking.totalAmount != null && (
-                            <span className="font-mono font-bold text-amber-300 text-sm ml-auto">
-                              Total: ₹{booking.totalAmount}
-                            </span>
-                          )}
                         </div>
                         {booking.notes && (
                           <p className="text-xs text-stone-400 mt-2 italic font-light">
@@ -171,6 +173,58 @@ const Cart = ({ cart = [], setCart = () => {} }) => {
                           </p>
                         )}
                       </div>
+
+                      {/* Consumables Requisition Summary */}
+                      {(() => {
+                        let consumablesList = [];
+                        if (Array.isArray(booking.consumablesRequested)) {
+                          consumablesList = booking.consumablesRequested;
+                        } else if (typeof booking.consumablesRequested === "string") {
+                          try {
+                            consumablesList = JSON.parse(booking.consumablesRequested);
+                          } catch (e) {
+                            consumablesList = [];
+                          }
+                        }
+                        if (!consumablesList || consumablesList.length === 0) return null;
+
+                        return (
+                          <div className="mt-3 p-3.5 bg-amber-500/10 rounded-2xl border border-amber-500/25">
+                            <div className="flex items-center justify-between mb-2">
+                              <p className="text-[10px] font-sans font-bold uppercase tracking-widest text-amber-300 flex items-center gap-1.5">
+                                <Package className="w-3 h-3 text-amber-400" />
+                                Requisitioned Consumables ({consumablesList.length})
+                              </p>
+                              <span className="text-[9px] bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded font-mono">
+                                Lab Materials
+                              </span>
+                            </div>
+                            <div className="flex flex-wrap gap-1.5 mb-2">
+                              {consumablesList.map((c, idx) => (
+                                <span
+                                  key={idx}
+                                  className="inline-flex items-center gap-1 text-[11px] bg-stone-900/90 border border-amber-500/30 text-stone-200 px-2 py-0.5 rounded-lg"
+                                >
+                                  <span className="text-stone-300">{c.name}:</span>
+                                  <span className="font-mono text-amber-300 font-bold">
+                                    {c.quantity} {c.unit}
+                                  </span>
+                                </span>
+                              ))}
+                            </div>
+                            {booking.consumablesPurpose && (
+                              <div className="text-[11px] text-stone-300 border-t border-amber-500/20 pt-1.5">
+                                <span className="font-bold text-amber-300 text-[10px] uppercase tracking-wider block mb-0.5">
+                                  Accountability Purpose:
+                                </span>
+                                <p className="italic text-stone-300 font-light">
+                                  "{booking.consumablesPurpose}"
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })()}
                     </div>
 
                     {canCancel(booking.status) && (
@@ -197,7 +251,7 @@ const Cart = ({ cart = [], setCart = () => {} }) => {
                 </span>
 
                 <button
-                  onClick={handleProceedToRequest}
+                  onClick={handleBookNow}
                   disabled={draftCount === 0 || isSubmittingCart}
                   className={`px-8 py-3 rounded-full font-sans text-xs uppercase font-bold tracking-[0.2em] transition-all shadow-lg ${
                     draftCount > 0 && !isSubmittingCart
@@ -208,10 +262,10 @@ const Cart = ({ cart = [], setCart = () => {} }) => {
                   {isSubmittingCart ? (
                     <>
                       <span className="inline-block w-4 h-4 border-2 border-stone-950 border-t-transparent rounded-full animate-spin align-middle mr-2" />
-                      Submitting...
+                      Booking Now...
                     </>
                   ) : (
-                    "Proceed to Request"
+                    "Book Now"
                   )}
                 </button>
               </div>

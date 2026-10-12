@@ -13,6 +13,7 @@ export const setupAssociations = () => {
   Equipment.hasMany(EquipmentBooking, {
     foreignKey: "equipmentId",
     as: "bookings",
+    onDelete: "CASCADE",
   });
 
   EquipmentBooking.belongsTo(Equipment, {

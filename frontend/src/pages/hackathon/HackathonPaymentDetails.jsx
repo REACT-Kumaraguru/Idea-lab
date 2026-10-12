@@ -87,22 +87,14 @@ const HackathonPaymentDetails = () => {
       <div className="max-w-2xl font-sans text-stone-100 space-y-4">
         <h2 className="font-serif text-3xl text-stone-100 uppercase tracking-widest font-normal">Payment Details</h2>
         <div className="rounded-3xl border border-amber-500/30 bg-amber-400/10 p-6 text-xs text-amber-200 space-y-3">
-          <div className="font-bold text-amber-300 font-serif text-base uppercase tracking-wider">
-            🔒 Payment Locked — Action Required
+          <div className="font-bold text-amber-300 font-serif text-base uppercase tracking-wider flex items-center gap-2">
+            <span>🔒 Level 1 Shortlisted Teams Only</span>
           </div>
           <p className="text-stone-300 font-sans leading-relaxed">
             {accessDeniedMessage}
           </p>
-          <div className="pt-2 border-t border-amber-500/20 space-y-2">
-            <div className="font-bold text-stone-100 uppercase tracking-wider text-[11px]">To unlock payment details:</div>
-            <div className="flex items-center gap-2 text-stone-300">
-              <span className="w-5 h-5 rounded-full bg-amber-400/20 text-amber-300 border border-amber-400/30 flex items-center justify-center font-mono font-bold text-[10px]">1</span>
-              <span>Submit your project / PoC under the <strong className="text-amber-300 uppercase">SUBMIT</strong> tab on your dashboard.</span>
-            </div>
-            <div className="flex items-center gap-2 text-stone-300">
-              <span className="w-5 h-5 rounded-full bg-amber-400/20 text-amber-300 border border-amber-400/30 flex items-center justify-center font-mono font-bold text-[10px]">2</span>
-              <span>Wait for your Faculty Mentor to review and click <strong className="text-emerald-400 uppercase">MENTOR APPROVE ✓</strong> on your submission.</span>
-            </div>
+          <div className="pt-2 border-t border-amber-500/20 text-stone-400 text-xs">
+            Registration fee payment is currently open for the 30 shortlisted teams selected for Level 1. If you are a team member, please ask your <strong>Team Leader</strong> to log in and submit the payment details.
           </div>
         </div>
         <button
@@ -110,7 +102,7 @@ const HackathonPaymentDetails = () => {
           className="px-5 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-stone-950 text-xs uppercase font-extrabold tracking-wider transition shadow-lg border border-amber-300 cursor-pointer"
           onClick={() => navigate("/Hackathon/dashboard")}
         >
-          ← Go to Dashboard & Submit Project
+          ← Back to Dashboard
         </button>
       </div>
     );
@@ -119,21 +111,44 @@ const HackathonPaymentDetails = () => {
   return (
     <div className="max-w-3xl font-sans text-stone-100 space-y-6">
       <div>
-        <h2 className="font-serif text-3xl text-stone-100 uppercase tracking-widest font-normal">Payment Details</h2>
-        <p className="text-xs font-dancing text-amber-200/90 mt-1">Submit your team payment details (one submission per team).</p>
+        <h2 className="font-serif text-3xl text-stone-100 uppercase tracking-widest font-normal">Level 1 Registration Payment</h2>
+        <p className="text-xs font-dancing text-amber-200/90 mt-1">Submit your team's ₹500 registration fee transaction details (one submission per team).</p>
+      </div>
+
+      {/* Shortlist Confirmation Card */}
+      <div className="rounded-2xl border border-emerald-500/30 bg-emerald-950/20 p-4 text-xs flex items-center justify-between flex-wrap gap-3">
+        <div className="flex items-center gap-2">
+          <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span className="font-bold text-emerald-300">Level 1 Selection Confirmed ✓</span>
+          <span className="text-stone-300">— {team?.teamName} ({team?.inviteCode})</span>
+        </div>
+        <div className="flex items-center gap-2 font-mono text-[11px]">
+          <span className="px-2.5 py-0.5 rounded-full bg-amber-400/20 text-amber-300 border border-amber-400/30 font-bold">Fee: ₹500</span>
+          <span className="px-2.5 py-0.5 rounded-full bg-stone-800 text-stone-300 border border-stone-700">Due: Aug 31, 2026</span>
+        </div>
       </div>
 
       {existing?.id ? (
-        <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-5 text-xs text-emerald-300 space-y-1">
-          Payment details already submitted for team <strong className="text-stone-100">{team?.teamName}</strong>. Status:{" "}
-          <strong className="text-emerald-400 uppercase tracking-wider">{existing.status}</strong>
+        <div className="serene-glass-card rounded-3xl border border-emerald-500/30 bg-emerald-500/10 p-6 text-xs text-emerald-300 space-y-3">
+          <div className="font-bold text-base text-emerald-200 font-serif uppercase tracking-wider flex items-center gap-2">
+            <span>✓ Payment Submitted</span>
+          </div>
+          <p className="text-stone-300">
+            Payment reference has been recorded for team <strong className="text-stone-100">{team?.teamName}</strong>.
+          </p>
+          <div className="grid sm:grid-cols-2 gap-3 pt-2 border-t border-emerald-500/20 text-xs font-mono">
+            <div><span className="text-stone-400">Transaction ID:</span> <strong className="text-stone-200">{existing.paymentId}</strong></div>
+            <div><span className="text-stone-400">Payer Name:</span> <strong className="text-stone-200">{existing.paidPersonName}</strong></div>
+            <div><span className="text-stone-400">Payer Email:</span> <strong className="text-stone-200">{existing.paymentEmail}</strong></div>
+            <div><span className="text-stone-400">Status:</span> <strong className="text-emerald-400 uppercase">{existing.status}</strong></div>
+          </div>
         </div>
       ) : (
         <form onSubmit={submit} className="serene-glass-card rounded-3xl border border-amber-500/25 p-6 md:p-8 shadow-2xl space-y-5 text-stone-100">
           <div>
             <label className="block text-xs font-serif uppercase tracking-wider text-amber-300 mb-1.5 font-normal">Team Name</label>
             <input
-              value={team?.teamName || ""}
+              value={team?.teamName ? `${team.teamName} (${team.inviteCode || ""})` : ""}
               readOnly
               className="w-full rounded-xl border border-amber-500/20 bg-stone-950/80 px-3.5 py-2.5 text-xs text-stone-300 font-serif uppercase tracking-wide focus:outline-none"
             />

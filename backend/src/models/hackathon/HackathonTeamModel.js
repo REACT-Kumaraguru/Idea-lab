@@ -68,6 +68,72 @@ const HackathonTeam = sequelize.define(
       allowNull: true,
       field: "reviewed_at",
     },
+    cluster: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      field: "cluster",
+    },
+    clusterMarks: {
+      type: DataTypes.FLOAT,
+      allowNull: true,
+      field: "cluster_marks",
+    },
+    clusterFeedback: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+      field: "cluster_feedback",
+    },
+    clusterEvaluatedBy: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      field: "cluster_evaluated_by",
+    },
+    clusterEvaluatedById: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      field: "cluster_evaluated_by_id",
+    },
+    clusterEvaluatedAt: {
+      type: DataTypes.DATE,
+      allowNull: true,
+      field: "cluster_evaluated_at",
+    },
+    assignedFacultyId: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      field: "assigned_faculty_id",
+    },
+    assignedFacultyName: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      field: "assigned_faculty_name",
+    },
+    assignedFacultyEmail: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      field: "assigned_faculty_email",
+    },
+    isPresent: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+      field: "is_present",
+    },
+    benchNumber: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      field: "bench_number",
+    },
+    attendanceMarkedAt: {
+      type: DataTypes.DATE,
+      allowNull: true,
+      field: "attendance_marked_at",
+    },
+    attendanceMarkedBy: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      field: "attendance_marked_by",
+    },
   },
   {
     tableName: "hackathon_teams",

@@ -1,5 +1,6 @@
 import { Op } from "sequelize";
 import ExcelJS from "exceljs";
+import { sequelize } from "../../lib/db.js";
 import HackathonPaymentDetail from "../../models/hackathon/HackathonPaymentDetailModel.js";
 import HackathonTeam from "../../models/hackathon/HackathonTeamModel.js";
 import HackathonTeamMember from "../../models/hackathon/HackathonTeamMemberModel.js";
@@ -14,6 +15,11 @@ const normalizePhone = (value) => String(value || "").replace(/\D/g, "");
 
 const isValidEmail = (value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 const isValidPhone = (value) => /^\d{10}$/.test(value);
+const sanitizeExcelCell = (val) => {
+  if (val == null) return "";
+  const str = String(val);
+  return /^[=@+\-\t\r]/.test(str) ? "'" + str : str;
+};
 const isMissingRelationError = (error) =>
   error?.name === "SequelizeDatabaseError" &&
   (error?.original?.code === "42P01" || /does not exist/i.test(String(error?.original?.message || "")));
@@ -31,18 +37,8 @@ const canAccessPaymentPage = async ({ team, userId }) => {
   if (Number(team.leaderUserId) !== Number(userId)) {
     return { allowed: false, message: "Access denied – only team leader can submit payment details" };
   }
-  if (team.status !== "approved") {
-    return { allowed: false, message: "Access denied – your team is not approved yet" };
-  }
-  const mentorApprovedSubmission = await HackathonSubmission.findOne({
-    where: { teamId: team.id, mentorApproved: true },
-    attributes: ["id"],
-  });
-  if (!mentorApprovedSubmission) {
-    return {
-      allowed: false,
-      message: "Access denied – mentor approval is pending for your team submission",
-    };
+  if (team.abstractionStatus !== "approved") {
+    return { allowed: false, message: "Payment is open exclusively for teams shortlisted for Level 1." };
   }
   return { allowed: true };
 };
@@ -56,8 +52,19 @@ export const getMyPaymentDetail = async (req, res) => {
 
     const existing = await HackathonPaymentDetail.findOne({ where: { teamId: team.id } });
     return res.status(200).json({
-      team: { id: team.id, teamName: team.teamName, status: team.status },
+      team: {
+        id: team.id,
+        teamName: team.teamName,
+        status: team.status,
+        abstractionStatus: team.abstractionStatus,
+        inviteCode: team.inviteCode,
+        theme: team.theme,
+        cluster: team.cluster,
+      },
       paymentDetail: existing || null,
+      amount: 500,
+      currency: "INR",
+      paymentDeadline: "August 31, 2026",
     });
   } catch (error) {
     console.error("getMyPaymentDetail:", error);
@@ -87,18 +94,36 @@ export const submitMyPaymentDetail = async (req, res) => {
       return res.status(400).json({ message: "Phone number must be 10 digits" });
     }
 
-    const existing = await HackathonPaymentDetail.findOne({ where: { teamId: team.id } });
-    if (existing) {
-      return res.status(409).json({ message: "Payment details already submitted for this team" });
-    }
+    const created = await sequelize.transaction(async (t) => {
+      const existing = await HackathonPaymentDetail.findOne({
+        where: { teamId: team.id },
+        transaction: t,
+        lock: t.LOCK?.UPDATE,
+      });
+      if (existing) {
+        throw new Error("TEAM_PAYMENT_EXISTS");
+      }
 
-    const created = await HackathonPaymentDetail.create({
-      teamId: team.id,
-      paymentEmail,
-      paidPersonName,
-      phone,
-      paymentId,
-      status: "pending",
+      const existingPaymentId = await HackathonPaymentDetail.findOne({
+        where: { paymentId },
+        transaction: t,
+        lock: t.LOCK?.UPDATE,
+      });
+      if (existingPaymentId) {
+        throw new Error("PAYMENT_ID_EXISTS");
+      }
+
+      return await HackathonPaymentDetail.create(
+        {
+          teamId: team.id,
+          paymentEmail,
+          paidPersonName,
+          phone,
+          paymentId,
+          status: "pending",
+        },
+        { transaction: t }
+      );
     });
 
     return res.status(201).json({
@@ -106,6 +131,12 @@ export const submitMyPaymentDetail = async (req, res) => {
       paymentDetail: created,
     });
   } catch (error) {
+    if (error.message === "TEAM_PAYMENT_EXISTS") {
+      return res.status(409).json({ message: "Payment details already submitted for this team" });
+    }
+    if (error.message === "PAYMENT_ID_EXISTS") {
+      return res.status(409).json({ message: "This transaction/payment ID has already been submitted by another team" });
+    }
     console.error("submitMyPaymentDetail:", error);
     return res.status(500).json({ message: "Internal Server Error" });
   }
@@ -294,14 +325,14 @@ export const adminExportPaymentDetailsExcel = async (req, res) => {
       const teamHackathonName = t?.hackathonId ? (hackathonNameById.get(t.hackathonId) || hackathonTitle) : hackathonTitle;
       ws.addRow([
         sNo++,
-        teamHackathonName,
-        t?.teamName || "",
-        rec.paymentEmail || "",
-        rec.paidPersonName || "",
-        rec.phone || "",
-        rec.paymentId || "",
-        rec.status || "",
-        rec.createdAt ? new Date(rec.createdAt).toISOString() : "",
+        sanitizeExcelCell(teamHackathonName),
+        sanitizeExcelCell(t?.teamName || ""),
+        sanitizeExcelCell(rec.paymentEmail || ""),
+        sanitizeExcelCell(rec.paidPersonName || ""),
+        sanitizeExcelCell(rec.phone || ""),
+        sanitizeExcelCell(rec.paymentId || ""),
+        sanitizeExcelCell(rec.status || ""),
+        sanitizeExcelCell(rec.createdAt ? new Date(rec.createdAt).toISOString() : ""),
       ]);
     }
 

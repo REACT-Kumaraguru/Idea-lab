@@ -6,13 +6,22 @@ import { getHackathonTemplatePdfHref } from "../../lib/config.js";
 import { isAllowedSubmissionFile, validateSubmissionFiles } from "../../lib/hackathonSubmissionFileTypes.js";
 import { downloadHackathonSubmissionFile, fileHref } from "../../lib/hackathonSubmissionFiles.js";
 import { useHackathonAuthStore } from "../../store/useHackathonAuthStore";
-import { AlertTriangle, Check, Copy, LogOut, Trash2, Trophy } from "lucide-react";
+import { AlertTriangle, Check, Copy, LogOut, Trash2, Trophy, Lock, QrCode, FileText, MessageSquare, ExternalLink, Download, Printer, UserX, ShieldCheck, Sparkles } from "lucide-react";
+import { QRCodeSVG } from "qrcode.react";
 import {
   HackathonProblemArticleCard,
   mentorNamesForProblem,
 } from "../../components/hackathon/HackathonProblemArticleCard.jsx";
 import AmbientBackground from "../../components/AmbientBackground";
 import ReviewerDashboard from "./ReviewerDashboard";
+import ClusterDashboard from "./ClusterDashboard";
+import HackathonPaymentDetails from "./HackathonPaymentDetails";
+import DashboardGuidelinesTab from "../../components/hackathon/dashboard/DashboardGuidelinesTab.jsx";
+import DashboardContactTab from "../../components/hackathon/dashboard/DashboardContactTab.jsx";
+import DashboardTeamTab from "../../components/hackathon/dashboard/DashboardTeamTab.jsx";
+import DashboardProblemsTab from "../../components/hackathon/dashboard/DashboardProblemsTab.jsx";
+import DashboardSubmitTab from "../../components/hackathon/dashboard/DashboardSubmitTab.jsx";
+import DashboardStatusTab from "../../components/hackathon/dashboard/DashboardStatusTab.jsx";
 
 const getHackathonSlugHelper = (h) => {
   if (!h) return "ich2026";
@@ -49,7 +58,7 @@ const HackathonDashboard = () => {
       else if (parts[2]?.toLowerCase() === "dashboard") t = parts[3];
     }
     if (t === "problem") t = "problems";
-    if (t && ["team", "problems", "submit", "status", "guidelines"].includes(t)) return t;
+    if (t && ["team", "problems", "submit", "status", "guidelines", "contact"].includes(t)) return t;
     return "team";
   }, [paramTab, location.pathname, location.search]);
 
@@ -78,6 +87,25 @@ const HackathonDashboard = () => {
   const [team, setTeam] = useState(null);
   const [teamLoading, setTeamLoading] = useState(true);
 
+  const [memberToRemove, setMemberToRemove] = useState(null);
+  const [removingMember, setRemovingMember] = useState(false);
+
+  const confirmRemoveMember = async () => {
+    if (!memberToRemove || !team?.id) return;
+    setRemovingMember(true);
+    try {
+      await axiosInstance.delete(`/ich2026/team/members/${memberToRemove.userId || memberToRemove.id}`);
+      toast.success(`Removed ${memberToRemove.fullName || "member"} from team`);
+      setMemberToRemove(null);
+      const res = await axiosInstance.get(`/ich2026/team${selectedStudentHackathonId ? `?hackathonId=${selectedStudentHackathonId}` : ""}`);
+      setTeam(res.data?.team || null);
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to remove member");
+    } finally {
+      setRemovingMember(false);
+    }
+  };
+
   const [problems, setProblems] = useState([]);
   const [problemsLoading, setProblemsLoading] = useState(false);
 
@@ -104,6 +132,7 @@ const HackathonDashboard = () => {
   const [phase, setPhase] = useState("poc");
   const [description, setDescription] = useState("");
   const [files, setFiles] = useState([]);
+  const [repoLink, setRepoLink] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(null);
 
@@ -175,6 +204,7 @@ const HackathonDashboard = () => {
   const [savingCustomProblem, setSavingCustomProblem] = useState(false);
   const [customProblemMsg, setCustomProblemMsg] = useState(null);
   const [customProblemSuccess, setCustomProblemSuccess] = useState(false);
+  const [isEditingAbstraction, setIsEditingAbstraction] = useState(false);
 
   useEffect(() => {
     if (team) {
@@ -426,22 +456,17 @@ const HackathonDashboard = () => {
 
   const showResults = selectedStudentHackathon?.showResults === true;
   const isAbstractionApproved = team?.abstractionStatus === "approved";
-  const isUnlockedCustom = showResults && isAbstractionApproved;
 
   const studentTabs = useMemo(() => {
-    if (isCustomMode && !isUnlockedCustom) {
-      return [
-        { key: "team", label: "Team" },
-        { key: "problems", label: "Problems" },
-      ];
-    }
-    return [
+    const base = [
       { key: "team", label: "Team" },
       { key: "problems", label: "Problems" },
-      { key: "submit", label: "Submit" },
-      { key: "status", label: "Status" },
     ];
-  }, [isCustomMode, isUnlockedCustom]);
+    if (isAbstractionApproved) {
+      base.push({ key: "payment", label: "Payment Details" });
+    }
+    return base;
+  }, [isAbstractionApproved]);
 
   const mentorTabs = [
     { key: "team", label: "Team" },
@@ -451,12 +476,12 @@ const HackathonDashboard = () => {
   const tabs = role === "mentor" ? mentorTabs : studentTabs;
 
   useEffect(() => {
-    if (role === "student" && isCustomMode && !isUnlockedCustom) {
-      if (activeTab === "submit" || activeTab === "status" || activeTab === "payment") {
+    if (role === "student" && !isAbstractionApproved) {
+      if (activeTab === "payment" || activeTab === "submit" || activeTab === "status") {
         changeTab("team");
       }
     }
-  }, [role, isCustomMode, isUnlockedCustom, activeTab]);
+  }, [role, isAbstractionApproved, activeTab]);
 
   const formatProblemStatementDisplay = (s) => {
     if (!s) return { title: "—", isPersonalized: false, theme: null };
@@ -556,6 +581,7 @@ const HackathonDashboard = () => {
     setPlannedTech("");
     setWorkedBefore("no");
     setAgreedTerms(false);
+    setRepoLink("");
   };
 
   const onSelectProblem = (p) => {
@@ -618,7 +644,9 @@ const HackathonDashboard = () => {
       fd.append("problemId", String(targetProblemId));
       fd.append("title", selectedProblem?.title || team?.topic || "Submission");
       fd.append("phase", phase);
-      fd.append("description", description || "");
+      const finalDescription = (description || "") + (repoLink?.trim() ? `\n\nProject Link / Repository: ${repoLink.trim()}` : "");
+      fd.append("description", finalDescription);
+      if (repoLink?.trim()) fd.append("repoLink", repoLink.trim());
       fd.append("whyParticipate", whyParticipate || "");
       fd.append("problemToSolve", problemToSolve || "");
       fd.append("plannedTech", plannedTech || "");
@@ -726,8 +754,8 @@ const HackathonDashboard = () => {
     }
   };
 
-  if (role === "reviewer") {
-    return <ReviewerDashboard />;
+  if (role === "reviewer" || role === "faculty") {
+    return <ClusterDashboard />;
   }
 
   return (
@@ -872,6 +900,90 @@ const HackathonDashboard = () => {
         </div>
       )}
 
+      {/* LEVEL 1 EVALUATION STATUS NOTIFICATION BANNER */}
+      {role === "student" && team && (
+        <div className="mt-4 mb-2">
+          {team.abstractionStatus === "approved" ? (
+            <div className="serene-glass-card rounded-3xl border border-emerald-500/40 bg-gradient-to-r from-emerald-950/70 via-stone-900/90 to-emerald-950/50 p-6 md:p-8 shadow-2xl backdrop-blur-xl space-y-4">
+              <div className="flex items-center justify-between flex-wrap gap-3">
+                <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-xs font-extrabold uppercase tracking-wider">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                  <span>🏆 Shortlisted & Selected for Level 1 (PoC / Prototype Evaluation)</span>
+                </div>
+                <div className="flex items-center gap-2 font-mono text-xs">
+                  <span className="px-3 py-1 rounded-full bg-amber-400/20 text-amber-300 border border-amber-400/30 font-bold">Fee: ₹500 / Team</span>
+                  <span className="px-3 py-1 rounded-full bg-stone-800 text-stone-300 border border-stone-700">Due: Aug 31, 2026</span>
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <h3 className="font-serif text-2xl md:text-3xl text-stone-100 uppercase tracking-wide">
+                  Congratulations, <span className="text-amber-300">{team.teamName}</span>!
+                </h3>
+                <p className="text-stone-300 text-xs md:text-sm font-sans leading-relaxed max-w-3xl">
+                  Your team has been <strong>successfully shortlisted for Level 1</strong> of the Smart City Hackathon 2026 following cluster faculty evaluation of your problem statement and abstraction.
+                </p>
+              </div>
+
+              <div className="grid sm:grid-cols-3 gap-3 pt-2 font-sans text-xs">
+                <div className="bg-stone-950/70 border border-emerald-500/25 rounded-2xl p-4">
+                  <div className="text-[10px] text-amber-300 uppercase font-bold tracking-wider font-mono">🚀 Level 1 PoC Demo</div>
+                  <div className="text-stone-100 font-bold mt-1 text-sm">September 15, 2026</div>
+                  <div className="text-emerald-400/90 text-[11px] mt-0.5 font-semibold">Prize Worth: ₹15,000</div>
+                </div>
+                <div className="bg-stone-950/70 border border-emerald-500/25 rounded-2xl p-4">
+                  <div className="text-[10px] text-amber-300 uppercase font-bold tracking-wider font-mono">🏆 Level 2 Real-Time Prototype</div>
+                  <div className="text-stone-100 font-bold mt-1 text-sm">October 12, 2026</div>
+                  <div className="text-stone-400 text-[11px] mt-0.5">Shortlisted from Level 1</div>
+                </div>
+                <div className="bg-stone-950/70 border border-emerald-500/25 rounded-2xl p-4">
+                  <div className="text-[10px] text-amber-300 uppercase font-bold tracking-wider font-mono">💳 Registration Fee</div>
+                  <div className="text-amber-300 font-bold mt-1 text-sm">₹500 / Team</div>
+                  <div className="text-stone-400 text-[11px] mt-0.5">Payment due before Aug 31</div>
+                </div>
+              </div>
+
+              <div className="pt-2 flex items-center gap-3 flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => changeTab("payment")}
+                  className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-amber-400 via-amber-300 to-amber-500 text-stone-950 text-xs font-extrabold uppercase tracking-wider shadow-lg hover:brightness-110 transition cursor-pointer border border-amber-300"
+                >
+                  Proceed to Payment Details Tab →
+                </button>
+              </div>
+            </div>
+          ) : team.abstractionStatus === "rejected" ? (
+            <div className="serene-glass-card rounded-3xl border border-rose-500/30 bg-gradient-to-r from-rose-950/40 via-stone-900/90 to-stone-950/80 p-6 md:p-8 shadow-2xl backdrop-blur-xl space-y-3">
+              <div className="flex items-center justify-between flex-wrap gap-3">
+                <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/40 text-xs font-extrabold uppercase tracking-wider">
+                  <span>✕ Level 1 Evaluation Outcome: Not Shortlisted</span>
+                </div>
+                <span className="text-xs text-stone-400 font-mono">Status: Rejected</span>
+              </div>
+
+              <div className="space-y-2">
+                <h3 className="font-serif text-2xl text-stone-100 uppercase tracking-wide">
+                  Evaluation Outcome for <span className="text-stone-300">{team.teamName}</span>
+                </h3>
+                <p className="text-stone-300 text-xs md:text-sm font-sans leading-relaxed max-w-3xl">
+                  Thank you for your active participation and commitment in the Smart City Hackathon 2026. Following the comprehensive evaluation of all project abstractions by our Cluster Faculty Panel, your team has <strong>not been shortlisted</strong> for the Level 1 stage.
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="serene-glass-card rounded-3xl border border-amber-500/30 bg-stone-900/80 p-6 shadow-xl space-y-2">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-400/20 text-amber-300 border border-amber-400/30 text-xs font-bold uppercase tracking-wider">
+                <span>⏳ Status: Under Review</span>
+              </div>
+              <div className="text-xs text-stone-300">
+                Your problem abstraction is recorded and currently undergoing faculty evaluation.
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       <div className="mt-5 relative z-20 flex items-center gap-3 overflow-x-auto whitespace-nowrap pb-2">
         {tabs.map((t) => (
           <button
@@ -898,1051 +1010,159 @@ const HackathonDashboard = () => {
 
       {/* TEAM TAB */}
       {activeTab === "team" ? (
-        <div className="mt-5">
-          {teamLoading ? (
-            <div className="text-stone-400 text-xs font-sans uppercase tracking-widest">Loading team...</div>
-          ) : role === "mentor" ? (
-            <div className="space-y-6 font-sans">
-              <div className="serene-glass-card rounded-3xl border border-amber-500/25 p-6 md:p-8 shadow-2xl">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                  <div>
-                    <div className="font-serif text-2xl uppercase tracking-wider text-stone-100 font-normal">
-                      Registered Teams & Submissions ({statusData.submissions?.length || 0})
-                    </div>
-                    <p className="mt-1 text-xs text-stone-400 font-sans leading-relaxed">
-                      Review registered teams, examine project proposals & files, and grant mentor approvals.
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => changeTab("status")}
-                    className="px-5 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-stone-950 text-xs font-sans uppercase font-extrabold tracking-wider shadow-lg transition cursor-pointer border border-amber-300 shrink-0"
-                  >
-                    View Status Board →
-                  </button>
-                </div>
-              </div>
-
-              {statusData.submissions?.length ? (
-                <div className="space-y-5">
-                  {statusData.submissions.map((s) => (
-                    <div key={s.id} className="serene-glass-card rounded-3xl border border-amber-500/25 p-6 md:p-8 shadow-2xl space-y-5">
-                      <div className="flex items-start justify-between gap-4 flex-wrap">
-                        <div>
-                          <div className="inline-flex px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                            Team Registered
-                          </div>
-                          <div className="font-serif text-3xl uppercase tracking-wider text-stone-100 mt-2 font-normal">
-                            {s.team?.teamName || "Unnamed Team"}
-                          </div>
-                          <div className="mt-2 inline-flex items-center gap-3 px-4 py-2 bg-stone-900/90 border border-amber-500/30 rounded-2xl text-xs font-sans">
-                            <span className="font-bold text-amber-300 uppercase tracking-wider">🔑 Invite Code:</span>
-                            <span className="font-mono font-bold text-stone-100 tracking-widest text-base select-all">{s.team?.inviteCode || "—"}</span>
-                          </div>
-                        </div>
-
-                        <div className="flex flex-col items-end gap-3 font-sans">
-                          <div className="flex items-center gap-4 flex-wrap justify-end">
-                            <div className="text-right">
-                              <div className="text-[10px] uppercase font-extrabold tracking-wider text-stone-400">
-                                Problem Statement Status
-                              </div>
-                              <div className={`mt-1 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider border ${
-                                (s.team?.abstractionStatus === "submitted" || s.team?.abstractionStatus === "approved")
-                                  ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/30"
-                                  : "bg-amber-500/20 text-amber-300 border-amber-500/30"
-                              }`}>
-                                {(s.team?.abstractionStatus === "submitted" || s.team?.abstractionStatus === "approved") ? "Submitted ✓" : "Not Submitted Yet"}
-                              </div>
-                            </div>
-
-                            <div className="text-right">
-                              <div className="text-[10px] uppercase font-extrabold tracking-wider text-stone-400">
-                                Final PoC Submission Status
-                              </div>
-                              <div className={`mt-1 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider border ${formatSubmissionStatus(s).color}`}>
-                                {formatSubmissionStatus(s).label}
-                              </div>
-                            </div>
-                          </div>
-
-                          <button
-                            type="button"
-                            disabled={Boolean(s.mentorApproved)}
-                            onClick={() => mentorApproveSubmission(s.id)}
-                            className="mt-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-amber-400 via-amber-300 to-amber-500 hover:brightness-110 text-stone-950 font-extrabold uppercase text-xs tracking-wider disabled:opacity-60 transition shadow-lg cursor-pointer border border-amber-300"
-                          >
-                            {s.mentorApproved ? "Mentor Approved ✓" : "Mentor Approve"}
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* Team Members */}
-                      {s.team?.members?.length ? (
-                        <div className="font-sans pt-2">
-                          <div className="font-serif text-sm uppercase tracking-wider text-amber-300 font-normal">Team Members</div>
-                          <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                            {s.team.members.map((m) => (
-                              <div key={m.userId} className="flex items-center justify-between gap-2 bg-stone-900/80 border border-amber-500/20 rounded-2xl p-3.5">
-                                <div>
-                                  <div className="font-semibold text-xs text-stone-100">{m.user?.fullName || "Member"}</div>
-                                  <div className="text-[11px] text-stone-400 font-mono">{m.user?.email || "—"}</div>
-                                </div>
-                                {m.isLeader ? (
-                                  <span className="px-2.5 py-0.5 rounded-full bg-amber-400/20 text-amber-300 border border-amber-400/30 text-[10px] font-bold uppercase">Leader</span>
-                                ) : (
-                                  <span className="px-2.5 py-0.5 rounded-full bg-stone-950 text-stone-400 border border-amber-500/15 text-[10px] font-bold uppercase">Member</span>
-                                )}
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      ) : null}
-
-                      {/* Selected Problem & Technical Proposal */}
-                      <div className="font-sans grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
-                        <div className="bg-stone-900/60 border border-amber-500/15 rounded-2xl p-4">
-                          <div className="text-[11px] uppercase font-bold text-amber-300 tracking-wider font-serif flex items-center justify-between">
-                            <span>Selected Problem Statement</span>
-                            {formatProblemStatementDisplay(s).isPersonalized && (
-                              <span className="px-2 py-0.5 rounded bg-amber-400/20 text-amber-300 border border-amber-400/30 text-[9px] font-bold uppercase tracking-wider">
-                                Personalized
-                              </span>
-                            )}
-                          </div>
-                          <div className="text-xs text-stone-100 font-semibold mt-1">
-                            {formatProblemStatementDisplay(s).title}
-                          </div>
-                          {formatProblemStatementDisplay(s).theme && (
-                            <div className="text-[11px] text-stone-400 mt-1 font-sans">
-                              <strong className="text-amber-200/90 font-semibold">Theme:</strong> {formatProblemStatementDisplay(s).theme}
-                            </div>
-                          )}
-                        </div>
-                        <div className="bg-stone-900/60 border border-amber-500/15 rounded-2xl p-4">
-                          <div className="text-[11px] uppercase font-bold text-amber-300 tracking-wider font-serif">Submission Summary</div>
-                          <div className="text-xs text-stone-200 font-semibold mt-1 uppercase">{s.submissionPhase} phase</div>
-                          {s.description && <div className="text-xs text-stone-400 mt-1">{s.description}</div>}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="p-8 text-center text-stone-400 text-xs font-sans serene-glass-card rounded-3xl border border-amber-500/25">
-                  No registered team submissions found for this hackathon yet.
-                </div>
-              )}
-            </div>
-          ) : !team ? (
-            <div className="mt-3 serene-glass-card rounded-3xl border border-amber-500/25 p-6 md:p-8 shadow-2xl">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <div>
-                  <div className="font-serif text-xl uppercase tracking-wider text-stone-100 font-normal">
-                    {role === "mentor"
-                      ? "Mentor Guidance Dashboard"
-                      : `You are not part of a team in ${selectedStudentHackathon?.name || "this hackathon"} yet`}
-                  </div>
-                  <div className="mt-1.5 text-xs text-stone-400 max-w-xl font-sans leading-relaxed">
-                    {role === "mentor"
-                      ? "As a mentor, you can evaluate and approve PoC / Prototype submissions assigned to your problem statements under the Assigned Submissions tab."
-                      : "Create a new team to become Team Leader, or enter an 8-character invite code to join an existing team."}
-                  </div>
-                </div>
-                <div className="flex items-center gap-3 shrink-0">
-                  {role === "mentor" ? (
-                    <button
-                      onClick={() => changeTab("status")}
-                      className="px-5 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-stone-950 text-xs font-sans uppercase font-extrabold tracking-wider shadow-lg transition cursor-pointer border border-amber-300"
-                    >
-                      Go to Assigned Submissions →
-                    </button>
-                  ) : (
-                    <>
-                      <Link
-                        to={`/Hackathon/create-team${selectedStudentHackathonId ? `?hackathonId=${selectedStudentHackathonId}` : ""}`}
-                        className="px-5 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-stone-950 text-xs font-sans uppercase font-extrabold tracking-wider shadow-lg transition flex items-center gap-1.5 cursor-pointer border border-amber-300"
-                      >
-                        <span>+ Create Team</span>
-                      </Link>
-                      <Link
-                        to={`/Hackathon/join-team${selectedStudentHackathonId ? `?hackathonId=${selectedStudentHackathonId}` : ""}`}
-                        className="px-5 py-2.5 rounded-xl border border-amber-500/30 bg-stone-900/80 hover:bg-amber-400/10 text-amber-300 text-xs font-sans uppercase font-bold tracking-wider shadow-lg transition flex items-center gap-1.5 cursor-pointer"
-                      >
-                        <span>🔑 Join Team</span>
-                      </Link>
-                    </>
-                  )}
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div className="mt-3 serene-glass-card rounded-3xl border border-amber-500/25 p-6 md:p-8 shadow-2xl space-y-6">
-              <div className="flex items-start justify-between gap-4 flex-wrap">
-                <div>
-                  <div className="inline-flex px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                    {team?.status === "approved" ? "Team Registered" : team?.status || "Active"}
-                  </div>
-                  <div className="font-serif text-3xl uppercase tracking-wider text-stone-100 mt-2 font-normal">{team?.teamName}</div>
-                  <div className="mt-3 inline-flex items-center gap-3 px-4 py-2 bg-stone-900/90 border border-amber-500/30 rounded-2xl text-xs font-sans">
-                    <span className="font-bold text-amber-300 uppercase tracking-wider">🔑 Team Invite Code:</span>
-                    <span className="font-mono font-bold text-stone-100 tracking-widest text-base select-all">{team?.inviteCode}</span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (team?.inviteCode) {
-                          navigator.clipboard.writeText(team.inviteCode);
-                          setCopiedCode(true);
-                        }
-                      }}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all duration-200 shadow-sm flex items-center gap-1.5 cursor-pointer ${
-                        copiedCode
-                          ? "bg-emerald-500 text-stone-950 scale-105 font-bold"
-                          : "bg-amber-400/20 hover:bg-amber-400/30 text-amber-300 border border-amber-400/30"
-                      }`}
-                    >
-                      {copiedCode ? (
-                        <>
-                          <Check className="w-3.5 h-3.5" />
-                          <span>Copied!</span>
-                        </>
-                      ) : (
-                        <>
-                          <Copy className="w-3.5 h-3.5" />
-                          <span>Copy Code</span>
-                        </>
-                      )}
-                    </button>
-                  </div>
-                </div>
-
-                {!isSubmissionApproved && role === "student" && (
-                  <div className="flex items-center gap-2 flex-wrap justify-end">
-                    {team?.isLeader && (
-                      <button
-                        type="button"
-                        disabled={dismantlingTeam}
-                        onClick={handleDismantleTeam}
-                        className="px-3.5 py-1.5 rounded-xl border border-rose-500/30 bg-rose-600/20 text-rose-300 text-xs font-bold uppercase tracking-wider hover:bg-rose-600/30 transition disabled:opacity-60 shadow-sm flex items-center gap-1.5 cursor-pointer"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                        <span>{dismantlingTeam ? "Dismantling..." : "Dismantle Team"}</span>
-                      </button>
-                    )}
-                    <button
-                      type="button"
-                      disabled={leavingTeam}
-                      onClick={handleLeaveTeam}
-                      className="px-3.5 py-1.5 rounded-xl border border-rose-500/30 bg-stone-900/80 hover:bg-rose-500/10 text-rose-300 text-xs font-bold uppercase tracking-wider transition disabled:opacity-60 shadow-sm flex items-center gap-1.5 cursor-pointer"
-                    >
-                      <LogOut className="w-3.5 h-3.5 text-rose-400" />
-                      <span>{leavingTeam ? "Leaving..." : "Leave Team"}</span>
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              {/* Status Section Grid directly under Invite Code */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-amber-500/20 font-sans">
-                <div className="p-4 rounded-2xl bg-stone-900/80 border border-amber-500/20 flex items-center justify-between gap-4">
-                  <div>
-                    <div className="text-[11px] uppercase font-extrabold tracking-wider text-amber-300/90">
-                      Problem Statement Status
-                    </div>
-                    <div className="text-xs text-stone-400 mt-0.5 font-medium">Abstraction Submission</div>
-                  </div>
-                  <div className={`px-4 py-1.5 rounded-full text-xs font-extrabold uppercase tracking-wider border shadow-sm ${
-                    (team?.abstractionStatus === "submitted" || team?.abstractionStatus === "approved")
-                      ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/40"
-                      : "bg-amber-500/20 text-amber-300 border-amber-500/40"
-                  }`}>
-                    {(team?.abstractionStatus === "submitted" || team?.abstractionStatus === "approved") ? "Submitted ✓" : "Not Submitted Yet"}
-                  </div>
-                </div>
-
-                <div className="p-4 rounded-2xl bg-stone-900/80 border border-amber-500/20 flex items-center justify-between gap-4">
-                  <div>
-                    <div className="text-[11px] uppercase font-extrabold tracking-wider text-amber-300/90">
-                      Final PoC Submission Status
-                    </div>
-                    <div className="text-xs text-stone-400 mt-0.5 font-medium">Prototype & Presentation</div>
-                  </div>
-                  <div className={`px-4 py-1.5 rounded-full text-xs font-extrabold uppercase tracking-wider border shadow-sm ${formatSubmissionStatus(latestSubmission).color}`}>
-                    {formatSubmissionStatus(latestSubmission).label}
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-6 font-sans">
-                <div className="font-serif text-lg uppercase tracking-wider text-amber-300 font-normal">Team Members</div>
-                <div className="mt-3 space-y-2">
-                  {(team?.members || []).map((m) => (
-                    <div
-                      key={m.userId}
-                      className="flex items-start justify-between gap-3 bg-stone-900/80 border border-amber-500/20 rounded-2xl p-4"
-                    >
-                      <div>
-                        <div className="font-semibold text-stone-100">{m.member?.fullName || "Member"}</div>
-                        <div className="text-xs text-stone-400 font-mono">{m.member?.email}</div>
-                      </div>
-                      {m.isLeader ? (
-                        <div className="px-3 py-1 rounded-full bg-amber-400/20 text-amber-300 border border-amber-400/30 text-xs font-bold uppercase tracking-wider">
-                          Leader
-                        </div>
-                      ) : (
-                        <div className="px-3 py-1 rounded-full bg-stone-950 text-stone-400 border border-amber-500/15 text-xs font-bold uppercase tracking-wider">
-                          Member
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="mt-6 font-sans">
-                <div className="font-serif text-lg uppercase tracking-wider text-amber-300 font-normal">
-                  {isCustomMode ? "Project Theme & Topic" : "Selected Problem"}
-                </div>
-                <div className="mt-2 text-stone-200 font-sans text-sm">
-                  {isCustomMode
-                    ? team?.topic
-                      ? `${team.topic} (${team.theme || "No Theme"})`
-                      : team?.theme
-                        ? `Theme: ${team.theme}`
-                        : "Not configured yet"
-                    : selectedProblem
-                      ? selectedProblem.title
-                      : team?.topic
-                        ? team.topic
-                        : "Not selected yet"}
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
+        <DashboardTeamTab
+          teamLoading={teamLoading}
+          role={role}
+          statusData={statusData}
+          changeTab={changeTab}
+          team={team}
+          selectedStudentHackathon={selectedStudentHackathon}
+          selectedStudentHackathonId={selectedStudentHackathonId}
+          copiedCode={copiedCode}
+          setCopiedCode={setCopiedCode}
+          isSubmissionApproved={isSubmissionApproved}
+          dismantlingTeam={dismantlingTeam}
+          handleDismantleTeam={handleDismantleTeam}
+          leavingTeam={leavingTeam}
+          handleLeaveTeam={handleLeaveTeam}
+          setMemberToRemove={setMemberToRemove}
+          isCustomMode={isCustomMode}
+          selectedProblem={selectedProblem}
+          mentorApproveSubmission={mentorApproveSubmission}
+          formatSubmissionStatus={formatSubmissionStatus}
+          formatProblemStatementDisplay={formatProblemStatementDisplay}
+        />
       ) : null}
 
       {/* PROBLEMS TAB */}
       {activeTab === "problems" && role === "student" ? (
-        <div className="mt-5 w-full max-w-6xl mx-auto font-sans">
-          {teamHasSubmitted ? (
-            <div className="mb-6">
-              <AlertCard tone="success">
-                Your team has already submitted. You can review your entry under the <strong className="underline underline-offset-2">Status</strong> tab.
-              </AlertCard>
-            </div>
-          ) : null}
-          {selectedStudentHackathon?.problemStatementType === "custom" ? (
-            <div className="serene-glass-card rounded-3xl border border-amber-500/25 p-6 sm:p-8 max-w-3xl mx-auto shadow-2xl text-stone-100 font-sans">
-              <div className="flex items-center justify-between gap-3 mb-5 pb-4 border-b border-amber-500/20 flex-wrap">
-                <div>
-                  <h3 className="font-serif text-2xl uppercase tracking-wider text-stone-100 flex items-center gap-2 font-normal">
-                    <span>✨ Personalized Problem Statement (Abstraction)</span>
-                    <span className="text-xs px-2.5 py-0.5 rounded-full bg-amber-400/20 text-amber-300 border border-amber-400/30 font-sans font-bold">
-                      {selectedStudentHackathon?.name || "Selected Event"}
-                    </span>
-                  </h3>
-                  <p className="text-xs text-stone-400 mt-1 font-sans">
-                    Select your project theme and enter your personalized problem statement title and abstraction details below.
-                  </p>
-                </div>
-                {!showResults ? (
-                  <span className="text-xs font-bold px-3.5 py-1 rounded-full bg-amber-400/20 text-amber-300 border border-amber-400/30 uppercase tracking-wider animate-pulse">
-                    PENDING ⏳
-                  </span>
-                ) : team?.abstractionStatus === "approved" ? (
-                  <span className="text-xs font-bold px-3.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 uppercase tracking-wider">
-                    Approved by Reviewer ✓
-                  </span>
-                ) : team?.abstractionStatus === "rejected" || team?.abstractionStatus === "needs_revision" ? (
-                  <span className="text-xs font-bold px-3.5 py-1 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/30 uppercase tracking-wider">
-                    Not Selected ❌
-                  </span>
-                ) : (
-                  <span className="text-xs font-bold px-3.5 py-1 rounded-full bg-amber-400/20 text-amber-300 border border-amber-400/30 uppercase tracking-wider animate-pulse">
-                    PENDING ⏳
-                  </span>
-                )}
-              </div>
-
-              {showResults && team?.reviewerFeedback && (
-                <div className="mb-5 p-4 rounded-2xl bg-rose-950/40 border border-rose-500/40 text-xs text-rose-200 font-sans">
-                  <strong className="block uppercase tracking-wider font-bold text-rose-300 mb-1">
-                    Reviewer Notes / Feedback:
-                  </strong>
-                  <p className="italic">"{team.reviewerFeedback}"</p>
-                </div>
-              )}
-
-              <form onSubmit={handleSaveCustomProblem} className="space-y-5">
-                <div>
-                  <label className="block text-xs font-serif uppercase tracking-wider text-amber-300 mb-2 font-normal">
-                    Select Project Theme *
-                  </label>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                    {(
-                      Array.isArray(selectedStudentHackathon?.themes) && selectedStudentHackathon.themes.length > 0
-                        ? selectedStudentHackathon.themes
-                        : [
-                            "Disaster Resilience",
-                            "Waste Management",
-                            "Energy Solutions",
-                            "Smart Agriculture",
-                            "Pollution Control",
-                            "Smart Mobility & Parking",
-                            "Smart Healthcare",
-                          ]
-                    ).map((t) => {
-                      const isSel = customTheme === t;
-                      return (
-                        <button
-                          key={t}
-                          type="button"
-                          onClick={() => setCustomTheme(t)}
-                          className={`p-3 rounded-2xl border text-left text-xs font-sans transition flex items-center gap-2 cursor-pointer ${
-                            isSel
-                              ? "bg-amber-400/20 border-amber-400 text-amber-200 font-bold shadow-md ring-1 ring-amber-400/40"
-                              : "bg-stone-900/80 border-amber-500/20 text-stone-300 hover:border-amber-400/50 hover:bg-stone-900"
-                          }`}
-                        >
-                          <span className={`w-3 h-3 rounded-full shrink-0 ${isSel ? "bg-amber-400 ring-2 ring-amber-400/40" : "bg-stone-600"}`} />
-                          <span>{t}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-serif uppercase tracking-wider text-amber-300 mb-1.5 font-normal">
-                    Problem Statement Title / Topic *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. AI-driven Autonomous Water Quality Monitoring System"
-                    value={customTopic}
-                    onChange={(e) => setCustomTopic(e.target.value)}
-                    className="w-full px-4 py-2.5 rounded-xl border border-amber-500/30 bg-stone-900/90 text-xs text-stone-100 placeholder-stone-600 focus:outline-none focus:border-amber-400 font-sans"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-serif uppercase tracking-wider text-amber-300 mb-1.5 font-normal">
-                    Project Description (Abstraction) (in ~300 words) *
-                  </label>
-                  <textarea
-                    rows={6}
-                    required
-                    placeholder="Describe the problem, key objectives, proposed technology stack, and expected outcomes in about 300 words..."
-                    value={customDesc}
-                    onChange={(e) => setCustomDesc(e.target.value)}
-                    className="w-full px-4 py-2.5 rounded-xl border border-amber-500/30 bg-stone-900/90 text-xs text-stone-100 placeholder-stone-600 focus:outline-none focus:border-amber-400 font-sans"
-                  />
-                </div>
-
-                {customProblemMsg ? (
-                  <div
-                    className={`p-3.5 rounded-xl text-xs font-bold ${
-                      customProblemSuccess
-                        ? "bg-emerald-950/40 text-emerald-300 border border-emerald-500/40"
-                        : "bg-rose-950/40 text-rose-200 border border-rose-500/40"
-                    }`}
-                  >
-                    {customProblemMsg}
-                  </div>
-                ) : null}
-
-                <button
-                  type="submit"
-                  disabled={savingCustomProblem}
-                  className="w-full px-6 py-3.5 rounded-xl bg-gradient-to-r from-amber-400 via-amber-300 to-amber-500 text-stone-950 font-extrabold text-xs uppercase tracking-wider transition shadow-lg disabled:opacity-60 cursor-pointer border border-amber-300 flex items-center justify-center gap-2"
-                >
-                  <span>{savingCustomProblem ? "SUBMITTING..." : "SUBMIT THE PROBLEM"}</span>
-                </button>
-              </form>
-            </div>
-          ) : problemsLoading ? (
-            <div className="text-stone-400 font-sans text-xs uppercase tracking-widest">Loading problems...</div>
-          ) : problems.length ? (
-            <div className="flex flex-col gap-8 sm:gap-10">
-              {problems.map((p) => (
-                <HackathonProblemArticleCard
-                  key={p.id}
-                  problem={p}
-                  footerMeta={
-                    <div className="font-sans text-xs text-stone-400">
-                      {p.teamRegistrationLimit != null && p.teamRegistrationLimit > 0 ? (
-                        <span>
-                          Teams registered:{" "}
-                          <strong className="font-bold text-amber-300">{p.registeredTeams ?? 0}</strong> /{" "}
-                          <strong className="font-bold text-stone-200">{p.teamRegistrationLimit}</strong>
-                        </span>
-                      ) : (
-                        <span>
-                          Teams registered:{" "}
-                          <strong className="font-bold text-amber-300">{p.registeredTeams ?? 0}</strong>
-                        </span>
-                      )}
-                      {problemIsFull(p) ? (
-                        <span className="block mt-1 text-amber-400 font-bold uppercase tracking-wider">Registration full</span>
-                      ) : null}
-                    </div>
-                  }
-                  action={
-                    teamHasSubmitted ? (
-                      <div className="px-6 py-2.5 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 font-extrabold text-xs uppercase tracking-wider flex items-center gap-1.5">
-                        <Check className="w-4 h-4 text-emerald-400" />
-                        <span>Submitted</span>
-                      </div>
-                    ) : (
-                      <button
-                        type="button"
-                        disabled={problemIsFull(p)}
-                        onClick={() => onSelectProblem(p)}
-                        className="px-8 py-3 rounded-xl bg-gradient-to-r from-amber-400 via-amber-300 to-amber-500 text-stone-950 font-extrabold text-xs uppercase tracking-wider hover:brightness-110 transition shadow-lg border border-amber-300 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        {problemIsFull(p) ? "Full" : "Select Problem"}
-                      </button>
-                    )
-                  }
-                />
-              ))}
-            </div>
-          ) : (
-            <div className="serene-glass-card rounded-3xl border border-amber-500/25 p-8 shadow-2xl text-stone-400 font-sans leading-relaxed text-center text-xs uppercase tracking-widest">
-              No problems available yet.
-            </div>
-          )}
-        </div>
+        <DashboardProblemsTab
+          teamHasSubmitted={teamHasSubmitted}
+          selectedStudentHackathon={selectedStudentHackathon}
+          showResults={showResults}
+          team={team}
+          problemsLoading={problemsLoading}
+          problems={problems}
+          problemIsFull={problemIsFull}
+          onSelectProblem={onSelectProblem}
+        />
       ) : null}
 
       {/* SUBMIT TAB */}
       {activeTab === "submit" && role === "student" ? (
-        <div className="mt-5 w-full max-w-5xl mx-auto font-sans">
-          {teamLoading || problemsLoading ? <div className="text-stone-400 font-sans text-xs uppercase tracking-widest mb-4">Loading team status...</div> : null}
-          
-          {teamHasSubmitted ? (
-            <div className="serene-glass-card rounded-3xl border border-emerald-500/30 bg-emerald-500/10 p-8 md:p-10 shadow-2xl space-y-6 text-center">
-              <div className="w-16 h-16 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 flex items-center justify-center mx-auto text-2xl font-bold shadow-lg">
-                ✓
-              </div>
-              <div className="space-y-2">
-                <div className="font-serif text-3xl uppercase tracking-wider text-stone-100 font-normal">
-                  Form Submitted Successfully!
-                </div>
-                <p className="text-stone-300 text-sm max-w-lg mx-auto leading-relaxed font-sans">
-                  Your team (<strong className="text-amber-300 font-semibold">{team?.teamName}</strong>) has already submitted your project proposal and documents for this hackathon.
-                </p>
-              </div>
-              <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-extrabold uppercase tracking-wider">
-                Status: Under Review by Faculty Mentor
-              </div>
-              <div className="pt-2">
-                <button
-                  type="button"
-                  onClick={() => changeTab("status")}
-                  className="px-8 py-3 rounded-xl bg-gradient-to-r from-amber-400 via-amber-300 to-amber-500 text-stone-950 font-extrabold text-xs uppercase tracking-wider hover:brightness-110 transition shadow-lg border border-amber-300 cursor-pointer"
-                >
-                  Track Status on Status Tab →
-                </button>
-              </div>
-            </div>
-          ) : (
-            <>
-              {!submitAllowed ? (
-                <div className="mb-5">
-                  <AlertCard tone="warning">
-                    {submissionBlockedReason || "You are not part of any team yet. Create or join a team first."}
-                  </AlertCard>
-                </div>
-              ) : (
-                <div className="mb-5">
-                  <AlertCard tone="success">
-                    Reviewer Approved ✓. Complete the questions below and submit your proposal for Faculty Mentor review.
-                  </AlertCard>
-                </div>
-              )}
-
-              <div className="serene-glass-card rounded-3xl border border-amber-500/25 p-6 md:p-8 shadow-2xl text-stone-100 font-sans" aria-disabled={!submitAllowed}>
-                
-                {/* Step 1 / Step 2 Tabs */}
-                <div className="mb-6 rounded-2xl border border-amber-500/20 bg-stone-900/80 p-1.5 shadow-inner">
-                  <div className="grid grid-cols-2 gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setSubmissionStep(1)}
-                      className={`rounded-xl px-4 py-3 text-center transition cursor-pointer font-sans ${
-                        submissionStep === 1
-                          ? "bg-gradient-to-r from-amber-400 via-amber-300 to-amber-500 text-stone-950 font-bold shadow-lg border border-amber-300"
-                          : "bg-stone-950/60 text-stone-400 border border-amber-500/10 hover:text-amber-300 hover:border-amber-500/30"
-                      }`}
-                    >
-                      <div className="text-[10px] font-bold uppercase tracking-widest">Step 1</div>
-                      <div className="text-xs font-serif uppercase tracking-wider font-semibold mt-0.5">Participation Questions</div>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (submitAllowed) goToSubmitStep2();
-                      }}
-                      className={`rounded-xl px-4 py-3 text-center transition cursor-pointer font-sans ${
-                        submissionStep === 2
-                          ? "bg-gradient-to-r from-amber-400 via-amber-300 to-amber-500 text-stone-950 font-bold shadow-lg border border-amber-300"
-                          : "bg-stone-950/60 text-stone-400 border border-amber-500/10 hover:text-amber-300 hover:border-amber-500/30"
-                      }`}
-                    >
-                      <div className="text-[10px] font-bold uppercase tracking-widest">Step 2</div>
-                      <div className="text-xs font-serif uppercase tracking-wider font-semibold mt-0.5">File & Proposal Upload</div>
-                    </button>
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  {submissionStep === 1 ? (
-                    <div className="rounded-2xl border border-amber-500/20 bg-stone-900/40 p-6 space-y-5 transition-all duration-300">
-                      <div>
-                        <label className="block text-xs font-serif uppercase tracking-wider text-amber-300 mb-2 font-normal">
-                          1. Why does your team want to participate in this hackathon? *
-                        </label>
-                        <textarea
-                          rows={3}
-                          value={whyParticipate}
-                          onChange={(e) => setWhyParticipate(e.target.value)}
-                          placeholder="Explain your team's motivation and goals..."
-                          className="w-full rounded-xl border border-amber-500/30 bg-stone-900/90 p-3.5 text-xs text-stone-100 placeholder-stone-500 focus:outline-none focus:border-amber-400 font-sans"
-                          disabled={!submitAllowed}
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-xs font-serif uppercase tracking-wider text-amber-300 mb-2 font-normal">
-                          2. What problem are you trying to solve? *
-                        </label>
-                        <textarea
-                          rows={3}
-                          value={problemToSolve}
-                          onChange={(e) => setProblemToSolve(e.target.value)}
-                          placeholder="Describe the core problem statement, target audience, and pain points..."
-                          className="w-full rounded-xl border border-amber-500/30 bg-stone-900/90 p-3.5 text-xs text-stone-100 placeholder-stone-500 focus:outline-none focus:border-amber-400 font-sans"
-                          disabled={!submitAllowed}
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-xs font-serif uppercase tracking-wider text-amber-300 mb-2 font-normal">
-                          3. What technologies are you planning to use? *
-                        </label>
-                        <input
-                          type="text"
-                          value={plannedTech}
-                          onChange={(e) => setPlannedTech(e.target.value)}
-                          placeholder="e.g. React, Node.js, Python, OpenCV, TensorFlow, Raspberry Pi"
-                          className="w-full rounded-xl border border-amber-500/30 bg-stone-900/90 p-3.5 text-xs text-stone-100 placeholder-stone-500 focus:outline-none focus:border-amber-400 font-sans"
-                          disabled={!submitAllowed}
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-xs font-serif uppercase tracking-wider text-amber-300 mb-2 font-normal">
-                          4. Have you worked on this idea before?
-                        </label>
-                        <select
-                          value={workedBefore}
-                          onChange={(e) => setWorkedBefore(e.target.value)}
-                          className="w-full rounded-xl border border-amber-500/30 bg-stone-900/90 p-3.5 text-xs text-stone-100 focus:outline-none focus:border-amber-400 font-sans"
-                          disabled={!submitAllowed}
-                        >
-                          <option value="no">No — Fresh idea for this hackathon</option>
-                          <option value="yes_concept">Yes — Early concept phase</option>
-                          <option value="yes_prototype">Yes — Existing prototype being expanded</option>
-                        </select>
-                      </div>
-
-                      <div className="pt-2 flex items-center gap-3">
-                        <input
-                          type="checkbox"
-                          id="agreedTerms"
-                          checked={agreedTerms}
-                          onChange={(e) => setAgreedTerms(e.target.checked)}
-                          className="w-4 h-4 rounded border-amber-500/40 text-amber-400 focus:ring-amber-400 cursor-pointer accent-amber-400"
-                          disabled={!submitAllowed}
-                        />
-                        <label htmlFor="agreedTerms" className="text-xs text-stone-300 font-sans cursor-pointer select-none">
-                          I agree to the official terms, rules, and code of conduct of the hackathon
-                        </label>
-                      </div>
-
-                      <div className="pt-3">
-                        <button
-                          type="button"
-                          onClick={goToSubmitStep2}
-                          disabled={!submitAllowed}
-                          className="w-full sm:w-auto px-8 py-3 rounded-xl bg-gradient-to-r from-amber-400 via-amber-300 to-amber-500 text-stone-950 font-extrabold text-xs uppercase tracking-wider hover:brightness-110 disabled:opacity-50 transition shadow-lg border border-amber-300 cursor-pointer"
-                        >
-                          Continue to Step 2 →
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <form onSubmit={onSubmit} className="rounded-2xl border border-amber-500/20 bg-stone-900/40 p-6 space-y-5 transition-all duration-300">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-xs font-serif uppercase tracking-wider text-amber-300 mb-1.5 font-normal">
-                            {isCustomMode ? "Personalized Problem Topic / Theme" : "Selected Problem Statement"}
-                          </label>
-                          <input
-                            type="text"
-                            readOnly
-                            value={
-                              isCustomMode
-                                ? (team?.topic || team?.theme || "Personalized Problem Statement")
-                                : (selectedProblem ? selectedProblem.title : team?.topic || "Selected Problem Statement")
-                            }
-                            className="w-full rounded-xl border border-amber-500/20 bg-stone-950/80 px-4 py-3 text-xs text-stone-300 font-sans cursor-not-allowed font-semibold"
-                          />
-                          {!isCustomMode && selectedProblem && (
-                            <div className="mt-1.5 text-[11px] text-stone-400 font-sans">Mentors: {mentorNamesForProblem(selectedProblem)}</div>
-                          )}
-                        </div>
-                        <div>
-                          <label className="block text-xs font-serif uppercase tracking-wider text-amber-300 mb-1.5 font-normal">
-                            Submission Phase
-                          </label>
-                          <select
-                            value={phase}
-                            onChange={(e) => {
-                              setPhase(e.target.value);
-                              setFiles([]);
-                            }}
-                            className="w-full rounded-xl border border-amber-500/30 bg-stone-900/90 px-4 py-3 text-xs text-stone-100 focus:outline-none focus:border-amber-400 font-sans"
-                            disabled={!submitAllowed}
-                          >
-                            <option value="poc">Proof of Concept (PoC)</option>
-                            <option value="prototype">Working Prototype</option>
-                            <option value="final">Final Presentation / Codebase</option>
-                          </select>
-                        </div>
-                      </div>
-
-                      {phase === "poc" ? (
-                        <div className="rounded-2xl border border-amber-500/30 bg-amber-400/10 p-4 text-xs text-amber-200 flex items-center justify-between gap-3 flex-wrap">
-                          <div>
-                            <div className="font-bold uppercase tracking-wider text-stone-100 font-serif">PoC Submission Template</div>
-                            <p className="mt-1 text-stone-300 font-sans text-xs">
-                              Follow the official PDF structure for your PoC document upload.
-                            </p>
-                          </div>
-                          {templatePdfHref ? (
-                            <a
-                              href={templatePdfHref}
-                              download="hackathon_poc_template.pdf"
-                              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-stone-950 text-xs uppercase font-extrabold tracking-wider transition shadow-md border border-amber-300"
-                            >
-                              <span>Download Template PDF</span>
-                              <span className="font-sans">📄</span>
-                            </a>
-                          ) : null}
-                        </div>
-                      ) : null}
-
-                      <div>
-                        <label className="block text-xs font-serif uppercase tracking-wider text-amber-300 mb-1.5 font-normal">
-                          Submission Summary / Approach *
-                        </label>
-                        <textarea
-                          rows={4}
-                          value={description}
-                          onChange={(e) => setDescription(e.target.value)}
-                          placeholder="Summarize your technical implementation, methodology, architecture, and current progress..."
-                          className="w-full rounded-xl border border-amber-500/30 bg-stone-900/90 p-4 text-xs text-stone-100 placeholder-stone-500 focus:outline-none focus:border-amber-400 font-sans"
-                          disabled={!submitAllowed}
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-xs font-serif uppercase tracking-wider text-amber-300 mb-1.5 font-normal">
-                          Upload {phase === "poc" ? "PoC Document" : phase === "prototype" ? "Prototype Files" : "Final Submission"} *
-                        </label>
-                        <input
-                          type="file"
-                          accept=".pdf,.docx"
-                          multiple={phase !== "poc"}
-                          onChange={(e) => {
-                            const selectedFiles = Array.from(e.target.files || []);
-                            const fileErr = validateSubmissionFiles(selectedFiles);
-                            if (fileErr) {
-                              setSubmitError(fileErr);
-                              setFiles([]);
-                            } else {
-                              setSubmitError(null);
-                              setFiles(selectedFiles);
-                            }
-                          }}
-                          className="w-full text-xs text-stone-300 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border file:border-amber-500/30 file:text-xs file:font-bold file:uppercase file:tracking-wider file:bg-amber-400 file:text-stone-950 hover:file:brightness-110 transition cursor-pointer"
-                        />
-                        <p className="mt-1 text-[11px] text-stone-400 font-sans">Accepted formats: PDF or DOCX documents only.</p>
-                      </div>
-
-                      <div className="pt-3 flex flex-col sm:flex-row gap-3">
-                        <button
-                          type="button"
-                          onClick={() => setSubmissionStep(1)}
-                          className="px-6 py-3 rounded-xl bg-stone-900 border border-amber-500/30 text-stone-300 font-bold text-xs uppercase tracking-wider hover:bg-stone-800 hover:text-amber-300 transition cursor-pointer"
-                        >
-                          ← Back to Questions
-                        </button>
-                        <button
-                          type="submit"
-                          disabled={submitting || !submitAllowed}
-                          className="flex-1 px-8 py-3 rounded-xl bg-gradient-to-r from-amber-400 via-amber-300 to-amber-500 text-stone-950 font-extrabold text-xs uppercase tracking-wider hover:brightness-110 disabled:opacity-50 transition shadow-lg border border-amber-300 cursor-pointer"
-                        >
-                          {submitting ? "Submitting Proposal..." : "Submit Proposal & Files 🚀"}
-                        </button>
-                      </div>
-                    </form>
-                  )}
-                </div>
-
-                {submitError ? (
-                  <div className="mt-5">
-                    <AlertCard tone="warning">{submitError}</AlertCard>
-                  </div>
-                ) : null}
-              </div>
-            </>
-          )}
-        </div>
+        <DashboardSubmitTab
+          teamLoading={teamLoading}
+          problemsLoading={problemsLoading}
+          teamHasSubmitted={teamHasSubmitted}
+          team={team}
+          changeTab={changeTab}
+          submitAllowed={submitAllowed}
+          submissionBlockedReason={submissionBlockedReason}
+          submissionStep={submissionStep}
+          setSubmissionStep={setSubmissionStep}
+          goToSubmitStep2={goToSubmitStep2}
+          whyParticipate={whyParticipate}
+          setWhyParticipate={setWhyParticipate}
+          problemToSolve={problemToSolve}
+          setProblemToSolve={setProblemToSolve}
+          plannedTech={plannedTech}
+          setPlannedTech={setPlannedTech}
+          workedBefore={workedBefore}
+          setWorkedBefore={setWorkedBefore}
+          agreedTerms={agreedTerms}
+          setAgreedTerms={setAgreedTerms}
+          onSubmit={onSubmit}
+          isCustomMode={isCustomMode}
+          selectedProblem={selectedProblem}
+          mentorNamesForProblem={mentorNamesForProblem}
+          phase={phase}
+          setPhase={setPhase}
+          setFiles={setFiles}
+          templatePdfHref={templatePdfHref}
+          selectedStudentHackathon={selectedStudentHackathon}
+          repoLink={repoLink}
+          setRepoLink={setRepoLink}
+          description={description}
+          setDescription={setDescription}
+          validateSubmissionFiles={validateSubmissionFiles}
+          setSubmitError={setSubmitError}
+          submitting={submitting}
+          submitError={submitError}
+        />
       ) : null}
 
       {/* STATUS TAB */}
       {activeTab === "status" ? (
-        <div className="mt-5 font-sans">
-          {statusLoading ? <div className="text-stone-400 text-xs font-sans uppercase tracking-widest">Loading status...</div> : null}
-          <div className="max-w-4xl mx-auto space-y-4">
-          {role === "mentor" ? (
-            <div className="serene-glass-card rounded-3xl border border-amber-500/25 p-6 md:p-8 shadow-2xl text-stone-100">
-              <div className="font-serif text-2xl uppercase tracking-wider text-stone-100 font-normal">Assigned Submissions</div>
-              <p className="text-xs text-stone-400 mt-1 font-sans">
-                Submissions for the problems assigned to you for technical review and mentor approval.
-              </p>
+        <DashboardStatusTab
+          statusLoading={statusLoading}
+          role={role}
+          statusData={statusData}
+          formatProblemStatementDisplay={formatProblemStatementDisplay}
+          formatSubmissionStatus={formatSubmissionStatus}
+          mentorApproveSubmission={mentorApproveSubmission}
+          getSubmissionFiles={getSubmissionFiles}
+          downloadHackathonSubmissionFile={downloadHackathonSubmissionFile}
+          fileHref={fileHref}
+          fileNameFromUrl={fileNameFromUrl}
+        />
+      ) : null}
 
-              {statusData.submissions?.length ? (
-                <div className="mt-6 space-y-5">
-                  {statusData.submissions.map((s) => (
-                    <div key={s.id} className="p-6 rounded-2xl border border-amber-500/20 bg-stone-900/90 text-stone-100 space-y-4 shadow-xl">
-                      <div className="flex items-start justify-between gap-3 flex-wrap">
-                        <div>
-                          <div className="font-serif text-lg text-amber-300 uppercase tracking-wider font-normal flex items-center gap-2 flex-wrap">
-                            <span>{formatProblemStatementDisplay(s).title} ({s.submissionPhase} phase)</span>
-                            {formatProblemStatementDisplay(s).isPersonalized && (
-                              <span className="px-2 py-0.5 rounded bg-amber-400/20 text-amber-300 border border-amber-400/30 text-[9px] font-bold uppercase tracking-wider">
-                                Personalized
-                              </span>
-                            )}
-                          </div>
-                          {formatProblemStatementDisplay(s).theme && (
-                            <div className="text-xs text-amber-200/90 font-sans mt-0.5">
-                              <strong>Theme:</strong> {formatProblemStatementDisplay(s).theme}
-                            </div>
-                          )}
-                          <div className="text-xs text-stone-300 mt-1 font-sans">
-                            Team: <span className="font-bold text-stone-100">{s.team?.teamName || "—"}</span>
-                          </div>
-                        </div>
-                        <div>
-                          <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider border ${formatSubmissionStatus(s).color}`}>
-                            {formatSubmissionStatus(s).label}
-                          </span>
-                        </div>
-                      </div>
+      {/* PAYMENT DETAILS TAB FOR APPROVED SHORTLISTED TEAMS */}
+      {activeTab === "payment" && role === "student" ? (
+        <div className="mt-5 w-full max-w-5xl mx-auto font-sans">
+          <HackathonPaymentDetails />
+        </div>
+      ) : null}
 
-                      <div className="space-y-3 font-sans text-xs">
-                        <div className="rounded-2xl border border-amber-500/20 bg-stone-950/70 p-4">
-                          <div className="text-xs uppercase font-bold text-amber-300 tracking-wider">Team members</div>
-                          <div className="text-xs text-stone-200 mt-1">
-                            {(s.team?.members || [])
-                              .map((m) => (m?.user?.fullName ? `${m.user.fullName}${m.isLeader ? " (Leader)" : ""}` : null))
-                              .filter(Boolean)
-                              .join(", ") || "—"}
-                          </div>
-                        </div>
+      {/* GUIDELINES TAB (Phase 14.2) */}
+      {activeTab === "guidelines" ? (
+        <DashboardGuidelinesTab selectedStudentHackathon={selectedStudentHackathon} />
+      ) : null}
 
-                        <div className="rounded-2xl border border-amber-500/20 bg-stone-950/70 p-4 space-y-2">
-                          <div className="text-xs uppercase font-bold text-amber-300 tracking-wider">Participation details</div>
-                          <div className="space-y-2.5 text-stone-200 pt-1">
-                            <div>
-                              <div className="font-bold text-stone-300">
-                                1. Why does your team want to participate in this hackathon?
-                              </div>
-                              <div className="text-stone-400 whitespace-pre-wrap mt-0.5">{s.whyParticipate || "—"}</div>
-                            </div>
-                            <div>
-                              <div className="font-bold text-stone-300">2. What problem are you trying to solve?</div>
-                              <div className="text-stone-400 whitespace-pre-wrap mt-0.5">{s.problemToSolve || "—"}</div>
-                            </div>
-                            <div>
-                              <div className="font-bold text-stone-300">3. What technologies are you planning to use?</div>
-                              <div className="text-stone-400 whitespace-pre-wrap mt-0.5">{s.plannedTech || "—"}</div>
-                            </div>
-                            <div>
-                              <div className="font-bold text-stone-300">4. Have you worked on this idea before?</div>
-                              <div className="text-stone-400 mt-0.5">{s.workedBefore ? String(s.workedBefore) : "—"}</div>
-                            </div>
-                          </div>
-                        </div>
+      {/* CONTACT & COMMUNITY TAB (Phase 14.8) */}
+      {activeTab === "contact" ? (
+        <DashboardContactTab selectedStudentHackathon={selectedStudentHackathon} />
+      ) : null}
 
-                        <div className="rounded-2xl border border-amber-500/20 bg-stone-950/70 p-4">
-                          <div className="text-xs uppercase font-bold text-amber-300 tracking-wider">Description</div>
-                          <div className="text-xs text-stone-300 mt-1 whitespace-pre-wrap">{s.description || "—"}</div>
-                        </div>
-
-                        <div className="rounded-2xl border border-amber-500/20 bg-stone-950/70 p-4">
-                          <div className="text-xs uppercase font-bold text-amber-300 tracking-wider">Uploaded files</div>
-                          {getSubmissionFiles(s).length ? (
-                            <div className="mt-2 space-y-2">
-                              {getSubmissionFiles(s).map((u, idx) => (
-                                <div key={`${u}-${idx}`} className="flex flex-wrap items-center gap-2">
-                                  <button
-                                    type="button"
-                                    onClick={() => void downloadHackathonSubmissionFile(u)}
-                                    className="inline-flex items-center rounded-xl bg-amber-400/20 border border-amber-400/30 px-3 py-1 text-xs font-bold uppercase text-amber-300 hover:bg-amber-400/30 transition cursor-pointer"
-                                  >
-                                    Download
-                                  </button>
-                                  <a
-                                    href={fileHref(u)}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="text-xs text-amber-300 hover:underline font-mono break-all"
-                                  >
-                                    {fileNameFromUrl(u)}
-                                  </a>
-                                </div>
-                              ))}
-                            </div>
-                          ) : (
-                            <div className="text-xs text-stone-500 mt-1">—</div>
-                          )}
-                        </div>
-
-                        <div className="flex items-center justify-between gap-3 flex-wrap pt-2">
-                          <div className="text-xs text-stone-300 font-sans">
-                            Mentor approval:{" "}
-                            <span className={`font-bold ${s.mentorApproved ? "text-emerald-400" : "text-amber-300"}`}>
-                              {s.mentorApproved ? "Approved ✓" : "Not approved"}
-                            </span>
-                          </div>
-                          <button
-                            type="button"
-                            disabled={Boolean(s.mentorApproved)}
-                            onClick={() => mentorApproveSubmission(s.id)}
-                            className="px-6 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-stone-950 font-extrabold uppercase text-xs tracking-wider disabled:opacity-60 transition shadow-lg cursor-pointer border border-amber-300"
-                          >
-                            {s.mentorApproved ? "Mentor Approved ✓" : "Mentor Approve"}
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="mt-6 p-6 text-center text-stone-400 text-xs font-sans border border-amber-500/15 rounded-2xl bg-stone-950/60">
-                  No submissions found for your assigned problems yet.
-                </div>
-              )}
-            </div>
-          ) : !statusData?.team ? (
-            <AlertCard tone="warning">No team found. Create/join a team to track submissions.</AlertCard>
-          ) : (
-            <div className="serene-glass-card rounded-3xl border border-amber-500/25 p-6 md:p-8 shadow-2xl text-stone-100 space-y-6">
-              <div className="flex items-start justify-between gap-4 flex-wrap">
-                <div>
-                  <div className="inline-flex px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                    {statusData?.team?.status === "approved" ? "Team Registered" : statusData?.team?.status || "Active"}
-                  </div>
-                  <div className="font-serif text-3xl uppercase tracking-wider text-stone-100 mt-2 font-normal">{statusData?.team?.teamName}</div>
-                  <div className="text-xs text-stone-400 mt-1 font-mono">
-                    Invite Code: <span className="text-amber-300 font-bold">{statusData?.team?.inviteCode}</span>
-                  </div>
-                </div>
+      {/* Member Removal Warning Modal (Phase 14.9) */}
+      {memberToRemove ? (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-stone-950/80 backdrop-blur-md animate-fadeIn">
+          <div className="serene-glass-card rounded-3xl p-6 sm:p-8 w-full max-w-md shadow-2xl border border-rose-500/40 text-stone-100 font-sans space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-rose-500/20 border border-rose-500/40 flex items-center justify-center text-rose-300 shrink-0">
+                <UserX className="w-5 h-5 text-rose-400" />
               </div>
-
               <div>
-                <div className="font-serif text-xl uppercase tracking-wider text-amber-300 font-normal border-b border-amber-500/20 pb-2 mb-4">
-                  Submissions
+                <h3 className="font-serif text-xl uppercase tracking-wider text-stone-100 font-normal">
+                  Remove Team Member
+                </h3>
+                <div className="text-[11px] font-mono text-rose-300 font-bold">
+                  {memberToRemove.fullName || "Student"}
                 </div>
-                {statusData.submissions?.length ? (
-                  <div className="space-y-4 font-sans text-xs">
-                    {statusData.submissions.map((s) => (
-                      <div key={s.id} className="p-5 rounded-2xl border border-amber-500/20 bg-stone-900/90 text-stone-100 space-y-3">
-                        <div className="flex items-start justify-between gap-3 flex-wrap">
-                          <div>
-                            <div className="font-serif text-base uppercase text-stone-100 font-normal">
-                              {s.problem?.title || "Problem Track"} ({s.submissionPhase} phase)
-                            </div>
-                            <div className="text-xs text-stone-300 mt-0.5">{s.title}</div>
-                          </div>
-                          <div>
-                            <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider border ${formatSubmissionStatus(s).color}`}>
-                              {formatSubmissionStatus(s).label}
-                            </span>
-                            {s.winnerAmount ? (
-                              <div className="text-xs text-emerald-400 font-bold mt-2">
-                                Winner Prize: ₹{s.winnerAmount}
-                              </div>
-                            ) : null}
-                          </div>
-                        </div>
-                        {s.description ? (
-                          <div className="text-xs text-stone-300 whitespace-pre-wrap border-t border-amber-500/15 pt-3">
-                            {s.description}
-                          </div>
-                        ) : null}
-                        <div className="rounded-2xl border border-amber-500/20 bg-stone-950/60 p-4">
-                          <div className="text-xs uppercase font-bold text-amber-300 tracking-wider">
-                            {s.submissionPhase === "poc"
-                              ? "PoC files"
-                              : s.submissionPhase === "prototype"
-                                ? "Prototype files"
-                                : "Final files"}
-                          </div>
-                          {getSubmissionFiles(s).length ? (
-                            <div className="mt-2 space-y-2">
-                              {getSubmissionFiles(s).map((u, idx) => (
-                                <div key={`${u}-${idx}`} className="flex flex-wrap items-center gap-2">
-                                  <button
-                                    type="button"
-                                    onClick={() => void downloadHackathonSubmissionFile(u)}
-                                    className="inline-flex items-center rounded-xl bg-amber-400/20 border border-amber-400/30 px-3 py-1 text-xs font-bold uppercase text-amber-300 hover:bg-amber-400/30 transition cursor-pointer"
-                                  >
-                                    Download
-                                  </button>
-                                  <a
-                                    href={fileHref(u)}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="text-xs text-amber-300 hover:underline font-mono break-all"
-                                  >
-                                    {fileNameFromUrl(u)}
-                                  </a>
-                                </div>
-                              ))}
-                            </div>
-                          ) : (
-                            <div className="text-xs text-stone-500 mt-1">No files for this phase.</div>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="p-6 text-center text-stone-400 text-xs font-sans border border-amber-500/15 rounded-2xl bg-stone-950/60">
-                    No submissions found yet.
-                  </div>
-                )}
               </div>
             </div>
-          )}
+
+            <p className="text-xs text-stone-300 leading-relaxed font-sans">
+              Are you sure you want to remove <strong className="text-stone-100">{memberToRemove.fullName || "this student"}</strong> from your team? This action cannot be undone.
+            </p>
+
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setMemberToRemove(null)}
+                className="px-4 py-2.5 rounded-xl border border-stone-700 bg-stone-900/80 text-stone-300 text-xs uppercase font-bold tracking-wider hover:bg-stone-800 transition cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={removingMember}
+                onClick={confirmRemoveMember}
+                className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-rose-500 to-rose-600 text-stone-100 text-xs uppercase font-extrabold tracking-wider hover:brightness-110 transition shadow-lg disabled:opacity-60 cursor-pointer"
+              >
+                {removingMember ? "Removing..." : "Yes, Remove Member"}
+              </button>
+            </div>
           </div>
         </div>
       ) : null}
@@ -1952,7 +1172,9 @@ const HackathonDashboard = () => {
           <div className="w-full max-w-2xl serene-glass-card rounded-3xl border border-amber-500/30 p-6 md:p-8 shadow-2xl text-stone-100">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <h3 className="font-serif text-2xl uppercase tracking-wider text-amber-300 font-normal">Hackathon Guidelines</h3>
+                <h3 className="font-serif text-2xl uppercase tracking-wider text-amber-300 font-normal">
+                  {selectedStudentHackathon?.name ? `${selectedStudentHackathon.name} Guidelines` : "Hackathon Guidelines"}
+                </h3>
                 <p className="text-xs text-stone-400 font-dancing mt-1">Official rules and guidelines for participation.</p>
               </div>
               <button
@@ -1973,10 +1195,16 @@ const HackathonDashboard = () => {
                 </ul>
               </div>
               <div className="bg-stone-900/90 border border-amber-500/20 rounded-2xl p-4 space-y-1">
-                <div className="font-serif text-sm uppercase tracking-wider text-amber-300 font-normal">Prizes & Support</div>
+                <div className="font-serif text-sm uppercase tracking-wider text-amber-300 font-normal">Reviewer Evaluation & Selection</div>
                 <ul className="mt-2 space-y-1.5 text-stone-300 list-disc list-inside">
-                  <li>Prize pool up to ₹60,000</li>
-                  <li>Internship opportunities for selected top performing teams</li>
+                  <li>Problem statements & abstractions are evaluated by designated Theme Reviewers for selection</li>
+                  <li>Shortlisted teams will be notified for the Hackathon build phase & final presentation</li>
+                </ul>
+              </div>
+              <div className="bg-stone-900/90 border border-amber-500/20 rounded-2xl p-4 space-y-1">
+                <div className="font-serif text-sm uppercase tracking-wider text-amber-300 font-normal">Prizes</div>
+                <ul className="mt-2 space-y-1.5 text-stone-300 list-disc list-inside">
+                  <li>{selectedStudentHackathon?.prizePool ? `Prizes worth ${selectedStudentHackathon.prizePool}` : "Prizes worth ₹15,000"}</li>
                 </ul>
               </div>
             </div>

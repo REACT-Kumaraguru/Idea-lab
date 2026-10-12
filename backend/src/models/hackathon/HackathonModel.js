@@ -157,6 +157,91 @@ const Hackathon = sequelize.define(
         this.setDataValue("themes", Array.isArray(val) ? JSON.stringify(val) : JSON.stringify(val ? [val] : []));
       },
     },
+    guidelines: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+      field: "guidelines",
+    },
+    isRegistrationLocked: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+      field: "is_registration_locked",
+    },
+    isPoCSubmissionLocked: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+      field: "is_poc_submission_locked",
+    },
+    isProblemStatementLocked: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+      field: "is_problem_statement_locked",
+    },
+    isOnCampusEventActive: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+      field: "is_on_campus_event_active",
+    },
+    whatsappInviteLink: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      field: "whatsapp_invite_link",
+    },
+    facultyCoordinates: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+      field: "faculty_coordinates",
+      get() {
+        const raw = this.getDataValue("facultyCoordinates");
+        if (!raw) return [];
+        try {
+          return JSON.parse(raw);
+        } catch {
+          return [];
+        }
+      },
+      set(val) {
+        this.setDataValue("facultyCoordinates", JSON.stringify(val || []));
+      },
+    },
+    studentCoordinates: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+      field: "student_coordinates",
+      get() {
+        const raw = this.getDataValue("studentCoordinates");
+        if (!raw) return [];
+        try {
+          return JSON.parse(raw);
+        } catch {
+          return [];
+        }
+      },
+      set(val) {
+        this.setDataValue("studentCoordinates", JSON.stringify(val || []));
+      },
+    },
+    gallery: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+      field: "gallery",
+      get() {
+        const raw = this.getDataValue("gallery");
+        if (!raw) return [];
+        try {
+          return JSON.parse(raw);
+        } catch {
+          return [];
+        }
+      },
+      set(val) {
+        this.setDataValue("gallery", JSON.stringify(val || []));
+      },
+    },
   },
   {
     tableName: "hackathons",

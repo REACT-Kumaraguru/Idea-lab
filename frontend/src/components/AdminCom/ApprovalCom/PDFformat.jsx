@@ -166,12 +166,66 @@ const InvoiceModal = ({ booking, bookings: bookingsProp, onClose }) => {
                     <span className="text-gray-700">Tax (18% GST):</span>
                     <span className="font-semibold text-gray-900">{formatCurrency(tax)}</span>
                   </div>
-                  <div className="flex justify-between py-3 bg-blue-50 px-4 rounded-lg mt-2">
-                    <span className="text-lg font-bold text-gray-900">Total:</span>
-                    <span className="text-lg font-bold text-blue-600">{formatCurrency(total)}</span>
-                  </div>
+                  {total === 0 ? (
+                    <div className="flex justify-between items-center py-3 bg-emerald-50 px-4 rounded-lg mt-2 border border-emerald-200">
+                      <div>
+                        <span className="text-lg font-bold text-gray-900 block leading-tight">Total:</span>
+                        <span className="text-[10px] text-emerald-700 font-bold uppercase tracking-wider">KCT Institutional Waiver (100% Free)</span>
+                      </div>
+                      <span className="text-lg font-bold text-emerald-600">₹0.00</span>
+                    </div>
+                  ) : (
+                    <div className="flex justify-between py-3 bg-blue-50 px-4 rounded-lg mt-2">
+                      <span className="text-lg font-bold text-gray-900">Total:</span>
+                      <span className="text-lg font-bold text-blue-600">{formatCurrency(total)}</span>
+                    </div>
+                  )}
                 </div>
               </div>
+
+              {/* Consumables & Raw Materials Requisition (IDEA Lab Accountability) */}
+              {list.some((b) => b.consumablesRequested) && (
+                <div className="mb-6 p-4 bg-amber-50 border-l-4 border-amber-500 rounded">
+                  <div className="flex justify-between items-center mb-2">
+                    <p className="text-xs font-bold text-amber-900 uppercase tracking-wide">
+                      Consumables & Raw Materials Requisition (IDEA Lab Accountability)
+                    </p>
+                    <span className="text-[10px] bg-amber-200 text-amber-900 px-2 py-0.5 rounded font-mono font-semibold">
+                      Material Issue Pass
+                    </span>
+                  </div>
+                  {list.map((b) => {
+                    let cList = [];
+                    if (Array.isArray(b.consumablesRequested)) {
+                      cList = b.consumablesRequested;
+                    } else if (typeof b.consumablesRequested === "string") {
+                      try { cList = JSON.parse(b.consumablesRequested); } catch (e) { cList = []; }
+                    }
+                    if (!cList || cList.length === 0) return null;
+
+                    return (
+                      <div key={`cons-inv-${b.id}`} className="mb-2 last:mb-0">
+                        <p className="text-xs font-semibold text-gray-800">
+                          {b.equipment?.equipmentName}:
+                        </p>
+                        <div className="flex flex-wrap gap-2 my-1">
+                          {cList.map((c, i) => (
+                            <span key={i} className="text-xs bg-white border border-amber-300 text-gray-800 px-2 py-0.5 rounded">
+                              <strong>{c.name}</strong>: {c.quantity} {c.unit}
+                            </span>
+                          ))}
+                        </div>
+                        {b.consumablesPurpose && (
+                          <p className="text-xs text-gray-600 italic">
+                            <span className="font-semibold text-gray-700 not-italic">Accountability Purpose: </span>
+                            "{b.consumablesPurpose}"
+                          </p>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
 
               {/* Notes - first booking with notes */}
               {list.some((b) => b.notes) && (

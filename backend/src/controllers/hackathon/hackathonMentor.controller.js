@@ -1,3 +1,4 @@
+import crypto from "crypto";
 import bcrypt from "bcryptjs";
 import HackathonUser from "../../models/hackathon/HackathonUserModel.js";
 import HackathonMentor from "../../models/hackathon/HackathonMentorModel.js";
@@ -8,13 +9,6 @@ import HackathonSession from "../../models/hackathon/HackathonSessionModel.js";
 import HackathonSubmission from "../../models/hackathon/HackathonSubmissionModel.js";
 
 const normalizeEmail = (email) => String(email || "").trim().toLowerCase();
-
-function passwordFromEmail(email) {
-  const normalized = normalizeEmail(email);
-  const idx = normalized.indexOf("@");
-  if (idx <= 0) throw new Error("Invalid email");
-  return normalized.slice(0, idx);
-}
 
 import { Op } from "sequelize";
 
@@ -62,12 +56,9 @@ export const adminCreateMentor = async (req, res) => {
     }
 
     const normalizedEmail = normalizeEmail(email);
-    let passwordPlain = "";
-    try {
-      passwordPlain = passwordFromEmail(normalizedEmail);
-    } catch {
-      return res.status(400).json({ message: "Invalid email format" });
-    }
+    const passwordPlain = (req.body?.password && String(req.body.password).trim().length >= 6)
+      ? String(req.body.password).trim()
+      : crypto.randomBytes(4).toString("hex");
 
     const existingEmail = await HackathonUser.findOne({ where: { email: normalizedEmail } });
     if (existingEmail) return res.status(400).json({ message: "Email already exists" });
@@ -89,7 +80,7 @@ export const adminCreateMentor = async (req, res) => {
       hackathonId: hackathonId && Number.isInteger(Number(hackathonId)) ? Number(hackathonId) : null,
     });
 
-    return res.status(201).json({ mentorId: mentor.id, userId: user.id });
+    return res.status(201).json({ mentorId: mentor.id, userId: user.id, initialPassword: passwordPlain });
   } catch (error) {
     console.log("Error in adminCreateMentor:", error.message);
     return res.status(500).json({ message: "Internal Server Error" });
@@ -123,9 +114,12 @@ export const adminUpdateMentor = async (req, res) => {
           return res.status(400).json({ message: "Email already exists" });
         }
         updatesUser.email = nextEmail;
-        const salt = await bcrypt.genSalt(10);
-        updatesUser.password = await bcrypt.hash(passwordFromEmail(nextEmail), salt);
       }
+    }
+
+    if (req.body?.password && String(req.body.password).trim().length >= 6) {
+      const salt = await bcrypt.genSalt(10);
+      updatesUser.password = await bcrypt.hash(String(req.body.password).trim(), salt);
     }
 
     if (Object.keys(updatesUser).length) await user.update(updatesUser);

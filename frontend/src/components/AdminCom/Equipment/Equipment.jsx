@@ -8,7 +8,7 @@ import {
   Filter
 } from 'lucide-react';
 import { useEquipmentStore } from '../../../store/useEquipmentStore';
-import { getImageUrl } from '../../../lib/config.js';
+import { getImageUrl, getEquipmentFallbackSvg } from '../../../lib/config.js';
 import AmbientBackground from '../../AmbientBackground';
 
 const Equipment = () => {
@@ -19,6 +19,7 @@ const Equipment = () => {
     equipment,
     fetchEquipment,
     deleteEquipment,
+    toggleEquipmentStatus,
     isFetchingEquipment
   } = useEquipmentStore();
 
@@ -34,7 +35,8 @@ const Equipment = () => {
 
   const filteredList = equipment.filter(item =>
     item.equipmentName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.brandName?.toLowerCase().includes(searchTerm.toLowerCase())
+    item.brandName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    item.category?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -81,23 +83,24 @@ const Equipment = () => {
                 <tr className="border-b border-amber-500/20 text-stone-400 uppercase tracking-wider font-bold">
                   <th className="px-6 py-4">Image</th>
                   <th className="px-6 py-4">Equipment</th>
+                  <th className="px-6 py-4">Category</th>
                   <th className="px-6 py-4">Brand</th>
                   <th className="px-6 py-4">Quantity</th>
-                  <th className="px-6 py-4">Price (₹/hr)</th>
-                  <th className="px-6 py-4">Status</th>
+                  <th className="px-6 py-4">Pricing (₹/hr)</th>
+                  <th className="px-6 py-4">Booking Status</th>
                   <th className="px-6 py-4 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-amber-500/10">
                 {isFetchingEquipment ? (
                   <tr>
-                    <td colSpan="7" className="text-center py-8 text-stone-500 uppercase tracking-widest text-xs">
+                    <td colSpan="8" className="text-center py-8 text-stone-500 uppercase tracking-widest text-xs">
                       Loading hardware inventory...
                     </td>
                   </tr>
                 ) : filteredList.length === 0 ? (
                   <tr>
-                    <td colSpan="7" className="text-center py-8 text-stone-500 uppercase tracking-widest text-xs">
+                    <td colSpan="8" className="text-center py-8 text-stone-500 uppercase tracking-widest text-xs">
                       No matching equipment found.
                     </td>
                   </tr>
@@ -106,13 +109,22 @@ const Equipment = () => {
                     <tr key={item.id} className="hover:bg-amber-400/5 transition">
                       <td className="px-6 py-4">
                         <img
-                          src={getImageUrl(item.image)}
+                          src={getImageUrl(item.image) || getEquipmentFallbackSvg(item.equipmentName)}
                           alt={item.equipmentName}
                           className="w-12 h-12 object-cover rounded-xl border border-amber-500/30 bg-stone-900"
+                          onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.src = getEquipmentFallbackSvg(item.equipmentName);
+                          }}
                         />
                       </td>
                       <td className="px-6 py-4 font-serif text-sm text-stone-100 uppercase tracking-wide">
                         {item.equipmentName}
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className="text-[10px] font-sans uppercase font-bold tracking-wider px-2.5 py-1 rounded-full border border-amber-500/30 bg-amber-500/10 text-amber-300 whitespace-nowrap">
+                          {item.category || "Mandatory Machines"}
+                        </span>
                       </td>
                       <td className="px-6 py-4 text-amber-300/90 font-mono">
                         {item.brandName || "Standard"}
@@ -120,17 +132,38 @@ const Equipment = () => {
                       <td className="px-6 py-4 font-mono text-stone-300">
                         {item.quantity}
                       </td>
-                      <td className="px-6 py-4 font-mono text-amber-400 font-bold">
-                        ₹{item.pricePerHour}
+                      <td className="px-6 py-4 font-mono">
+                        <div className="flex flex-col gap-1">
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[10px] uppercase font-semibold text-stone-400">External:</span>
+                            <span className="text-amber-400 font-bold">
+                              {item.pricePerHour != null ? `₹${item.pricePerHour}/hr` : 'Not set'}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[10px] uppercase font-semibold text-emerald-400">@kct.ac.in:</span>
+                            <span className="text-emerald-300 font-bold bg-emerald-500/10 px-1.5 py-0.5 rounded text-[10px]">
+                              {item.kctPricePerHour && Number(item.kctPricePerHour) > 0 ? `₹${item.kctPricePerHour}/hr` : '₹0 (Free)'}
+                            </span>
+                          </div>
+                        </div>
                       </td>
                       <td className="px-6 py-4">
-                        <span className={`px-2.5 py-1 rounded-full text-[10px] uppercase font-bold tracking-wider border ${
-                          item.isAvailable
-                            ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
-                            : 'bg-rose-500/20 text-rose-300 border-rose-500/30'
-                        }`}>
-                          {item.isAvailable ? 'Available' : 'Unavailable'}
-                        </span>
+                        <button
+                          type="button"
+                          onClick={() => toggleEquipmentStatus(item.id)}
+                          className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-sans font-bold tracking-wider transition-all shadow-md cursor-pointer border ${
+                            item.isAvailable
+                              ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40 hover:bg-emerald-500/30'
+                              : 'bg-rose-500/20 text-rose-300 border-rose-500/40 hover:bg-rose-500/30'
+                          }`}
+                          title={`Click to switch to ${item.isAvailable ? 'Unbookable' : 'Bookable'}`}
+                        >
+                          <span className={`w-2.5 h-2.5 rounded-full transition-transform ${
+                            item.isAvailable ? 'bg-emerald-400 shadow-sm shadow-emerald-400' : 'bg-rose-400 shadow-sm shadow-rose-400'
+                          }`} />
+                          <span>{item.isAvailable ? 'Bookable' : 'Unbookable'}</span>
+                        </button>
                       </td>
                       <td className="px-6 py-4 text-right">
                         <div className="flex items-center justify-end gap-2">

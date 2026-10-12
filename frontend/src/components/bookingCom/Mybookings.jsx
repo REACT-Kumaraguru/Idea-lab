@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { Calendar, Clock, AlertCircle, Search, Filter, FileText, QrCode, X, ShieldCheck } from "lucide-react";
+import { Calendar, Clock, AlertCircle, Search, Filter, FileText, QrCode, X, ShieldCheck, Package } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import Navbar from "../Navbar";
 import { useBookingStore } from "../../store/useBookingStore";
 import { axiosInstance } from "../../lib/axios";
-import { getImageUrl } from "../../lib/config.js";
+import { getImageUrl, getEquipmentFallbackSvg } from "../../lib/config.js";
 import InvoiceModal from "../AdminCom/ApprovalCom/PDFformat";
 import AmbientBackground from "../AmbientBackground";
 
@@ -306,11 +306,12 @@ const MyBookings = () => {
                         {group.bookings.map((b) => (
                           <div key={b.id} className="flex gap-3 items-start">
                             <img
-                              src={getImageUrl(b.equipment?.image) || "https://via.placeholder.com/150"}
+                              src={getImageUrl(b.equipment?.image) || getEquipmentFallbackSvg(b.equipment?.equipmentName)}
                               alt={b.equipment?.equipmentName}
                               className="w-20 h-20 object-cover rounded-xl border border-amber-500/30 bg-stone-900 flex-shrink-0"
                               onError={(e) => {
-                                e.target.src = "https://via.placeholder.com/150";
+                                e.target.onerror = null;
+                                e.target.src = getEquipmentFallbackSvg(b.equipment?.equipmentName);
                               }}
                             />
                             <div>
@@ -424,8 +425,8 @@ const MyBookings = () => {
                       <div className="flex items-center gap-2">
                         <div>
                           <p className="text-[10px] uppercase font-bold text-stone-400 tracking-wider">Total</p>
-                          <p className="font-semibold text-amber-300 font-mono">
-                            ₹{totalAmount.toFixed(2)}
+                          <p className={`font-semibold font-mono ${totalAmount === 0 ? "text-emerald-400" : "text-amber-300"}`}>
+                            {totalAmount === 0 ? "₹0.00 (KCT Free)" : `₹${totalAmount.toFixed(2)}`}
                           </p>
                         </div>
                       </div>
@@ -437,6 +438,64 @@ const MyBookings = () => {
                         {group.bookings.filter((b) => b.notes).map((b) => (
                           <p key={b.id} className="text-xs text-stone-200">{b.notes}</p>
                         ))}
+                      </div>
+                    )}
+
+                    {/* Consumables Requisition Display */}
+                    {group.bookings.some((b) => b.consumablesRequested) && (
+                      <div className="mt-4 p-4 bg-amber-500/10 border border-amber-500/25 rounded-2xl font-sans space-y-2">
+                        <div className="flex items-center justify-between">
+                          <p className="text-[10px] uppercase font-bold text-amber-300 tracking-wider flex items-center gap-1.5">
+                            <Package className="w-3.5 h-3.5 text-amber-400" />
+                            Consumables Requisition (IDEA Lab Accountability)
+                          </p>
+                          <span className="text-[9px] bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded font-mono">
+                            Material Tracking
+                          </span>
+                        </div>
+
+                        {group.bookings.map((b) => {
+                          let list = [];
+                          if (Array.isArray(b.consumablesRequested)) {
+                            list = b.consumablesRequested;
+                          } else if (typeof b.consumablesRequested === "string") {
+                            try {
+                              list = JSON.parse(b.consumablesRequested);
+                            } catch (e) {
+                              list = [];
+                            }
+                          }
+                          if (!list || list.length === 0) return null;
+
+                          return (
+                            <div key={`cons-${b.id}`} className="space-y-1.5 pt-1">
+                              <p className="text-[11px] font-semibold text-stone-300">
+                                Materials for {b.equipment?.equipmentName}:
+                              </p>
+                              <div className="flex flex-wrap gap-1.5">
+                                {list.map((c, i) => (
+                                  <span
+                                    key={i}
+                                    className="inline-flex items-center gap-1 text-[11px] bg-stone-900/90 border border-amber-500/30 text-stone-200 px-2 py-0.5 rounded-lg"
+                                  >
+                                    <span>{c.name}:</span>
+                                    <span className="font-mono text-amber-300 font-bold">
+                                      {c.quantity} {c.unit}
+                                    </span>
+                                  </span>
+                                ))}
+                              </div>
+                              {b.consumablesPurpose && (
+                                <p className="text-[11px] text-stone-300 italic pt-1 border-t border-amber-500/15">
+                                  <span className="font-semibold text-amber-300/90 not-italic mr-1 text-[10px] uppercase tracking-wider">
+                                    Accountability Purpose:
+                                  </span>
+                                  "{b.consumablesPurpose}"
+                                </p>
+                              )}
+                            </div>
+                          );
+                        })}
                       </div>
                     )}
 

@@ -1,6 +1,7 @@
 import Admin from "../models/AdminModel.js";
 import { sequelize } from "../lib/db.js";
 import bcrypt from "bcryptjs";
+import { recordFailedLogin, clearFailedLogin } from "../middleware/accountLockout.middleware.js";
 
 export const login = async (req, res) => {
   const { email, password } = req.body;
@@ -8,12 +9,25 @@ export const login = async (req, res) => {
     const admin = await Admin.findOne({ where: { email } });
 
     if (!admin) {
+      recordFailedLogin(email);
       return res.status(400).json({ message: "Invalid credentials" });
     }
 
     const isPasswordCorrect = await bcrypt.compare(password, admin.password);
     if (!isPasswordCorrect) {
+      recordFailedLogin(email);
       return res.status(400).json({ message: "Invalid credentials" });
+    }
+
+    clearFailedLogin(email);
+
+    if (req.session && typeof req.session.regenerate === "function") {
+      await new Promise((resolve) => {
+        req.session.regenerate((err) => {
+          if (err) console.error("Session regenerate error:", err);
+          resolve();
+        });
+      });
     }
 
     req.session.user = {
@@ -21,6 +35,15 @@ export const login = async (req, res) => {
       role: "admin",
       email: admin.email,
     };
+
+    if (req.session && typeof req.session.save === "function") {
+      await new Promise((resolve) => {
+        req.session.save((err) => {
+          if (err) console.error("Session save error:", err);
+          resolve();
+        });
+      });
+    }
 
     res.status(200).json({
       id: admin.id,
@@ -53,7 +76,10 @@ export const logout = (req, res) => {
 export const checkAuth = (req, res) => {
   try {
     // req.user is populated by protectRoute middleware
-    res.status(200).json({ ...req.user.toJSON(), role: "admin" });
+    const data = req.user?.toJSON ? req.user.toJSON() : { ...req.user };
+    delete data.password;
+    delete data.passwordHash;
+    res.status(200).json({ ...data, role: "admin" });
   } catch (error) {
     console.log("Error in admin checkAuth controller", error.message);
     res.status(500).json({ message: "Internal Server Error" });
@@ -179,6 +205,13 @@ export const deleteAdmin = async (req, res) => {
     const admin = await Admin.findByPk(id);
     if (!admin) {
       return res.status(404).json({ message: "Admin not found" });
+    }
+
+    const adminCount = await Admin.count();
+    if (adminCount <= 1) {
+      return res.status(400).json({
+        message: "Cannot delete the last remaining admin. Create another admin account first, then you can remove this one.",
+      });
     }
 
     await admin.destroy();

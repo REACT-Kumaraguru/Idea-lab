@@ -532,7 +532,7 @@ export default function QRScanner() {
           {window.location.protocol !== "https:" && 
            window.location.hostname !== "localhost" && 
            window.location.hostname !== "127.0.0.1" &&
-           window.location.hostname !== "213.210.37.189" && (
+           window.location.hostname !== "idealab.kct.ac.in" && (
             <div className="mt-3 p-3.5 bg-amber-500/10 border border-amber-500/30 rounded-2xl">
               <p className="text-xs text-amber-300 font-sans">
                 ⚠️ <strong>Camera requires HTTPS:</strong> Access via <code className="bg-stone-900 px-1.5 py-0.5 rounded text-amber-400">https://</code> or use <code className="bg-stone-900 px-1.5 py-0.5 rounded text-amber-400">localhost</code> for camera to work.

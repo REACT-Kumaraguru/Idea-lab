@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Users, Clock, FileCheck, FileX, Download, Check, X, Printer, Search, FileText, ShieldCheck, RefreshCw } from 'lucide-react';
+import { Users, Clock, FileCheck, FileX, Download, Check, X, Printer, Search, FileText, ShieldCheck, RefreshCw, Package } from 'lucide-react';
 import { useAuthStore } from '../../../store/useAuthStore';
 import InvoiceModal from './PDFformat'; // Import the invoice modal
 import { axiosInstance } from '../../../lib/axios.js';
@@ -363,6 +363,15 @@ const Approval = () => {
                         <td className="py-6 px-4">
                           <div className="font-bold text-slate-800 text-sm">{row.user?.fullName || 'N/A'}</div>
                           <div className="text-gray-400 font-normal">{row.user?.email || 'N/A'}</div>
+                          {row.user?.email && (row.user.email.toLowerCase().endsWith('@kct.ac.in') || row.user.email.toLowerCase().endsWith('.kct.ac.in')) ? (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 mt-1">
+                              KCT Account • Free (₹0)
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 mt-1">
+                              External Account • Billed
+                            </span>
+                          )}
                           {isBatch && <div className="text-blue-600 text-[10px] mt-1">{group.bookings.length} item(s)</div>}
                           {group.bookings.some((b) => b.verifiedAt) && (
                             <div className="flex items-center gap-1 mt-1">
@@ -388,6 +397,37 @@ const Approval = () => {
                                   {b.equipment?.brandName && (
                                     <div className="text-gray-400 text-[10px]">{b.equipment.brandName}</div>
                                   )}
+                                  {b.consumablesRequested && (() => {
+                                    let list = [];
+                                    if (Array.isArray(b.consumablesRequested)) {
+                                      list = b.consumablesRequested;
+                                    } else if (typeof b.consumablesRequested === "string") {
+                                      try { list = JSON.parse(b.consumablesRequested); } catch (e) { list = []; }
+                                    }
+                                    if (!list || list.length === 0) return null;
+
+                                    return (
+                                      <div className="mt-1.5 pt-1.5 border-t border-gray-200 text-[11px]">
+                                        <div className="flex items-center gap-1 font-bold text-amber-800">
+                                          <Package size={11} className="text-amber-600" />
+                                          <span>Consumables ({list.length}):</span>
+                                        </div>
+                                        <div className="flex flex-wrap gap-1 mt-0.5">
+                                          {list.map((c, idx) => (
+                                            <span key={idx} className="bg-amber-50 border border-amber-200 text-amber-900 px-1.5 py-0.5 rounded text-[10px]">
+                                              {c.name}: {c.quantity} {c.unit}
+                                            </span>
+                                          ))}
+                                        </div>
+                                        {b.consumablesPurpose && (
+                                          <p className="text-[10px] text-gray-600 italic mt-1">
+                                            <span className="font-semibold not-italic text-gray-800">Purpose: </span>
+                                            "{b.consumablesPurpose}"
+                                          </p>
+                                        )}
+                                      </div>
+                                    );
+                                  })()}
                                 </div>
                               </div>
                               {b.status === 'pending' && (
@@ -441,8 +481,12 @@ const Approval = () => {
                         </td>
 
                         {/* Amount */}
-                        <td className="py-6 px-4 font-bold text-blue-600 text-sm">
-                          ₹{totalRent.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                        <td className="py-6 px-4 font-bold text-sm">
+                          {totalRent === 0 ? (
+                            <span className="text-emerald-600 font-bold">₹0.00 (Free)</span>
+                          ) : (
+                            <span className="text-blue-600 font-bold">₹{totalRent.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                          )}
                         </td>
 
                         {/* Status - Only show in History tab */}

@@ -226,3 +226,111 @@ export function handleDownloadMentorsPDF(mentors, hackathonName = "All Hackathon
   const dateStr = new Date().toISOString().slice(0, 10);
   doc.save(`mentors_${cleanTitle}_${dateStr}.pdf`);
 }
+
+export function handleDownloadEvaluationSheetsPDF(teams, hackathonName = "AICTE IDEA Lab Hackathon") {
+  const doc = new jsPDF("portrait", "mm", "a4");
+
+  if (!teams || teams.length === 0) {
+    doc.text("No teams found for evaluation sheet generation.", 14, 20);
+    doc.save("evaluation_sheets_empty.pdf");
+    return;
+  }
+
+  teams.forEach((team, index) => {
+    if (index > 0) doc.addPage("a4", "portrait");
+
+    // Header Banner
+    doc.setFillColor(24, 24, 27); // Dark zinc
+    doc.rect(0, 0, 210, 24, "F");
+
+    doc.setFontSize(10);
+    doc.setTextColor(251, 191, 36); // Amber
+    doc.text("AICTE IDEA LAB  •  KUMARAGURU COLLEGE OF TECHNOLOGY", 14, 9);
+
+    doc.setFontSize(13);
+    doc.setTextColor(255, 255, 255);
+    doc.text("FACULTY EVALUATION & JURY SCORING SHEET", 14, 17);
+
+    doc.setFontSize(9);
+    doc.setTextColor(209, 213, 219);
+    doc.text(`Event: ${hackathonName}`, 145, 9);
+    doc.text(`Date: ${new Date().toLocaleDateString()}`, 145, 17);
+
+    // Team Meta Box
+    const bench = team.benchNumber || team.bench || "UNASSIGNED";
+    doc.setDrawColor(209, 213, 219);
+    doc.setFillColor(249, 250, 251);
+    doc.roundedRect(14, 28, 182, 34, 2, 2, "FD");
+
+    doc.setFontSize(12);
+    doc.setTextColor(17, 24, 39);
+    doc.text(`Team: ${team.teamName || team.name || "Untitled Team"}`, 18, 36);
+
+    doc.setFontSize(10);
+    doc.setTextColor(75, 85, 99);
+    doc.text(`Bench / Table No: ${bench}`, 130, 36);
+    doc.text(`Team Code: ${team.inviteCode || team.teamCode || "—"}`, 130, 43);
+
+    const topicStr = (team.topic || team.title || "Custom Problem").slice(0, 55);
+    doc.text(`Topic / Theme: ${topicStr}`, 18, 43);
+
+    const membersStr = Array.isArray(team.members)
+      ? team.members.map((m) => m.fullName || m.name || m.email).slice(0, 4).join(", ")
+      : team.leaderName || "Roster Registered";
+    doc.text(`Members: ${membersStr}`, 18, 50);
+
+    // Scoring Rubrics Table
+    const rubricCols = ["Criteria", "Description", "Max Marks", "Awarded Marks"];
+    const rubricRows = [
+      ["1. Novelty & Innovation", "Originality of the concept, problem clarity, and innovative approach.", "20", ""],
+      ["2. Technical Rigor & Prototype", "Hardware/software functional working model, code architecture, circuits.", "30", ""],
+      ["3. Practical Feasibility", "Real-world scalability, deployment readiness, and societal relevance.", "20", ""],
+      ["4. Lab Equipment Utilization", "Effective utilization of AICTE IDEA Lab 3D printers, CNC, laser, IoT kits.", "15", ""],
+      ["5. Presentation & Q&A", "Clarity of demonstration, team communication, and jury question defense.", "15", ""],
+      ["TOTAL SCORE", "Cumulative evaluated marks across all 5 parameters", "100", ""],
+    ];
+
+    autoTable(doc, {
+      head: [rubricCols],
+      body: rubricRows,
+      startY: 66,
+      theme: "grid",
+      headStyles: { fillColor: [31, 41, 55], textColor: 255, fontStyle: "bold", fontSize: 9 },
+      styles: { fontSize: 8.5, cellPadding: 4, textColor: [17, 24, 39] },
+      columnStyles: {
+        0: { cellWidth: 46, fontStyle: "bold" },
+        1: { cellWidth: 84 },
+        2: { cellWidth: 24, halign: "center", fontStyle: "bold" },
+        3: { cellWidth: 28, halign: "center" },
+      },
+    });
+
+    const finalY = doc.lastAutoTable.finalY + 8;
+
+    // Evaluator Remarks Box
+    doc.setFontSize(9.5);
+    doc.setTextColor(31, 41, 55);
+    doc.text("Evaluator Qualitative Feedback & Technical Recommendations:", 14, finalY);
+
+    doc.setDrawColor(156, 163, 175);
+    doc.rect(14, finalY + 3, 182, 34);
+
+    // Signature Area
+    const signY = finalY + 48;
+    doc.line(14, signY, 74, signY);
+    doc.text("Faculty Evaluator Signature", 14, signY + 5);
+
+    doc.line(122, signY, 196, signY);
+    doc.text("Evaluator Name & Department", 122, signY + 5);
+
+    // Footer
+    doc.setFontSize(8);
+    doc.setTextColor(156, 163, 175);
+    doc.text("AICTE IDEA Lab Confidential Judging Record • Kumaraguru College of Technology", 14, 287);
+    doc.text(`Page ${index + 1} of ${teams.length}`, 180, 287);
+  });
+
+  const cleanTitle = (hackathonName || "hackathon").toLowerCase().replace(/[^a-z0-9]+/g, "_");
+  doc.save(`evaluation_sheets_${cleanTitle}_${new Date().toISOString().slice(0, 10)}.pdf`);
+}
+

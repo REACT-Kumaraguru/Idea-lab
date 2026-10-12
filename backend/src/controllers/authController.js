@@ -9,6 +9,7 @@ import {
   isHackathonRegistrationClosed,
   hackathonRegistrationClosedMessage,
 } from "../lib/hackathonRegistrationStatus.js";
+import { recordFailedLogin, clearFailedLogin } from "../middleware/accountLockout.middleware.js";
 
 const normalizeEmail = (email) => String(email || "").trim().toLowerCase();
 
@@ -66,9 +67,16 @@ export const verifyRegisterOtp = async (req, res, next) => {
     });
 
     if (!row || new Date(row.expiresAt) < new Date()) {
+      req.session.registerOtpAttempts = (req.session.registerOtpAttempts || 0) + 1;
+      if (req.session.registerOtpAttempts >= 5) {
+        await OtpCode.destroy({ where: { email, type: "register" } });
+        delete req.session.registerOtpAttempts;
+        throw new AppError("Too many failed attempts. Verification code has been invalidated. Please request a new code.", 429);
+      }
       throw new AppError("Invalid or expired verification code", 400);
     }
 
+    delete req.session.registerOtpAttempts;
     await OtpCode.destroy({ where: { id: row.id } });
 
     req.session.registrationEmailVerified = email;
@@ -124,11 +132,29 @@ export const register = async (req, res, next) => {
 
     delete req.session.registrationEmailVerified;
 
+    if (req.session && typeof req.session.regenerate === "function") {
+      await new Promise((resolve) => {
+        req.session.regenerate((err) => {
+          if (err) console.error("Session regenerate error:", err);
+          resolve();
+        });
+      });
+    }
+
     req.session.user = {
       id: user.id,
       role: user.role,
       email: user.email,
     };
+
+    if (req.session && typeof req.session.save === "function") {
+      await new Promise((resolve) => {
+        req.session.save((err) => {
+          if (err) console.error("Session save error:", err);
+          resolve();
+        });
+      });
+    }
 
     res.status(201).json({
       id: user.id,
@@ -201,12 +227,19 @@ export const verifyResetOtp = async (req, res, next) => {
       typeof expiresAt !== "number" ||
       Date.now() > expiresAt
     ) {
+      req.session.resetOtpAttempts = (req.session.resetOtpAttempts || 0) + 1;
+      if (req.session.resetOtpAttempts >= 5) {
+        clearAuthResetSession(req);
+        delete req.session.resetOtpAttempts;
+        throw new AppError("Too many failed attempts. Verification code has been invalidated. Please request a new code.", 429);
+      }
       throw new AppError("Invalid or expired verification code", 400);
     }
 
     delete req.session.resetEmail;
     delete req.session.resetOtp;
     delete req.session.resetOtpExpiresAt;
+    delete req.session.resetOtpAttempts;
 
     req.session.resetPasswordEmail = email;
 
@@ -252,56 +285,7 @@ export const resetPassword = async (req, res, next) => {
 };
 
 export const signup = async (req, res, next) => {
-  try {
-    const { fullName, email, password, phoneNumber, role } = req.body || {};
-    const normalizedEmail = normalizeEmail(email);
-
-    if (!fullName || !normalizedEmail || !password || !phoneNumber) {
-      throw new AppError("All fields are required", 400);
-    }
-
-    if (password.length < 6) {
-      throw new AppError("Password must be at least 6 characters", 400);
-    }
-
-    if (role && !["student", "external"].includes(role)) {
-      throw new AppError("Role must be either student or external", 400);
-    }
-
-    const user = await User.findOne({ where: { email: normalizedEmail } });
-
-    if (user) {
-      throw new AppError("User with this email already exists", 400);
-    }
-
-    const salt = await bcrypt.genSalt(10);
-    const passwordHash = await bcrypt.hash(password, salt);
-
-    const newUser = await User.create({
-      fullName,
-      email: normalizedEmail,
-      phoneNumber,
-      passwordHash,
-      role: role || "student",
-      isVerified: true,
-    });
-
-    req.session.user = {
-      id: newUser.id,
-      role: newUser.role,
-      email: newUser.email,
-    };
-
-    res.status(201).json({
-      id: newUser.id,
-      fullName: newUser.fullName,
-      email: newUser.email,
-      phoneNumber: newUser.phoneNumber,
-      role: newUser.role,
-    });
-  } catch (err) {
-    next(err);
-  }
+  return register(req, res, next);
 };
 
 export const login = async (req, res, next) => {
@@ -316,6 +300,7 @@ export const login = async (req, res, next) => {
     const user = await User.findOne({ where: { email: normalizedEmail } });
 
     if (!user) {
+      recordFailedLogin(normalizedEmail);
       throw new AppError("Invalid credentials", 400);
     }
 
@@ -325,16 +310,37 @@ export const login = async (req, res, next) => {
 
     const isPasswordCorrect = await bcrypt.compare(password, user.passwordHash);
     if (!isPasswordCorrect) {
+      recordFailedLogin(normalizedEmail);
       throw new AppError("Invalid credentials", 400);
     }
 
+    clearFailedLogin(normalizedEmail);
+
     const resolvedRole = user.role || "student";
+
+    if (req.session && typeof req.session.regenerate === "function") {
+      await new Promise((resolve) => {
+        req.session.regenerate((err) => {
+          if (err) console.error("Session regenerate error:", err);
+          resolve();
+        });
+      });
+    }
 
     req.session.user = {
       id: user.id,
       role: resolvedRole,
       email: user.email,
     };
+
+    if (req.session && typeof req.session.save === "function") {
+      await new Promise((resolve) => {
+        req.session.save((err) => {
+          if (err) console.error("Session save error:", err);
+          resolve();
+        });
+      });
+    }
 
     res.status(200).json({
       id: user.id,

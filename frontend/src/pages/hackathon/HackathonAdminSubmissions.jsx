@@ -169,12 +169,7 @@ const HackathonAdminSubmissions = () => {
   const filterOptions = useMemo(() => {
     if (!hackathonId) return [];
     if (isCustomMode) {
-      const set = new Set();
-      submissions.forEach((s) => {
-        const t = s.theme || s.team?.theme;
-        if (t) set.add(t);
-      });
-      [
+      return [
         "Disaster Resilience",
         "Waste Management",
         "Energy Solutions",
@@ -182,18 +177,17 @@ const HackathonAdminSubmissions = () => {
         "Pollution Control",
         "Smart Mobility & Parking",
         "Smart Healthcare",
-      ].forEach((t) => set.add(t));
-      return Array.from(set);
+      ];
     } else {
       const set = new Set();
       problems.forEach((p) => { if (p.title) set.add(p.title); });
       submissions.forEach((s) => {
-        const t = s.problem?.title || s.title || s.team?.topic;
-        if (t) set.add(t);
+        const title = s.problem?.title || s.title;
+        if (title) set.add(title);
       });
       return Array.from(set);
     }
-  }, [hackathonId, isCustomMode, submissions, problems]);
+  }, [hackathonId, isCustomMode, problems, submissions]);
 
   const teamsGrouped = useMemo(() => {
     const filteredSubmissions = submissions.filter((s) => {

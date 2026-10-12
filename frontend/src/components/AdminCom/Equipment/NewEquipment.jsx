@@ -15,8 +15,10 @@ export default function NewEquipment() {
   const [formData, setFormData] = useState({
     equipmentName: '',
     brandName: '',
+    category: 'Mandatory Machines',
     quantity: '',
     pricePerHour: '',
+    kctPricePerHour: '0.00',
     equipmentDetails: '',
     isAvailable: true
   });
@@ -30,8 +32,10 @@ export default function NewEquipment() {
       setFormData({
         equipmentName: editingEquipment.equipmentName,
         brandName: editingEquipment.brandName,
+        category: editingEquipment.category || 'Mandatory Machines',
         quantity: editingEquipment.quantity,
         pricePerHour: editingEquipment.pricePerHour ?? '',
+        kctPricePerHour: editingEquipment.kctPricePerHour != null ? String(editingEquipment.kctPricePerHour) : '0.00',
         equipmentDetails: editingEquipment.equipmentDetails || '',
         isAvailable: editingEquipment.isAvailable
       });
@@ -75,7 +79,9 @@ export default function NewEquipment() {
     data.append('brandName', formData.brandName);
     data.append('quantity', formData.quantity);
     if (formData.pricePerHour !== '') data.append('pricePerHour', formData.pricePerHour);
+    data.append('kctPricePerHour', formData.kctPricePerHour !== '' ? formData.kctPricePerHour : '0.00');
     data.append('equipmentDetails', formData.equipmentDetails);
+    data.append('category', formData.category || 'Mandatory Machines');
     data.append('isAvailable', formData.isAvailable);
 
     if (imageFile) {
@@ -244,27 +250,56 @@ export default function NewEquipment() {
                       />
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label htmlFor="quantity" className="block text-sm font-medium text-slate-900 mb-1.5">
-                          Quantity <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                          type="number"
-                          id="quantity"
-                          name="quantity"
-                          value={formData.quantity}
-                          onChange={handleInputChange}
-                          placeholder="0"
-                          min="0"
-                          required
-                          className="w-full px-3 py-2.5 text-sm font-mono border-2 border-slate-200 rounded-lg bg-slate-50 text-slate-900 transition-all duration-300 outline-none focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-100 hover:border-slate-300"
-                        />
-                      </div>
+                    <div>
+                      <label htmlFor="quantity" className="block text-sm font-medium text-slate-900 mb-1.5">
+                        Quantity <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="number"
+                        id="quantity"
+                        name="quantity"
+                        value={formData.quantity}
+                        onChange={handleInputChange}
+                        placeholder="0"
+                        min="0"
+                        required
+                        className="w-full px-3 py-2.5 text-sm font-mono border-2 border-slate-200 rounded-lg bg-slate-50 text-slate-900 transition-all duration-300 outline-none focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-100 hover:border-slate-300"
+                      />
+                    </div>
 
+                    <div>
+                      <label htmlFor="category" className="block text-sm font-medium text-slate-900 mb-1.5">
+                        Equipment Category <span className="text-red-500">*</span>
+                      </label>
+                      <select
+                        id="category"
+                        name="category"
+                        value={formData.category}
+                        onChange={handleInputChange}
+                        required
+                        className="w-full px-3 py-2.5 text-sm border-2 border-slate-200 rounded-lg bg-slate-50 text-slate-900 transition-all duration-300 outline-none focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-100 hover:border-slate-300 cursor-pointer"
+                      >
+                        <option value="Mandatory Machines">Mandatory Machines</option>
+                        <option value="Electronic Tools">Electronic Tools</option>
+                        <option value="Mechanical Tools">Mechanical Tools</option>
+                        <option value="Computing">Computing</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Hourly Pricing Section */}
+                  <div className="p-4 bg-slate-100/80 rounded-xl border border-slate-200 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold uppercase tracking-wider text-slate-700">Hourly Pricing Rules</span>
+                      <span className="text-[10px] bg-emerald-100 text-emerald-800 font-semibold px-2 py-0.5 rounded-full">
+                        @kct.ac.in = ₹0 / Free
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
-                        <label htmlFor="pricePerHour" className="block text-sm font-medium text-slate-900 mb-1.5">
-                          Price per hour (₹)
+                        <label htmlFor="pricePerHour" className="block text-xs font-semibold text-slate-800 mb-1">
+                          External Accounts Rate (₹/hr)
                         </label>
                         <input
                           type="number"
@@ -275,9 +310,28 @@ export default function NewEquipment() {
                           placeholder="0.00"
                           min="0"
                           step="0.01"
-                          className="w-full px-3 py-2.5 text-sm font-mono border-2 border-slate-200 rounded-lg bg-slate-50 text-slate-900 transition-all duration-300 outline-none focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-100 hover:border-slate-300"
+                          className="w-full px-3 py-2 text-sm font-mono border-2 border-slate-200 rounded-lg bg-white text-slate-900 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-100"
                         />
-                        <p className="text-xs text-slate-500 mt-1">Used for hourly booking total.</p>
+                        <p className="text-[10px] text-slate-500 mt-1">Charged to any account with non-@kct.ac.in email.</p>
+                      </div>
+
+                      <div>
+                        <label htmlFor="kctPricePerHour" className="block text-xs font-semibold text-emerald-800 mb-1 flex items-center justify-between">
+                          <span>KCT Institutional Rate (₹/hr)</span>
+                          <span className="text-[10px] text-emerald-600 font-bold">Complimentary</span>
+                        </label>
+                        <input
+                          type="number"
+                          id="kctPricePerHour"
+                          name="kctPricePerHour"
+                          value={formData.kctPricePerHour}
+                          onChange={handleInputChange}
+                          placeholder="0.00"
+                          min="0"
+                          step="0.01"
+                          className="w-full px-3 py-2 text-sm font-mono border-2 border-emerald-200 rounded-lg bg-emerald-50/50 text-emerald-950 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+                        />
+                        <p className="text-[10px] text-emerald-600 mt-1">Users ending with @kct.ac.in receive cost 0.</p>
                       </div>
                     </div>
                   </div>
@@ -317,12 +371,19 @@ export default function NewEquipment() {
                 <div className="flex items-center gap-2 mb-3">
                   <span className="w-1 h-4 bg-emerald-500 rounded-sm"></span>
                   <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-                    Availability
+                    Booking Status
                   </h2>
                 </div>
 
                 <div className="flex items-center justify-between p-4 bg-slate-50 rounded-lg border-2 border-slate-200 transition-all hover:border-slate-300">
-                  <span className="font-medium text-slate-900 text-sm">Is Available</span>
+                  <div>
+                    <span className="font-semibold text-slate-900 text-sm block">
+                      {formData.isAvailable ? 'Bookable' : 'Unbookable'}
+                    </span>
+                    <span className="text-xs text-slate-500">
+                      {formData.isAvailable ? 'Students can request and book this hardware' : 'Hardware is locked from student bookings'}
+                    </span>
+                  </div>
                   <label className="relative inline-block w-12 h-7 cursor-pointer">
                     <input
                       type="checkbox"
@@ -406,7 +467,7 @@ export default function NewEquipment() {
                       : 'bg-red-500 text-white'
                       }`}
                   >
-                    {formData.isAvailable ? 'Available' : 'Unavailable'}
+                    {formData.isAvailable ? 'Bookable' : 'Unbookable'}
                   </span>
                 </div>
               </div>
@@ -431,6 +492,17 @@ export default function NewEquipment() {
                       {formData.quantity || '0'}
                     </span>
                   </div>
+
+                  {/* Pricing Preview Badges */}
+                  <div className="flex flex-wrap gap-2 text-xs font-mono my-2.5">
+                    <span className="bg-amber-100 text-amber-900 px-2.5 py-1 rounded-md font-bold border border-amber-200">
+                      External: ₹{formData.pricePerHour || '0'}/hr
+                    </span>
+                    <span className="bg-emerald-100 text-emerald-900 px-2.5 py-1 rounded-md font-bold border border-emerald-200">
+                      @kct.ac.in: {formData.kctPricePerHour && Number(formData.kctPricePerHour) > 0 ? `₹${formData.kctPricePerHour}/hr` : '₹0/hr (Free)'}
+                    </span>
+                  </div>
+
                   <p className="text-sm text-slate-600">
                     {formData.equipmentDetails || 'No details provided yet. Add specifications, model number, or additional information.'}
                   </p>

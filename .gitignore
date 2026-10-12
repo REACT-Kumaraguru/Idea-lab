@@ -39,3 +39,9 @@ Thumbs.db
 *.njsproj
 *.sln
 *.sw?
+
+# Sensitive credential docs & local backups
+SERVER_CONNECTIVITY_AND_CREDENTIALS.md
+*.sqlite-shm
+*.sqlite-wal
+backend/backups/

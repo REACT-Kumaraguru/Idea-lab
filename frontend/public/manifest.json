@@ -1,0 +1,24 @@
+{
+  "name": "AICTE IDEA Lab — Kumaraguru College of Technology",
+  "short_name": "IDEA Lab KCT",
+  "description": "Official innovation, equipment sanctuary, and hackathon portal for AICTE IDEA Lab at Kumaraguru College of Technology.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0809",
+  "theme_color": "#f59e0b",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/kct-logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/kct-logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

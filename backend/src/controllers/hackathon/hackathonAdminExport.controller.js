@@ -26,6 +26,12 @@ import HackathonProblem from "../../models/hackathon/HackathonProblemModel.js";
 import HackathonUser from "../../models/hackathon/HackathonUserModel.js";
 import Hackathon from "../../models/hackathon/HackathonModel.js";
 
+export const sanitizeExcelCell = (val) => {
+  if (val == null) return "";
+  const str = String(val);
+  return /^[=@+\-\t\r]/.test(str) ? "'" + str : str;
+};
+
 const HEADERS = [
   "S.No.",
   "Hackathon Name",
@@ -286,20 +292,20 @@ export const adminExportSubmissionsExcel = async (req, res) => {
       for (const r of rows) {
         const row = ws.addRow([
           sNo++,
-          r.hackathonName,
-          r.teamName,
-          r.theme || "—",
-          r.memberName,
-          r.email,
-          r.phone,
-          r.degree,
-          r.gradYear,
-          r.college,
-          r.branch,
-          r.participation,
-          r.description,
-          r.tech,
-          r.fileLabel || r.fileLinkUrl || "",
+          sanitizeExcelCell(r.hackathonName),
+          sanitizeExcelCell(r.teamName),
+          sanitizeExcelCell(r.theme || "—"),
+          sanitizeExcelCell(r.memberName),
+          sanitizeExcelCell(r.email),
+          sanitizeExcelCell(r.phone),
+          sanitizeExcelCell(r.degree),
+          sanitizeExcelCell(r.gradYear),
+          sanitizeExcelCell(r.college),
+          sanitizeExcelCell(r.branch),
+          sanitizeExcelCell(r.participation),
+          sanitizeExcelCell(r.description),
+          sanitizeExcelCell(r.tech),
+          sanitizeExcelCell(r.fileLabel || r.fileLinkUrl || ""),
         ]);
         const d = row.getCell(11);
         const p = row.getCell(12);
@@ -439,11 +445,11 @@ export const adminExportMentorsExcel = async (req, res) => {
     for (const m of mentors) {
       ws.addRow([
         sNo++,
-        hackathonTitle,
-        m.user?.fullName || m.fullName || "—",
-        m.user?.email || m.email || "—",
-        m.user?.phoneNumber || "—",
-        m.expertise || "General Mentor",
+        sanitizeExcelCell(hackathonTitle),
+        sanitizeExcelCell(m.user?.fullName || m.fullName || "—"),
+        sanitizeExcelCell(m.user?.email || m.email || "—"),
+        sanitizeExcelCell(m.user?.phoneNumber || "—"),
+        sanitizeExcelCell(m.expertise || "General Mentor"),
       ]);
     }
 

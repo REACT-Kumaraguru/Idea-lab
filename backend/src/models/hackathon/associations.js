@@ -10,6 +10,7 @@ import HackathonTeamMentor from "./HackathonTeamMentorModel.js";
 import HackathonProblemMentor from "./HackathonProblemMentorModel.js";
 import HackathonPaymentDetail from "./HackathonPaymentDetailModel.js";
 import HackathonRegistration from "./HackathonRegistrationModel.js";
+import HackathonAnnouncement from "./HackathonAnnouncementModel.js";
 
 let isSetup = false;
 export const setupHackathonAssociations = () => {
@@ -50,6 +51,15 @@ export const setupHackathonAssociations = () => {
   Hackathon.hasMany(HackathonSubmission, {
     foreignKey: { name: "hackathonId", field: "hackathon_id" },
     as: "submissions",
+  });
+
+  HackathonAnnouncement.belongsTo(Hackathon, {
+    foreignKey: { name: "hackathonId", field: "hackathon_id" },
+    as: "hackathon",
+  });
+  Hackathon.hasMany(HackathonAnnouncement, {
+    foreignKey: { name: "hackathonId", field: "hackathon_id" },
+    as: "announcements",
   });
   // Sessions
   HackathonSession.belongsTo(HackathonUser, {
@@ -161,10 +171,12 @@ export const setupHackathonAssociations = () => {
 };
 
 import HackathonLog from "./HackathonLogModel.js";
+import HackathonEmailLog from "./HackathonEmailLogModel.js";
 
 export {
   Hackathon,
   HackathonLog,
+  HackathonEmailLog,
   HackathonUser,
   HackathonSession,
   HackathonTeam,
@@ -176,5 +188,6 @@ export {
   HackathonProblemMentor,
   HackathonPaymentDetail,
   HackathonRegistration,
+  HackathonAnnouncement,
 };
 

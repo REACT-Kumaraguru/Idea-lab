@@ -31,6 +31,12 @@ const Equipment = sequelize.define(
       defaultValue: null,
       field: "price_per_hour",
     },
+    kctPricePerHour: {
+      type: DataTypes.DECIMAL(10, 2),
+      allowNull: true,
+      defaultValue: 0.00,
+      field: "kct_price_per_hour",
+    },
     equipmentDetails: {
       type: DataTypes.TEXT, // Use TEXT for potentially longer descriptions
       allowNull: true,
@@ -44,6 +50,11 @@ const Equipment = sequelize.define(
     image: {
       type: DataTypes.STRING,
       allowNull: true, // Image might be optional or added later
+    },
+    category: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      defaultValue: "Mandatory Machines",
     },
   },
   {
