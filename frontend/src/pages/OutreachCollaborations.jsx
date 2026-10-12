@@ -39,13 +39,13 @@ const ATOMQUEST_EVENT = {
   name: "AtomQuest 2026 – National Open Innovation Championship",
   headline: "A National-Level Student Innovation Challenge by Atomberg Technologies Ltd.",
   category: "National Student Innovation Challenge",
-  status: "active",
-  statusLabel: "REGISTRATION OPEN",
-  badgeColor: "bg-emerald-500/15 text-emerald-300 border-emerald-500/30",
+  status: "closed",
+  statusLabel: "REGISTRATIONS CLOSED",
+  badgeColor: "bg-rose-500/15 text-rose-300 border-rose-500/30",
   startDate: "2026-10-08",
   endDate: "2026-10-09",
   displayDate: "8 - 9 October 2026",
-  internalRegDate: "8 October 2026",
+  internalRegDate: "8 October 2026 (Closed)",
   reviewDate: "9 October 2026",
   organizedBy: "Atomberg Technologies Ltd. & AICTE IDEA Lab, KCT",
   venue: "AICTE IDEA Lab, Kumaraguru College of Technology (KCT)",
@@ -265,8 +265,8 @@ export default function OutreachCollaborations() {
               {/* Badges & Host Header */}
               <div className="relative z-10 flex flex-wrap items-center justify-between gap-4 mb-6">
                 <div className="flex flex-wrap items-center gap-2.5">
-                  <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-sans font-bold uppercase tracking-widest bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 shadow-md">
-                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                  <span className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-sans font-bold uppercase tracking-widest border shadow-md ${selectedEvent.badgeColor}`}>
+                    <span className={`w-2 h-2 rounded-full ${selectedEvent.status === "closed" ? "bg-rose-400" : "bg-emerald-400 animate-pulse"}`} />
                     {selectedEvent.statusLabel}
                   </span>
 
@@ -524,41 +524,81 @@ export default function OutreachCollaborations() {
               </div>
 
               {/* Registration Action Hub */}
-              <div className="relative z-10 rounded-2xl border border-amber-500/40 bg-gradient-to-b from-stone-950 to-[#0e090b] p-8 sm:p-10 text-center shadow-2xl">
-                <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-400/10 border border-amber-400/30 text-amber-300 text-xs font-mono uppercase tracking-widest mb-4">
-                  <Rocket className="w-4 h-4" />
-                  <span>📢 Official Team Registration</span>
-                </div>
+              <div className={`relative z-10 rounded-2xl border p-8 sm:p-10 text-center shadow-2xl ${
+                selectedEvent.status === "closed"
+                  ? "border-rose-500/30 bg-gradient-to-b from-stone-950 via-[#140a0d] to-[#0a0809]"
+                  : "border-amber-500/40 bg-gradient-to-b from-stone-950 to-[#0e090b]"
+              }`}>
+                {selectedEvent.status === "closed" ? (
+                  <>
+                    <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs font-mono uppercase tracking-widest mb-4">
+                      <Clock className="w-4 h-4 text-rose-400" />
+                      <span>REGISTRATIONS CLOSED</span>
+                    </div>
 
-                <h3 className="font-serif text-3xl sm:text-4xl uppercase tracking-wider text-stone-100 mb-3">
-                  Register Your Team For AtomQuest 2026
-                </h3>
+                    <h3 className="font-serif text-3xl sm:text-4xl uppercase tracking-wider text-stone-100 mb-3">
+                      Registrations Closed for AtomQuest 2026
+                    </h3>
 
-                <p className="text-xs sm:text-sm text-stone-400 font-light max-w-xl mx-auto mb-8">
-                  Internal registration closes on <strong>8 October 2026</strong>. Final Review PPT presentation will be held on <strong>9 October 2026</strong> at AICTE IDEA Lab, KCT.
-                </p>
+                    <p className="text-xs sm:text-sm text-stone-300 font-light max-w-xl mx-auto mb-8 leading-relaxed">
+                      The internal team registration window closed on <strong>8 October 2026</strong>. Registered teams are currently undergoing PPT review and hardware prototyping mentorship at AICTE IDEA Lab, KCT.
+                    </p>
 
-                <div className="flex flex-wrap items-center justify-center gap-4">
-                  <a
-                    href={selectedEvent.registrationUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 px-8 py-4 rounded-full bg-gradient-to-r from-amber-400 via-amber-300 to-amber-500 text-stone-950 font-sans font-bold text-xs uppercase tracking-[0.2em] hover:brightness-110 transition-all shadow-xl hover:shadow-amber-500/30 hover:scale-105 cursor-pointer"
-                  >
-                    <span>Register Here (Microsoft Forms)</span>
-                    <ExternalLink className="w-4 h-4 text-stone-950" />
-                  </a>
+                    <div className="flex flex-wrap items-center justify-center gap-4">
+                      <div className="inline-flex items-center gap-2 px-8 py-4 rounded-full bg-stone-900 border border-stone-800 text-stone-400 font-sans font-bold text-xs uppercase tracking-[0.2em] shadow-lg cursor-not-allowed select-none">
+                        <span className="w-2 h-2 rounded-full bg-rose-400" />
+                        <span>Registration Closed</span>
+                      </div>
 
-                  <a
-                    href={selectedEvent.gradPartnersUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 px-6 py-4 rounded-full border border-stone-700 bg-stone-900/80 text-stone-300 hover:text-amber-300 hover:border-amber-500/40 font-sans font-semibold text-xs uppercase tracking-wider transition-all"
-                  >
-                    <span>Official Portal (GradPartners)</span>
-                    <ExternalLink className="w-3.5 h-3.5" />
-                  </a>
-                </div>
+                      <a
+                        href={selectedEvent.gradPartnersUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 px-6 py-4 rounded-full border border-stone-700 bg-stone-900/80 text-stone-300 hover:text-amber-300 hover:border-amber-500/40 font-sans font-semibold text-xs uppercase tracking-wider transition-all"
+                      >
+                        <span>Official Challenge Portal (GradPartners)</span>
+                        <ExternalLink className="w-3.5 h-3.5" />
+                      </a>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-400/10 border border-amber-400/30 text-amber-300 text-xs font-mono uppercase tracking-widest mb-4">
+                      <Rocket className="w-4 h-4" />
+                      <span>📢 Official Team Registration</span>
+                    </div>
+
+                    <h3 className="font-serif text-3xl sm:text-4xl uppercase tracking-wider text-stone-100 mb-3">
+                      Register Your Team For AtomQuest 2026
+                    </h3>
+
+                    <p className="text-xs sm:text-sm text-stone-400 font-light max-w-xl mx-auto mb-8">
+                      Internal registration closes on <strong>8 October 2026</strong>. Final Review PPT presentation will be held on <strong>9 October 2026</strong> at AICTE IDEA Lab, KCT.
+                    </p>
+
+                    <div className="flex flex-wrap items-center justify-center gap-4">
+                      <a
+                        href={selectedEvent.registrationUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 px-8 py-4 rounded-full bg-gradient-to-r from-amber-400 via-amber-300 to-amber-500 text-stone-950 font-sans font-bold text-xs uppercase tracking-[0.2em] hover:brightness-110 transition-all shadow-xl hover:shadow-amber-500/30 hover:scale-105 cursor-pointer"
+                      >
+                        <span>Register Here (Microsoft Forms)</span>
+                        <ExternalLink className="w-4 h-4 text-stone-950" />
+                      </a>
+
+                      <a
+                        href={selectedEvent.gradPartnersUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 px-6 py-4 rounded-full border border-stone-700 bg-stone-900/80 text-stone-300 hover:text-amber-300 hover:border-amber-500/40 font-sans font-semibold text-xs uppercase tracking-wider transition-all"
+                      >
+                        <span>Official Portal (GradPartners)</span>
+                        <ExternalLink className="w-3.5 h-3.5" />
+                      </a>
+                    </div>
+                  </>
+                )}
 
                 <div className="mt-8 pt-6 border-t border-stone-800/80 flex flex-wrap items-center justify-center gap-6 text-xs text-stone-400 font-mono">
                   <span>🚀 Solve</span>
